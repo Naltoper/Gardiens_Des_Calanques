@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions, Image
 import { useRouter } from 'expo-router';
 import { ShieldAlert, MessageSquare, Info, Phone, Mail, Shield } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { GradientButton } from '../../components/buttons/GradientButton';
 
 const { width } = Dimensions.get('window');
 
@@ -40,7 +41,6 @@ export default function HomeScreen() {
         colors: ["#48a4f4ff", "#10ac56ff","#48a4f4ff"], 
         icon: <ShieldAlert color="white" size={32} />, 
         fullWidth: true,
-        isPriority: true
     },
     { 
         title: "Mes signalements", 
@@ -95,24 +95,15 @@ export default function HomeScreen() {
         {/* Grille de navigation avec Gradients */}
         <View style={styles.grid}>
           {menuButtons.map((btn, index) => (
-            <TouchableOpacity 
+            <GradientButton
               key={index}
-              style={btn.fullWidth ? styles.fullWidthContainer : styles.halfWidthContainer}
-              activeOpacity={0.9}
+              title={btn.title}
+              icon={btn.icon}
+              colors={btn.colors as [string, string, ...string[]]}
               onPress={() => router.push(btn.route as any)}
-            >
-              <LinearGradient
-                colors={btn.colors as [string, string, ...string[]]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.gradientButton}
-              >
-                <View style={styles.iconContainer}>{btn.icon}</View>
-                <Text style={styles.buttonText}>
-                  {btn.title}
-                </Text>
-              </LinearGradient>
-            </TouchableOpacity>
+              width={btn.fullWidth ? '100%' : '48%'}// Logique pour la largeur : 100% si fullWidth, sinon 48%
+              style={{ marginBottom: 12 }}
+            />
           ))}
         </View>
 
