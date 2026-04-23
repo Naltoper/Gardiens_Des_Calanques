@@ -1,0 +1,4 @@
+import { Channel, ChannelMemberResponse } from 'stream-chat';
+export declare function useChannelMembershipState(channel: Channel): ChannelMemberResponse;
+export declare function useChannelMembershipState(channel?: Channel): ChannelMemberResponse | undefined;
+//# sourceMappingURL=useChannelMembershipState.d.ts.map
