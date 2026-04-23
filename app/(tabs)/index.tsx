@@ -1,11 +1,9 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions, Image, Platform, Linking } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ShieldAlert, MessageSquare, Info, Phone, Mail, Shield } from 'lucide-react-native';
 import { GradientButton } from '../../components/buttons/GradientButton';
 import { InstallBanner } from '../../components/banners/InstallBanner';
-
-const { width } = Dimensions.get('window');
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -82,7 +80,6 @@ export default function HomeScreen() {
               colors={btn.colors as [string, string, ...string[]]}
               onPress={() => router.push(btn.route as any)}
               width={btn.fullWidth ? '100%' : '48%'}// Logique pour la largeur : 100% si fullWidth, sinon 48%
-              style={{ marginBottom: 12 }}
             />
           ))}
         </View>
