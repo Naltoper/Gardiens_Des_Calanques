@@ -1,34 +1,9 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions, Image, Platform, Linking } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ShieldAlert, MessageSquare, Info, Phone, Mail, Shield } from 'lucide-react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-
-const { width } = Dimensions.get('window');
-
-
-const InstallBanner = () => {
-  // On n'affiche la bannière QUE sur le Web et sur un navigateur Mobile
-  // (Note: Sur PC, Platform.OS est aussi 'web', mais on cible l'usage mobile)
-  if (Platform.OS !== 'web') return null;
-
-  const apkUrl = "https://github.com/Naltoper/GardiensApp_v0/releases/download/v1.0.0/GDC.apk"; // lien apk
-// TODO
-  return (
-    <View style={styles.bannerContainer}>
-      <View style={{ flex: 1 }}>
-        <Text style={styles.bannerTitle}>Application Intervenants</Text>
-        <Text style={styles.bannerSubtitle}>Installez l&apos;app pour recevoir les alertes en direct.</Text>
-      </View>
-      <TouchableOpacity 
-        onPress={() => Linking.openURL(apkUrl)}
-        style={styles.downloadBtn}
-      >
-        <Text style={styles.downloadBtnText}>Installer</Text>
-      </TouchableOpacity>
-    </View>
-  );
-};
+import { GradientButton } from '../../components/buttons/GradientButton';
+import { InstallBanner } from '../../components/banners/InstallBanner';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -40,7 +15,6 @@ export default function HomeScreen() {
         colors: ["#48a4f4ff", "#10ac56ff","#48a4f4ff"], 
         icon: <ShieldAlert color="white" size={32} />, 
         fullWidth: true,
-        isPriority: true
     },
     { 
         title: "Mes signalements", 
@@ -72,8 +46,12 @@ export default function HomeScreen() {
     <View style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
         
-        {/* --- AJOUT DE LA BANNIÈRE ICI --- */}
-        <InstallBanner />
+        {/* --- INSTALL BANNER (s'affiche seulement sur web --- */}
+        <InstallBanner 
+          title="Application Intervenants"
+          subtitle="Installez l'app pour recevoir les alertes en direct."
+          url="https://github.com/Naltoper/GardiensApp_v0/releases/download/v1.0.0/GDC.apk"
+        />
 
         {/* En-tête avec votre logo en rond */}
         <View style={styles.header}>
@@ -95,24 +73,14 @@ export default function HomeScreen() {
         {/* Grille de navigation avec Gradients */}
         <View style={styles.grid}>
           {menuButtons.map((btn, index) => (
-            <TouchableOpacity 
+            <GradientButton
               key={index}
-              style={btn.fullWidth ? styles.fullWidthContainer : styles.halfWidthContainer}
-              activeOpacity={0.9}
+              title={btn.title}
+              icon={btn.icon}
+              colors={btn.colors as [string, string, ...string[]]}
               onPress={() => router.push(btn.route as any)}
-            >
-              <LinearGradient
-                colors={btn.colors as [string, string, ...string[]]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.gradientButton}
-              >
-                <View style={styles.iconContainer}>{btn.icon}</View>
-                <Text style={styles.buttonText}>
-                  {btn.title}
-                </Text>
-              </LinearGradient>
-            </TouchableOpacity>
+              width={btn.fullWidth ? '100%' : '48%'}// Logique pour la largeur : 100% si fullWidth, sinon 48%
+            />
           ))}
         </View>
 
@@ -195,33 +163,6 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingTop: 50,
   },
-  fullWidthContainer: {
-    width: '100%',
-    marginBottom: 8,
-  },
-  halfWidthContainer: {
-    width: '48%',
-    height: 110,
-  },
-  gradientButton: {
-    flex: 1,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 15,
-  },
-  iconContainer: {
-    marginBottom: 5,
-  },
-  buttonText: { 
-    color: '#fff', 
-    fontSize: 14, 
-    fontWeight: '700', 
-    textAlign: 'center',
-    textShadowColor: 'rgba(0, 0, 0, 0.1)',
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 2
-  },
   footer: {
     marginTop: 40,
     paddingBottom: 20,
@@ -249,43 +190,5 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 2,
     fontWeight: '500'
-  },
-  bannerContainer: {
-    backgroundColor: '#023e8a',
-    padding: 15,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    borderRadius: 15,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: '#48a4f4ff',
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-  },
-  bannerTitle: {
-    color: 'white',
-    fontWeight: '800',
-    fontSize: 14,
-  },
-  bannerSubtitle: {
-    color: '#caf0f8',
-    fontSize: 11,
-    marginTop: 2,
-  },
-  downloadBtn: {
-    backgroundColor: '#76c893',
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    borderRadius: 10,
-    marginLeft: 10,
-  },
-  downloadBtnText: {
-    color: '#023e8a',
-    fontWeight: '800',
-    fontSize: 13,
   },
 });
