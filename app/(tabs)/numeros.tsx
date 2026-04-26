@@ -2,31 +2,32 @@ import { View, Text, StyleSheet, Linking, TouchableOpacity, ScrollView, Platform
 import { Phone, ShieldCheck, ChevronLeft } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router'; // Import du router
+import { EMERGENCY_NUMBERS } from '../../constants/emergencyNumbers';
 
 export default function NumerosScreen() {
   const router = useRouter(); // Initialisation du router
   const call = (num: string) => Linking.openURL(`tel:${num}`);
 
-  const emergencyNumbers = [
-    {
-      title: "Non au Harcèlement",
-      number: "3020",
-      description: "Écoute, conseil et orientation pour les victimes et témoins.",
-      colors: ["#48a4f4", "#00b4d8"],
-    },
-    {
-      title: "Cyber-Harcèlement",
-      number: "3018",
-      description: "Le numéro court national pour les violences numériques.",
-      colors: ["#76c893", "#10ac56"],
-    },
-    {
-      title: "Enfance en Danger",
-      number: "119",
-      description: "Numéro national dédié à la prévention et à la protection.",
-      colors: ["#023e8a", "#48cae4"],
-    }
-  ];
+  // const emergencyNumbers = [
+  //   {
+  //     title: "Non au Harcèlement",
+  //     number: "3020",
+  //     description: "Écoute, conseil et orientation pour les victimes et témoins.",
+  //     colors: ["#48a4f4", "#00b4d8"],
+  //   },
+  //   {
+  //     title: "Cyber-Harcèlement",
+  //     number: "3018",
+  //     description: "Le numéro court national pour les violences numériques.",
+  //     colors: ["#76c893", "#10ac56"],
+  //   },
+  //   {
+  //     title: "Enfance en Danger",
+  //     number: "119",
+  //     description: "Numéro national dédié à la prévention et à la protection.",
+  //     colors: ["#023e8a", "#48cae4"],
+  //   }
+  // ];
 
   return (
     <View style={styles.mainContainer}>
@@ -47,7 +48,7 @@ export default function NumerosScreen() {
           Besoin d&apos;aide immédiatement ? Ces services sont gratuits, anonymes et disponibles partout en France.
         </Text>
 
-        {emergencyNumbers.map((item, index) => (
+        {EMERGENCY_NUMBERS.map((item, index) => (
           <TouchableOpacity 
             key={index} 
             activeOpacity={0.9} 
