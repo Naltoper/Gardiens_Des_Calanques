@@ -3,45 +3,20 @@ import { Phone, ShieldCheck, ChevronLeft } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router'; // Import du router
 import { EMERGENCY_NUMBERS } from '../../constants/emergencyNumbers';
+import { CustomHeader } from '../../components/CustomHeader';
 
 export default function NumerosScreen() {
   const router = useRouter(); // Initialisation du router
   const call = (num: string) => Linking.openURL(`tel:${num}`);
 
-  // const emergencyNumbers = [
-  //   {
-  //     title: "Non au Harcèlement",
-  //     number: "3020",
-  //     description: "Écoute, conseil et orientation pour les victimes et témoins.",
-  //     colors: ["#48a4f4", "#00b4d8"],
-  //   },
-  //   {
-  //     title: "Cyber-Harcèlement",
-  //     number: "3018",
-  //     description: "Le numéro court national pour les violences numériques.",
-  //     colors: ["#76c893", "#10ac56"],
-  //   },
-  //   {
-  //     title: "Enfance en Danger",
-  //     number: "119",
-  //     description: "Numéro national dédié à la prévention et à la protection.",
-  //     colors: ["#023e8a", "#48cae4"],
-  //   }
-  // ];
 
   return (
     <View style={styles.mainContainer}>
       {/* HEADER AVEC FLÈCHE RETOUR ET TITRE CENTRÉ */}
-      <View style={styles.headerContainer}>
-        <TouchableOpacity 
-          onPress={() => router.replace('/(tabs)')} 
-          style={styles.backButton}
-          activeOpacity={0.7}
-        >
-          <ChevronLeft color="#023e8a" size={30} strokeWidth={2.5} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Numéros Utiles</Text>
-      </View>
+      <CustomHeader 
+        title="Numéros Utiles" 
+        onBack={() => router.replace('/(tabs)')} 
+      />
 
       <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <Text style={styles.subtitle}>
@@ -90,28 +65,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'transparent',
   },
-  headerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingTop: Platform.OS === 'ios' ? 60 : 40, // Gestion de la barre d'état
-    paddingBottom: 15,
-    paddingHorizontal: 20,
-    backgroundColor: 'transparent',
-  },
-  backButton: {
-    position: 'absolute',
-    left: 20,
-    top: Platform.OS === 'ios' ? 55 : 35,
-    padding: 10,
-    zIndex: 10,
-  },
-  headerTitle: {
-    fontSize: 22, // Un peu plus petit pour le centrage harmonieux
-    fontWeight: '800',
-    color: '#023e8a',
-    textAlign: 'center',
-  },
+
   container: { 
     flex: 1, 
   },
