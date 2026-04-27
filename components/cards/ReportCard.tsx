@@ -11,9 +11,19 @@ interface ReportCardProps {
   formatDateTime: (date: string) => string;
 }
 
+// Mapping des couleurs par statut
+const STATUS_CONFIG: Record<string, { main: string; bg: string }> = {
+  'Non traité': { main: '#00b4d8', bg: '#e0f2fe' },   // Bleu
+  'En cours':   { main: '#f59e0b', bg: '#fef3c7' },   // Orange
+  'Traité':     { main: '#10ac56', bg: '#e6f4f1' },   // Vert
+  'Résolu':     { main: '#10ac56', bg: '#e6f4f1' },   // Vert (alias pour Traité)
+};
+
 export const ReportCard = ({ item, onChat, onDetails, formatDateTime }: ReportCardProps) => {
-  const isProcessed = item.status !== 'Non traité';
-  const statusColor = isProcessed ? '#10ac56' : '#00b4d8';
+  // On récupère la config selon le statut, avec une valeur par défaut (bleu) au cas où
+  const config = STATUS_CONFIG[item.status || ''] || STATUS_CONFIG['Non traité'];
+  const statusColor = config.main;
+  const bgColor = config.bg;
 
   return (
     <TouchableOpacity 
@@ -28,9 +38,12 @@ export const ReportCard = ({ item, onChat, onDetails, formatDateTime }: ReportCa
           <Info size={20} color="#94a3b8" />
         </TouchableOpacity>
 
-        <View style={[styles.badge, { backgroundColor: isProcessed ? '#e6f4f1' : '#e0f2fe' }]}>
+        {/* On utilise bgColor pour le fond du badge */}
+        <View style={[styles.badge, { backgroundColor: bgColor }]}>
           <View style={[styles.dot, { backgroundColor: statusColor }]} />
-          <Text style={[styles.badgeText, { color: statusColor }]}>{item.status}</Text>
+          <Text style={[styles.badgeText, { color: statusColor }]}>
+            {item.status}
+          </Text>
         </View>
       </View>
 

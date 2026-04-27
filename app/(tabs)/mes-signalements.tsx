@@ -7,6 +7,7 @@ import { ReportCard } from '../../components/cards/ReportCard';
 import { ReportDetailModal } from '../../components/modals/ReportDetailModal';
 import { useReports } from '../../hooks/useReports';
 import { formatDateTime } from '../../utils/dateFormatter';
+import { Report } from '../../types/report';
 
 export default function MesSignalementsScreen() {
 
@@ -17,13 +18,13 @@ export default function MesSignalementsScreen() {
 
   const { reports, loading, refreshing, onRefresh } = useReports();
 
-  const [selectedReport, setSelectedReport] = useState<any>(null);
+  const [selectedReport, setSelectedReport] = useState<Report | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
 
   // -------------------------------------------------------------------------
   // 2. RENDU DES COMPOSANTS (Items de la liste)
   // -------------------------------------------------------------------------
-  const renderItem = ({ item }: { item: any }) => (
+  const renderItem = ({ item }: { item: Report }) => (
   <ReportCard 
     item={item}
     formatDateTime={formatDateTime}
