@@ -1,12 +1,13 @@
 import { View, Text, StyleSheet, FlatList, ActivityIndicator, 
   Platform, TouchableOpacity, RefreshControl} from 'react-native';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect} from 'react';
 import { supabase } from '../../lib/supabase';
 import * as SecureStore from 'expo-secure-store';
 import { ChevronLeft} from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { ReportCard } from '../../components/cards/ReportCard';
 import { ReportDetailModal } from '../../components/modals/ReportDetailModal';
+import { useReports } from '../../hooks/useReports';
 
 export default function MesSignalementsScreen() {
 
@@ -14,9 +15,9 @@ export default function MesSignalementsScreen() {
   // 1. ÉTATS & CONFIGURATION (Hooks)
   // -------------------------------------------------------------------------
   const router = useRouter();
-  const [reports, setReports] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+
+  const { reports, loading, refreshing, onRefresh } = useReports();
+
   const [selectedReport, setSelectedReport] = useState<any>(null);
   const [modalVisible, setModalVisible] = useState(false);
 
@@ -24,52 +25,11 @@ export default function MesSignalementsScreen() {
   // -------------------------------------------------------------------------
   // 2. LOGIQUE DE RÉCUPÉRATION DES DONNÉES (Supabase & SecureStore)
   // -------------------------------------------------------------------------
-  const fetchReports = async () => {
-    const TOKEN_KEY = 'user_report_token';
-    let userToken;
-
-    // Gestion de la persistence selon la plateforme (Web vs Mobile)
-    if (Platform.OS === 'web') {
-      userToken = localStorage.getItem(TOKEN_KEY);
-    } else {
-      userToken = await SecureStore.getItemAsync(TOKEN_KEY);
-    }
-
-    if (!userToken) {
-      setReports([]);
-      setLoading(false);
-      return;
-    }
-
-    // Appel à la base de données Supabase
-    const { data, error } = await supabase
-      .from('reports')
-      .select('*')
-      .eq('user_token', userToken)
-      .order('created_at', { ascending: false });
-
-    if (!error && data) {
-      setReports(data);
-    }
-    setLoading(false);
-    setRefreshing(false);
-  };
-
-  // Chargement initial
-  useEffect(() => {
-    fetchReports();
-  }, []);
-
-  // Gestion du "Pull to Refresh"
-  const onRefresh = useCallback(() => {
-    setRefreshing(true);
-    fetchReports();
-  }, []);
 
   // -------------------------------------------------------------------------
   // 3. FONCTIONS UTILITAIRES (Formatage)
   // -------------------------------------------------------------------------
-  const formatDateTime = (dateString: string) => {
+  const formatDateTime = (dateString: string) => { // TODO creer un hook
     const date = new Date(dateString);
     return date.toLocaleDateString('fr-FR', {
       day: '2-digit',
