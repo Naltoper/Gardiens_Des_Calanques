@@ -20,17 +20,8 @@ export default function MesSignalementsScreen() {
   const [selectedReport, setSelectedReport] = useState<any>(null);
   const [modalVisible, setModalVisible] = useState(false);
 
-
   // -------------------------------------------------------------------------
-  // 2. LOGIQUE DE RÉCUPÉRATION DES DONNÉES (Supabase & SecureStore)
-  // -------------------------------------------------------------------------
-
-  // -------------------------------------------------------------------------
-  // 3. FONCTIONS UTILITAIRES (Formatage)
-  // -------------------------------------------------------------------------
-
-  // -------------------------------------------------------------------------
-  // 4. RENDU DES COMPOSANTS (Items de la liste)
+  // 2. RENDU DES COMPOSANTS (Items de la liste)
   // -------------------------------------------------------------------------
   const renderItem = ({ item }: { item: any }) => (
   <ReportCard 
@@ -42,10 +33,10 @@ export default function MesSignalementsScreen() {
       params: { role: 'user' }
     })}
   />
-);
+  );
 
   // -------------------------------------------------------------------------
-  // 5. AFFICHAGE DE L'ÉTAT DE CHARGEMENT
+  // 3. AFFICHAGE DE L'ÉTAT DE CHARGEMENT
   // -------------------------------------------------------------------------
   if (loading && !refreshing) {
     return (
@@ -56,7 +47,7 @@ export default function MesSignalementsScreen() {
   }
 
   // -------------------------------------------------------------------------
-  // 6. RENDU PRINCIPAL (Layout)
+  // 4. RENDU PRINCIPAL (Layout)
   // -------------------------------------------------------------------------
   return (
     <View style={styles.container}>
