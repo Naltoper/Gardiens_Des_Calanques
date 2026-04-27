@@ -1,13 +1,12 @@
 import { View, Text, StyleSheet, FlatList, ActivityIndicator, 
   Platform, TouchableOpacity, RefreshControl} from 'react-native';
-import { useState, useEffect} from 'react';
-import { supabase } from '../../lib/supabase';
-import * as SecureStore from 'expo-secure-store';
+import { useState} from 'react';
 import { ChevronLeft} from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { ReportCard } from '../../components/cards/ReportCard';
 import { ReportDetailModal } from '../../components/modals/ReportDetailModal';
 import { useReports } from '../../hooks/useReports';
+import { formatDateTime } from '../../utils/dateFormatter';
 
 export default function MesSignalementsScreen() {
 
@@ -29,16 +28,6 @@ export default function MesSignalementsScreen() {
   // -------------------------------------------------------------------------
   // 3. FONCTIONS UTILITAIRES (Formatage)
   // -------------------------------------------------------------------------
-  const formatDateTime = (dateString: string) => { // TODO creer un hook
-    const date = new Date(dateString);
-    return date.toLocaleDateString('fr-FR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    }).replace(' ', ' à ');
-  };
 
   // -------------------------------------------------------------------------
   // 4. RENDU DES COMPOSANTS (Items de la liste)
