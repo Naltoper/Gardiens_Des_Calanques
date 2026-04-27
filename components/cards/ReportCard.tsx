@@ -1,8 +1,17 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { MessageCircle, Info } from 'lucide-react-native';
+import { Report } from '../../types/report';
 
-export const ReportCard = ({ item, onChat, onDetails, formatDateTime }: any) => {
+
+interface ReportCardProps {
+  item: Report;
+  onChat: () => void;
+  onDetails: () => void;
+  formatDateTime: (date: string) => string;
+}
+
+export const ReportCard = ({ item, onChat, onDetails, formatDateTime }: ReportCardProps) => {
   const isProcessed = item.status !== 'Non traité';
   const statusColor = isProcessed ? '#10ac56' : '#00b4d8';
 

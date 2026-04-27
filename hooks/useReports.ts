@@ -2,9 +2,10 @@ import { useState, useEffect, useCallback } from 'react';
 import { Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import { supabase } from '../lib/supabase';
+import { Report } from '../types/report';
 
 export const useReports = () => {
-  const [reports, setReports] = useState<any[]>([]);
+  const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -33,7 +34,7 @@ export const useReports = () => {
       .order('created_at', { ascending: false });
 
     if (!error && data) {
-      setReports(data);
+      setReports(data as Report[]);
     }
     setLoading(false);
     setRefreshing(false);
