@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { EMERGENCY_NUMBERS } from '../../constants/emergencyNumbers';
 import { CustomHeader } from '../../components/CustomHeader';
 import { EmergencyCard } from '../../components/EmergencyCard';
+import { Colors } from '../../constants/theme';
 
 export default function NumerosScreen() {
   const router = useRouter();
@@ -30,7 +31,7 @@ export default function NumerosScreen() {
         ))}
 
         <View style={styles.footerInfo}>
-          <ShieldCheck size={18} color="#64748b" />
+          <ShieldCheck size={18} color={Colors.light.icon} />
           <Text style={styles.footerText}>Appels gratuits et confidentiels</Text>
         </View>
       </ScrollView>
@@ -41,7 +42,7 @@ export default function NumerosScreen() {
 const styles = StyleSheet.create({
   mainContainer: {
     flex: 1,
-    backgroundColor: 'transparent',
+    backgroundColor: Colors.light.background, // Utilise '#fff' du thème
   },
   container: { 
     flex: 1, 
@@ -53,7 +54,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 15,
-    color: '#64748b',
+    color: Colors.light.icon, // On utilise le gris '#687076' défini dans le thème pour le texte secondaire
     lineHeight: 22,
     marginBottom: 25,
     textAlign: 'center'
@@ -68,7 +69,7 @@ const styles = StyleSheet.create({
   footerText: {
     marginLeft: 8,
     fontSize: 14,
-    color: '#64748b',
+    color: Colors.light.icon, // Cohérence avec le subtitle
     fontWeight: '600'
   }
 });
