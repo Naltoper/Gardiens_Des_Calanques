@@ -1,19 +1,16 @@
-import { View, Text, StyleSheet, Linking, TouchableOpacity, ScrollView, Platform } from 'react-native';
-import { Phone, ShieldCheck, ChevronLeft } from 'lucide-react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router'; // Import du router
+import { View, Text, StyleSheet, Linking, ScrollView } from 'react-native';
+import { ShieldCheck } from 'lucide-react-native';
+import { useRouter } from 'expo-router';
 import { EMERGENCY_NUMBERS } from '../../constants/emergencyNumbers';
 import { CustomHeader } from '../../components/CustomHeader';
 import { EmergencyCard } from '../../components/EmergencyCard';
 
 export default function NumerosScreen() {
-  const router = useRouter(); // Initialisation du router
+  const router = useRouter();
   const call = (num: string) => Linking.openURL(`tel:${num}`);
-
 
   return (
     <View style={styles.mainContainer}>
-      {/* HEADER AVEC FLÈCHE RETOUR ET TITRE CENTRÉ */}
       <CustomHeader 
         title="Numéros Utiles" 
         onBack={() => router.replace('/(tabs)')} 
@@ -46,7 +43,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'transparent',
   },
-
   container: { 
     flex: 1, 
   },
@@ -61,36 +57,6 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     marginBottom: 25,
     textAlign: 'center'
-  },
-  cardDesc: {
-    fontSize: 13,
-    color: 'rgba(255, 255, 255, 0.9)',
-    marginBottom: 12,
-    lineHeight: 18
-  },
-  numberBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    alignSelf: 'flex-start',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
-  },
-  cardNumber: { 
-    fontSize: 20, 
-    fontWeight: '900', 
-    color: '#fff',
-    marginLeft: 8
-  },
-  iconCircle: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#fff',
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 2
   },
   footerInfo: {
     flexDirection: 'row',
