@@ -1,17 +1,18 @@
-import React from 'react';
-import { 
-  TouchableOpacity, 
-  Text, 
-  StyleSheet, 
-  View, 
-  DimensionValue, 
-  StyleProp, 
-  ViewStyle 
-} from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import React from 'react';
+import {
+  DimensionValue,
+  StyleProp,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  ViewStyle
+} from 'react-native';
 
 // Définition des types pour TypeScript
 interface GradientButtonProps {
+  disabled?: boolean;
   title: string;
   icon?: React.ReactNode;
   onPress: () => void;
@@ -29,10 +30,12 @@ export const GradientButton = ({
   width = '100%', // Valeur par défaut
   height = 110,   // Valeur par défaut correspondant à tes boutons actuels
   style,
+  disabled = false,
 }: GradientButtonProps) => {
   return (
     <TouchableOpacity 
       onPress={onPress} 
+      disabled={disabled}
       activeOpacity={0.85}
       style={[{ width, height }, style]}
     >
