@@ -4,6 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router'; // Import du router
 import { EMERGENCY_NUMBERS } from '../../constants/emergencyNumbers';
 import { CustomHeader } from '../../components/CustomHeader';
+import { EmergencyCard } from '../../components/EmergencyCard';
 
 export default function NumerosScreen() {
   const router = useRouter(); // Initialisation du router
@@ -23,32 +24,12 @@ export default function NumerosScreen() {
           Besoin d&apos;aide immédiatement ? Ces services sont gratuits, anonymes et disponibles partout en France.
         </Text>
 
-        {EMERGENCY_NUMBERS.map((item, index) => (
-          <TouchableOpacity 
-            key={index} 
-            activeOpacity={0.9} 
-            onPress={() => call(item.number)}
-            style={styles.cardContainer}
-          >
-            <LinearGradient
-              colors={item.colors as [string, string, ...string[]]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.card}
-            >
-              <View style={styles.cardInfo}>
-                <Text style={styles.cardTitle}>{item.title}</Text>
-                <Text style={styles.cardDesc}>{item.description}</Text>
-                <View style={styles.numberBadge}>
-                  <Phone size={16} color="white" fill="white" />
-                  <Text style={styles.cardNumber}>{item.number}</Text>
-                </View>
-              </View>
-              <View style={styles.iconCircle}>
-                <Phone size={28} color={item.colors[0]} />
-              </View>
-            </LinearGradient>
-          </TouchableOpacity>
+        {EMERGENCY_NUMBERS.map((item) => (
+          <EmergencyCard 
+            key={item.id} 
+            item={item} 
+            onPress={call} 
+          />
         ))}
 
         <View style={styles.footerInfo}>
@@ -80,32 +61,6 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     marginBottom: 25,
     textAlign: 'center'
-  },
-  cardContainer: {
-    marginBottom: 16,
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-  },
-  card: { 
-    padding: 20, 
-    borderRadius: 24, 
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    overflow: 'hidden'
-  },
-  cardInfo: {
-    flex: 1,
-    marginRight: 10
-  },
-  cardTitle: { 
-    fontSize: 18, 
-    fontWeight: '800', 
-    color: '#fff',
-    marginBottom: 4
   },
   cardDesc: {
     fontSize: 13,
