@@ -15,33 +15,15 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { ENGAGEMENTS, GENIALLY_URL } from '../../constants/cellule';
 
 import EngagementItem from '../../components/cellule/EngagementItem';
 
 const { width, height } = Dimensions.get('window');
 
-const GENIALLY_URL = 'https://view.genially.com/6745954c37cfac416f351af9';
 
-const ENGAGEMENTS = [
-  {
-    icon: <ShieldCheck color="white" size={24} />,
-    title: 'Anonymat total',
-    desc: "Tes échanges avec nous restent strictement confidentiels.\nAucune donnée personnelle n'est collectée.",
-    colors: ['#00b4d8', '#0077b6'] as [string, string],
-  },
-  {
-    icon: <Zap color="white" size={24} />,
-    title: 'Réponse rapide',
-    desc: 'Nos intervenants se mobilisent pour te répondre au plus vite.',
-    colors: ['#48a4f4', '#10ac56'] as [string, string],
-  },
-  {
-    icon: <Heart color="white" size={24} />,
-    title: 'Soutien bienveillant',
-    desc: 'Une équipe à ton écoute pour t’accompagner sans jugement.',
-    colors: ['#76c893', '#52b69a'] as [string, string],
-  },
-];
+
+
 
 export default function CelluleScreen() {
   const router = useRouter();
@@ -125,7 +107,11 @@ export default function CelluleScreen() {
                 {ENGAGEMENTS.map((engagement) => (
                   <EngagementItem
                     key={engagement.title}
-                    icon={engagement.icon}
+                    icon={
+                      engagement.icon === 'shield' ? <ShieldCheck color="white" size={24} /> :
+                      engagement.icon === 'zap' ? <Zap color="white" size={24} /> :
+                      <Heart color="white" size={24} />
+                    }
                     title={engagement.title}
                     desc={engagement.desc}
                     colors={engagement.colors}
