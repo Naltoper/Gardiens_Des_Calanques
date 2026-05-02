@@ -1,14 +1,19 @@
-import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, StatusBar } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { supabase } from '../../lib/supabase';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Send, ChevronLeft, ShieldCheck, Lock } from 'lucide-react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { ChevronLeft, Lock, Send, ShieldCheck } from 'lucide-react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { FlatList, KeyboardAvoidingView, Platform, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { supabase } from '../../lib/supabase';
 
 
 
 export default function ChatScreen() {
-  const { id, role } = useLocalSearchParams();
+  const params = useLocalSearchParams();
+
+  const rawReportId = params.id;
+  const role = params.role;
+
+  const reportId = Array.isArray(rawReportId) ? rawReportId[0] : rawReportId;
   const router = useRouter();
   const [messages, setMessages] = useState<any[]>([]);
   const flatListRef = useRef<FlatList>(null);
@@ -18,27 +23,30 @@ export default function ChatScreen() {
   const isUserAuthor = role === 'user';
 
   const fetchMessages = useCallback(async () => {
+    if(!reportId) return;
     const { data, error } = await supabase
       .from('messages')
       .select('*')
-      .eq('report_id', id)
+      .eq('report_id', reportId)
       .order('created_at', { ascending: true });
     
     if (!error && data) setMessages(data);
-  }, [id]);
+  }, [reportId]);
 
   useEffect(() => {
+    if (!reportId) return;
+
     fetchMessages();
 
     const channel = supabase
-      .channel(`chat-${id}`)
+      .channel(`chat-${reportId}`)
       .on(
         'postgres_changes',
         {
           event: 'INSERT',
           schema: 'public',
           table: 'messages',
-          filter: `report_id=eq.${id}`, // Vérifie bien que id est le bon format
+          filter: `report_id=eq.${reportId}`, // Vérifie bien que reportId est le bon format
         },
         (payload) => {
           console.log("Nouveau message reçu !", payload.new); // Pour debugger
@@ -57,7 +65,7 @@ export default function ChatScreen() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [id, fetchMessages]);
+  }, [reportId, fetchMessages]);
 
   useEffect(() => {
     if (messages.length > 0) {
@@ -69,13 +77,13 @@ export default function ChatScreen() {
   }, [messages]);
 
   const sendMessage = async () => {
-    if (!newMessage.trim()) return;
+    if (!newMessage.trim() || !reportId) return;
     setLoading(true);
     
     const { error } = await supabase
       .from('messages')
       .insert([{ 
-        report_id: id, 
+        report_id: reportId, 
         content: newMessage, 
         sender_role: isUserAuthor ? 'user' : 'admin' 
       }]);
@@ -105,7 +113,7 @@ export default function ChatScreen() {
             </Text>
             <View style={styles.idBadge}>
               <Lock size={10} color="#caf0f8" style={{ marginRight: 4 }} />
-              <Text style={styles.idText}>ID: {id?.toString().toUpperCase().slice(0, 8)}</Text>
+              <Text style={styles.idText}>ID: {reportId?.toString().toUpperCase().slice(0, 8)}</Text>
             </View>
           </View>
 
