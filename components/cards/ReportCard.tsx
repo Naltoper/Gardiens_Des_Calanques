@@ -1,6 +1,6 @@
+import { Info, MessageCircle } from 'lucide-react-native';
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { MessageCircle, Info } from 'lucide-react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Report } from '../../types/report';
 
 
