@@ -12,6 +12,7 @@ import { supabase } from '../../lib/supabase';
 export default function SignalementScreen() {
   const router = useRouter();
   const userToken = useUserToken();
+  const isWeb = Platform.OS === 'web';
 
   const [isAnonyme, setIsAnonyme] = useState(true);
   const [nom, setNom] = useState('');
@@ -62,7 +63,7 @@ export default function SignalementScreen() {
 
   const handleSend = async () => {
     if (!desc.trim() || !typeHarcelement) {
-      if (Platform.OS === 'web') {
+      if (isWeb) {
         alert("Veuillez remplir le type de harcèlement et la description.");
       } else {
         Alert.alert("Erreur", "Veuillez remplir le type de harcèlement et la description.");
@@ -71,7 +72,7 @@ export default function SignalementScreen() {
     }
 
     if (!userToken) {
-      if (Platform.OS === 'web') {
+      if (isWeb) {
         alert("Erreur : identifiant utilisateur non disponible.");
       } else {
         Alert.alert("Erreur", "Identifiant utilisateur non disponible.");
@@ -104,16 +105,18 @@ export default function SignalementScreen() {
       setLoading(false);
 
       if (error) {
-        Platform.OS === 'web'
-          ? alert("Erreur : impossible d'envoyer le signalement.")
-          : Alert.alert("Erreur", "Impossible d'envoyer le signalement.");
+        if (isWeb) {
+          alert("Erreur : impossible d'envoyer le signalement.");
+        } else {
+          Alert.alert("Erreur", "Impossible d'envoyer le signalement.");
+        }
       } else {
         resetForm();
         setIsSent(true);
       }
     };
 
-    if (Platform.OS === 'web') {
+    if (isWeb) {
       const hasConfirmed = window.confirm(confirmationMessage);
       if (hasConfirmed) {
         processUpload();
@@ -136,7 +139,7 @@ export default function SignalementScreen() {
       onBackHome={() => router.replace('/(tabs)')}
     />
   );
-}
+  }
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 40 }} showsVerticalScrollIndicator={false}>

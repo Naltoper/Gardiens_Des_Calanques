@@ -17,7 +17,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ENGAGEMENTS, GENIALLY_URL } from '../../constants/cellule';
 
-import EngagementItem from '../../components/cellule/EngagementItem';
+import EngagementItem from '../../components/cards/EngagementItem';
 
 const { width, height } = Dimensions.get('window');
 
