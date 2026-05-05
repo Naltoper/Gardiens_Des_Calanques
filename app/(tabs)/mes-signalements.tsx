@@ -1,13 +1,23 @@
-import { View, Text, StyleSheet, FlatList, ActivityIndicator, 
-  Platform, TouchableOpacity, RefreshControl} from 'react-native';
-import { useState} from 'react';
-import { ChevronLeft} from 'lucide-react-native';
 import { useRouter } from 'expo-router';
+import { ChevronLeft } from 'lucide-react-native';
+import { useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  Platform,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
+} from 'react-native';
 import { ReportCard } from '../../components/cards/ReportCard';
 import { ReportDetailModal } from '../../components/modals/ReportDetailModal';
 import { useReports } from '../../hooks/useReports';
-import { formatDateTime } from '../../utils/dateFormatter';
+import { supabase } from '../../lib/supabase';
 import { Report } from '../../types/report';
+import { formatDateTime } from '../../utils/dateFormatter';
 
 export default function MesSignalementsScreen() {
 
@@ -20,6 +30,60 @@ export default function MesSignalementsScreen() {
 
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
+  
+  const deleteReport = async (reportId: string) => {
+    console.log('Suppression demandée pour le signalement :', reportId);
+    const { error } = await supabase
+      .from('reports')
+      .delete()
+      .eq('id', reportId);
+
+    if (error) {
+      console.error('Erreur suppression signalement :', error.message);
+      if (Platform.OS === 'web') {
+        alert('Impossible de supprimer ce signalement pour le moment.');
+      } else {
+        Alert.alert(
+          'Erreur',
+          'Impossible de supprimer ce signalement pour le moment.'
+        );
+      }
+      return;
+    }
+
+    console.log('Signalement supprimé avec succès');
+    await onRefresh();
+  };
+
+  const confirmDeleteReport = (reportId: string) => {
+    if (Platform.OS === 'web') {
+      const confirmed = window.confirm(
+        'Voulez-vous vraiment supprimer ce signalement ? Les messages liés seront aussi supprimés.'
+      );
+
+      if (confirmed) {
+        deleteReport(reportId);
+      }
+
+      return;
+    }
+    Alert.alert(
+      'Supprimer le signalement',
+      'Voulez-vous vraiment supprimer ce signalement ? Les messages liés seront aussi supprimés.',
+      [
+        {
+          text: 'Annuler',
+          style: 'cancel',
+        },
+        {
+          text: 'Supprimer',
+          style: 'destructive',
+          onPress: () => deleteReport(reportId),
+        },
+      ]
+    );
+  };
+  
 
   // -------------------------------------------------------------------------
   // 2. RENDU DES COMPOSANTS (Items de la liste)
@@ -29,6 +93,7 @@ export default function MesSignalementsScreen() {
     item={item}
     formatDateTime={formatDateTime}
     onDetails={() => { setSelectedReport(item); setModalVisible(true); }}
+    onDelete={() => confirmDeleteReport(item.id)}
     onChat={() => router.push({
       pathname: `../chat/${item.id}`,
       params: { role: 'user' }

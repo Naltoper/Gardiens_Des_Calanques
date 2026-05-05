@@ -1,44 +1,60 @@
+import { Info, MessageCircle, Trash2 } from 'lucide-react-native';
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { MessageCircle, Info } from 'lucide-react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Report } from '../../types/report';
-
 
 interface ReportCardProps {
   item: Report;
   onChat: () => void;
   onDetails: () => void;
+  onDelete: () => void;
   formatDateTime: (date: string) => string;
 }
 
 // Mapping des couleurs par statut
 const STATUS_CONFIG: Record<string, { main: string; bg: string }> = {
-  'Non traité': { main: '#00b4d8', bg: '#e0f2fe' },   // Bleu
-  'En cours':   { main: '#f59e0b', bg: '#fef3c7' },   // Orange
-  'Traité':     { main: '#10ac56', bg: '#e6f4f1' },   // Vert
-  'Résolu':     { main: '#10ac56', bg: '#e6f4f1' },   // Vert (alias pour Traité)
+  'Non traité': { main: '#00b4d8', bg: '#e0f2fe' },
+  'En cours': { main: '#f59e0b', bg: '#fef3c7' },
+  'Traité': { main: '#10ac56', bg: '#e6f4f1' },
+  'Résolu': { main: '#10ac56', bg: '#e6f4f1' },
 };
 
-export const ReportCard = ({ item, onChat, onDetails, formatDateTime }: ReportCardProps) => {
-  // On récupère la config selon le statut, avec une valeur par défaut (bleu) au cas où
+export const ReportCard = ({ item, onChat, onDetails, onDelete, formatDateTime }: ReportCardProps) => {
   const config = STATUS_CONFIG[item.status || ''] || STATUS_CONFIG['Non traité'];
   const statusColor = config.main;
   const bgColor = config.bg;
 
   return (
-    <TouchableOpacity 
-      activeOpacity={0.8} 
+    <TouchableOpacity
+      activeOpacity={0.8}
       style={[styles.card, { borderLeftColor: statusColor }]}
       onPress={onChat}
     >
       <View style={styles.cardHeader}>
         <Text style={styles.date}>Posté le {formatDateTime(item.created_at)}</Text>
-        
-        <TouchableOpacity onPress={onDetails} style={{ padding: 5 }}>
-          <Info size={20} color="#94a3b8" />
-        </TouchableOpacity>
 
-        {/* On utilise bgColor pour le fond du badge */}
+        <View style={styles.headerActions}>
+          <TouchableOpacity
+            onPress={(event) => {
+              event.stopPropagation();
+              onDetails();
+            }}
+            style={styles.iconButton}
+          >
+            <Info size={20} color="#94a3b8" />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={(event) => {
+              event.stopPropagation();
+              onDelete();
+            }}
+            style={styles.iconButton}
+          >
+            <Trash2 size={20} color="#ef4444" />
+          </TouchableOpacity>
+        </View>
+
         <View style={[styles.badge, { backgroundColor: bgColor }]}>
           <View style={[styles.dot, { backgroundColor: statusColor }]} />
           <Text style={[styles.badgeText, { color: statusColor }]}>
@@ -47,7 +63,9 @@ export const ReportCard = ({ item, onChat, onDetails, formatDateTime }: ReportCa
         </View>
       </View>
 
-      <Text style={styles.content} numberOfLines={2}>{item.content}</Text>
+      <Text style={styles.content} numberOfLines={2}>
+        {item.content}
+      </Text>
 
       <View style={styles.cardFooter}>
         <View style={styles.footerLeft}>
@@ -61,53 +79,62 @@ export const ReportCard = ({ item, onChat, onDetails, formatDateTime }: ReportCa
 };
 
 const styles = StyleSheet.create({
-  card: { 
-    backgroundColor: '#fff', 
-    padding: 20, 
-    borderRadius: 20, 
-    marginBottom: 16, 
+  card: {
+    backgroundColor: '#fff',
+    padding: 20,
+    borderRadius: 20,
+    marginBottom: 16,
     borderLeftWidth: 6,
     elevation: 3,
-    shadowColor: '#000', 
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05, 
-    shadowRadius: 10, 
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
   },
-  cardHeader: { 
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12 
+    marginBottom: 12,
+    gap: 8,
   },
-  date: { 
-    color: '#94a3b8', 
-    fontSize: 12, 
-    fontWeight: '600' 
+  date: {
+    color: '#94a3b8',
+    fontSize: 12,
+    fontWeight: '600',
+    flex: 1,
   },
-  badge: { 
+  headerActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12, 
-    paddingVertical: 5, 
-    borderRadius: 20 
+  },
+  iconButton: {
+    padding: 5,
+  },
+  badge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 20,
   },
   dot: {
     width: 7,
     height: 7,
     borderRadius: 4,
-    marginRight: 6
+    marginRight: 6,
   },
-  badgeText: { 
-    fontSize: 10, 
+  badgeText: {
+    fontSize: 10,
     fontWeight: '800',
-    textTransform: 'uppercase'
+    textTransform: 'uppercase',
   },
-  content: { 
-    fontSize: 15, 
+  content: {
+    fontSize: 15,
     lineHeight: 22,
-    color: '#334155', 
+    color: '#334155',
     marginBottom: 15,
-    fontWeight: '500'
+    fontWeight: '500',
   },
   cardFooter: {
     flexDirection: 'row',
@@ -115,20 +142,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#f1f5f9'
+    borderTopColor: '#f1f5f9',
   },
   footerLeft: {
     flexDirection: 'row',
-    alignItems: 'center'
+    alignItems: 'center',
   },
-  footerLink: { 
-    fontSize: 13, 
-    color: '#00b4d8', 
-    fontWeight: '700' 
+  footerLink: {
+    fontSize: 13,
+    color: '#00b4d8',
+    fontWeight: '700',
   },
   arrow: {
     fontSize: 18,
     color: '#00b4d8',
-    fontWeight: 'bold'
+    fontWeight: 'bold',
   },
 });
