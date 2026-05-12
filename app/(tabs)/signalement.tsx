@@ -1,14 +1,13 @@
 import { useRouter } from 'expo-router';
 import { ChevronLeft } from 'lucide-react-native';
 import { useState } from 'react';
-import { Alert, Platform, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Platform, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { GradientButton } from '../../components/buttons/GradientButton';
 import CustomSelect from '../../components/signalement/CustomSelect';
 import SignalementSuccess from '../../components/signalement/SignalementSuccess';
 import { useUserToken } from '../../hooks/useUserToken';
-import { supabase } from '../../lib/supabase';
 import { useSignalementForm } from '../../hooks/useSignalementForm';
-
+import { SELECT_FIELDS } from '../../constants/signalementFields';
 
 
 export default function SignalementScreen() {
@@ -38,6 +37,28 @@ export default function SignalementScreen() {
 
   const toggleMenu = (menuName: string) => {
     setActiveMenu(prev => (prev === menuName ? null : menuName));
+  };
+
+  // 3. Helpers pour le mapping dynamique
+  const getValueById = (id: string) => {
+    const values: Record<string, string> = { 
+        types: typeHarcelement, urgence, dateApproximative, lieu, frequence, nbVictimes 
+    };
+    // Petite correction pour correspondre aux noms des variables du hook
+    if (id === 'date') return dateApproximative;
+    return values[id];
+  };
+
+  const setterById = (id: string, val: string) => {
+    const setters: Record<string, (v: string) => void> = {
+      types: setTypeHarcelement,
+      urgence: setUrgence,
+      date: setDateApproximative,
+      lieu: setLieu,
+      frequence: setFrequence,
+      nbVictimes: setNbVictimes
+    };
+    setters[id](val);
   };
 
   if (isSent) {
@@ -79,83 +100,24 @@ export default function SignalementScreen() {
         </View>
       )}
 
-      <View style={styles.row}>
-        <View style={styles.column}>
-          <CustomSelect
-            label="Type de harcèlement :"
-            value={typeHarcelement}
-            options={["Cyber-harcèlement", "Physique", "Moral", "Exclusion", "Autre"]}
-            visible={activeMenu === 'types'} // Vérifie si c'est ce menu qui est actif
-            onToggle={() => toggleMenu('types')}
-            onSelect={setTypeHarcelement}
-            placeholder="Sélectionner..."
-          />
+      {/* Rendu dynamique des sélecteurs par paires */}
+      {[0, 2, 4].map((startIndex) => (
+        <View style={styles.row} key={`row-${startIndex}`}>
+          {SELECT_FIELDS.slice(startIndex, startIndex + 2).map((field) => (
+            <View style={styles.column} key={field.id}>
+              <CustomSelect
+                label={field.label}
+                value={getValueById(field.id)}
+                options={field.options}
+                visible={activeMenu === field.id}
+                onToggle={() => toggleMenu(field.id)}
+                onSelect={(val) => setterById(field.id, val)}
+                placeholder={field.placeholder}
+              />
+            </View>
+          ))}
         </View>
-
-        <View style={styles.column}>
-          <CustomSelect
-            label="Niveau d'urgence :"
-            value={urgence}
-            options={["Faible", "Moyen", "Élevé"]}
-            visible={activeMenu === 'urgence'}
-            onToggle={() => toggleMenu('urgence')}
-            onSelect={setUrgence}
-            placeholder="Évaluer..."
-          />
-        </View>
-      </View>
-
-      <View style={styles.row}>
-        <View style={styles.column}>
-          <CustomSelect
-            label="Date :"
-            value={dateApproximative}
-            options={["Aujourd'hui", "Une semaine", "Un mois", "Plus d'un mois"]}
-            visible={activeMenu === 'date'}
-            onToggle={() => toggleMenu('date')}
-            onSelect={setDateApproximative}
-            placeholder="Quand ?"
-          />
-        </View>
-
-        <View style={styles.column}>
-          <CustomSelect
-            label="Lieu des faits :"
-            value={lieu}
-            options={["Classe", "Récré", "Web", "Trajet", "Autre"]}
-            visible={activeMenu === 'lieu'}
-            onToggle={() => toggleMenu('lieu')}
-            onSelect={setLieu}
-            placeholder="Où ?"
-          />
-        </View>
-      </View>
-
-      <View style={styles.row}>
-        <View style={styles.column}>
-          <CustomSelect
-            label="Fréquence :"
-            value={frequence}
-            options={["Une seule fois", "De temps en temps", "Tous les jours"]}
-            visible={activeMenu === 'frequence'}
-            onToggle={() => toggleMenu('frequence')}
-            onSelect={setFrequence}
-            placeholder="Souvent ?"
-          />
-        </View>
-
-        <View style={styles.column}>
-          <CustomSelect
-            label="Nombre de victimes :"
-            value={nbVictimes}
-            options={["Moi", "2-3", "Groupe"]}
-            visible={activeMenu === 'nbVictimes'}
-            onToggle={() => toggleMenu('nbVictimes')}
-            onSelect={setNbVictimes}
-            placeholder="Combien ?"
-          />
-        </View>
-      </View>
+      ))}
 
       <View style={styles.section}>
         <Text style={styles.label}>Description des faits :</Text>
