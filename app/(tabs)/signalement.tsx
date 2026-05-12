@@ -34,20 +34,10 @@ export default function SignalementScreen() {
   const userToken = useUserToken();
   const isWeb = Platform.OS === 'web';
 
-  const [showTypes, setShowTypes] = useState(false);
-  const [showUrgence, setShowUrgence] = useState(false);
-  const [showDate, setShowDate] = useState(false);
-  const [showLieu, setShowLieu] = useState(false);
-  const [showFrequence, setShowFrequence] = useState(false);
-  const [showNbVictimes, setShowNbVictimes] = useState(false);
+  const [activeMenu, setActiveMenu] = useState<string | null>(null);
 
-  const toggleMenu = (menu: string) => {
-    setShowTypes(menu === 'types' ? !showTypes : false);
-    setShowUrgence(menu === 'urgence' ? !showUrgence : false);
-    setShowDate(menu === 'date' ? !showDate : false);
-    setShowLieu(menu === 'lieu' ? !showLieu : false);
-    setShowFrequence(menu === 'frequence' ? !showFrequence : false);
-    setShowNbVictimes(menu === 'nbVictimes' ? !showNbVictimes : false);
+  const toggleMenu = (menuName: string) => {
+    setActiveMenu(prev => (prev === menuName ? null : menuName));
   };
 
   if (isSent) {
@@ -95,7 +85,7 @@ export default function SignalementScreen() {
             label="Type de harcèlement :"
             value={typeHarcelement}
             options={["Cyber-harcèlement", "Physique", "Moral", "Exclusion", "Autre"]}
-            visible={showTypes}
+            visible={activeMenu === 'types'} // Vérifie si c'est ce menu qui est actif
             onToggle={() => toggleMenu('types')}
             onSelect={setTypeHarcelement}
             placeholder="Sélectionner..."
@@ -107,7 +97,7 @@ export default function SignalementScreen() {
             label="Niveau d'urgence :"
             value={urgence}
             options={["Faible", "Moyen", "Élevé"]}
-            visible={showUrgence}
+            visible={activeMenu === 'urgence'}
             onToggle={() => toggleMenu('urgence')}
             onSelect={setUrgence}
             placeholder="Évaluer..."
@@ -121,7 +111,7 @@ export default function SignalementScreen() {
             label="Date :"
             value={dateApproximative}
             options={["Aujourd'hui", "Une semaine", "Un mois", "Plus d'un mois"]}
-            visible={showDate}
+            visible={activeMenu === 'date'}
             onToggle={() => toggleMenu('date')}
             onSelect={setDateApproximative}
             placeholder="Quand ?"
@@ -133,7 +123,7 @@ export default function SignalementScreen() {
             label="Lieu des faits :"
             value={lieu}
             options={["Classe", "Récré", "Web", "Trajet", "Autre"]}
-            visible={showLieu}
+            visible={activeMenu === 'lieu'}
             onToggle={() => toggleMenu('lieu')}
             onSelect={setLieu}
             placeholder="Où ?"
@@ -147,7 +137,7 @@ export default function SignalementScreen() {
             label="Fréquence :"
             value={frequence}
             options={["Une seule fois", "De temps en temps", "Tous les jours"]}
-            visible={showFrequence}
+            visible={activeMenu === 'frequence'}
             onToggle={() => toggleMenu('frequence')}
             onSelect={setFrequence}
             placeholder="Souvent ?"
@@ -159,7 +149,7 @@ export default function SignalementScreen() {
             label="Nombre de victimes :"
             value={nbVictimes}
             options={["Moi", "2-3", "Groupe"]}
-            visible={showNbVictimes}
+            visible={activeMenu === 'nbVictimes'}
             onToggle={() => toggleMenu('nbVictimes')}
             onSelect={setNbVictimes}
             placeholder="Combien ?"
