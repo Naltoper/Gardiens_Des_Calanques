@@ -7,25 +7,32 @@ import CustomSelect from '../../components/signalement/CustomSelect';
 import SignalementSuccess from '../../components/signalement/SignalementSuccess';
 import { useUserToken } from '../../hooks/useUserToken';
 import { supabase } from '../../lib/supabase';
+import { useSignalementForm } from '../../hooks/useSignalementForm';
+
 
 
 export default function SignalementScreen() {
   const router = useRouter();
+  
+  // On récupère tout ce dont on a besoin depuis le hook
+  const {
+    isAnonyme, setIsAnonyme,
+    nom, setNom,
+    desc, setDesc,
+    typeHarcelement, setTypeHarcelement,
+    urgence, setUrgence,
+    dateApproximative, setDateApproximative,
+    lieu, setLieu,
+    frequence, setFrequence,
+    nbVictimes, setNbVictimes,
+    loading,
+    isSent,
+    setIsSent,
+    handleSend
+  } = useSignalementForm();
+
   const userToken = useUserToken();
   const isWeb = Platform.OS === 'web';
-
-  const [isAnonyme, setIsAnonyme] = useState(true);
-  const [nom, setNom] = useState('');
-  const [desc, setDesc] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [isSent, setIsSent] = useState(false);
-
-  const [typeHarcelement, setTypeHarcelement] = useState('');
-  const [urgence, setUrgence] = useState('');
-  const [dateApproximative, setDateApproximative] = useState('');
-  const [lieu, setLieu] = useState('');
-  const [frequence, setFrequence] = useState('');
-  const [nbVictimes, setNbVictimes] = useState('');
 
   const [showTypes, setShowTypes] = useState(false);
   const [showUrgence, setShowUrgence] = useState(false);
@@ -43,102 +50,8 @@ export default function SignalementScreen() {
     setShowNbVictimes(menu === 'nbVictimes' ? !showNbVictimes : false);
   };
 
-  const resetForm = () => {
-    setIsAnonyme(true);
-    setNom('');
-    setDesc('');
-    setTypeHarcelement('');
-    setUrgence('');
-    setDateApproximative('');
-    setLieu('');
-    setFrequence('');
-    setNbVictimes('');
-    setShowTypes(false);
-    setShowUrgence(false);
-    setShowDate(false);
-    setShowLieu(false);
-    setShowFrequence(false);
-    setShowNbVictimes(false);
-  };
-
-  const handleSend = async () => {
-    if (!desc.trim() || !typeHarcelement) {
-      if (isWeb) {
-        alert("Veuillez remplir le type de harcèlement et la description.");
-      } else {
-        Alert.alert("Erreur", "Veuillez remplir le type de harcèlement et la description.");
-      }
-      return;
-    }
-
-    if (!userToken) {
-      if (isWeb) {
-        alert("Erreur : identifiant utilisateur non disponible.");
-      } else {
-        Alert.alert("Erreur", "Identifiant utilisateur non disponible.");
-      }
-      return;
-    }
-
-    const confirmationMessage =
-      "Je confirme que les informations transmises sont sincères. Un signalement volontairement inexact peut donner lieu à des sanctions (Art. 226-10 du Code pénal).";
-
-    const processUpload = async () => {
-      setLoading(true);
-
-      const { error } = await supabase.from('reports').insert([
-        {
-          content: desc,
-          is_anonyme: isAnonyme,
-          author_name: isAnonyme ? "Anonyme" : nom,
-          user_token: userToken,
-          status: "Non traité",
-          type_harcelement: typeHarcelement,
-          urgence: urgence,
-          date_faits: dateApproximative,
-          lieu: lieu,
-          frequence: frequence,
-          nb_victimes: nbVictimes,
-        },
-      ]);
-
-      setLoading(false);
-
-      if (error) {
-        if (isWeb) {
-          alert("Erreur : impossible d'envoyer le signalement.");
-        } else {
-          Alert.alert("Erreur", "Impossible d'envoyer le signalement.");
-        }
-      } else {
-        resetForm();
-        setIsSent(true);
-      }
-    };
-
-    if (isWeb) {
-      const hasConfirmed = window.confirm(confirmationMessage);
-      if (hasConfirmed) {
-        processUpload();
-      }
-    } else {
-      Alert.alert(
-        "Confirmation importante",
-        confirmationMessage,
-        [
-          { text: "Modifier", style: "cancel" },
-          { text: "Confirmer l'envoi", onPress: () => processUpload() },
-        ]
-      );
-    }
-  };
-
   if (isSent) {
-  return (
-    <SignalementSuccess
-      onBackHome={() => router.replace('/(tabs)')}
-    />
-  );
+    return <SignalementSuccess onBackHome={() => router.replace('/(tabs)')} />;
   }
 
   return (
