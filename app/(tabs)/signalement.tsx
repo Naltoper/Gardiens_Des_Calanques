@@ -1,13 +1,13 @@
 import { useRouter } from 'expo-router';
-import { ChevronLeft } from 'lucide-react-native';
 import { useState } from 'react';
-import { Platform, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Platform, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 import { GradientButton } from '../../components/buttons/GradientButton';
 import CustomSelect from '../../components/signalement/CustomSelect';
 import SignalementSuccess from '../../components/signalement/SignalementSuccess';
 import { useUserToken } from '../../hooks/useUserToken';
 import { useSignalementForm } from '../../hooks/useSignalementForm';
 import { SELECT_FIELDS } from '../../constants/signalementFields';
+import { ScreenHeader } from '../../components/headers/ScreenHeader';
 
 
 export default function SignalementScreen() {
@@ -67,12 +67,10 @@ export default function SignalementScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
-      <View style={styles.headerContainer}>
-        <TouchableOpacity onPress={() => router.replace('/(tabs)')} style={styles.backButton} activeOpacity={0.7}>
-          <ChevronLeft color="#023e8a" size={32} strokeWidth={2.5} />
-        </TouchableOpacity>
-        <Text style={styles.title}>Fiche de Signalement</Text>
-      </View>
+      <ScreenHeader 
+      title="Fiche de Signalement" 
+      onBack={() => router.replace('/(tabs)')} 
+      />
 
       <View style={styles.switchContainer}>
         <View style={{ flex: 1 }}>
@@ -158,12 +156,6 @@ export default function SignalementScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 24, backgroundColor: 'transparent' },
-  title: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: '#023e8a',
-    flex: 1,
-  },
   switchContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -242,16 +234,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 18,
     textAlign: 'left',
-  },
-  headerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 25,
-    marginLeft: -10,
-  },
-  backButton: {
-    padding: 10,
-    marginRight: 5,
   },
   row: {
     flexDirection: 'row',
