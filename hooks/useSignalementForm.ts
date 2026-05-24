@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Alert, Platform } from 'react-native';
 import { supabase } from '../lib/supabase';
 import { useUserToken } from './useUserToken';
+import * as ImagePicker from 'expo-image-picker';
+import { uploadImageToSupabase } from '../utils/uploadImage';
 
 export const useSignalementForm = () => {
   const userToken = useUserToken();
@@ -17,6 +19,7 @@ export const useSignalementForm = () => {
   const [lieu, setLieu] = useState('');
   const [frequence, setFrequence] = useState('');
   const [nbVictimes, setNbVictimes] = useState('');
+  const [image, setImage] = useState<string | null>(null);
 
   // États de gestion de l'interface
   const [loading, setLoading] = useState(false);
@@ -32,6 +35,7 @@ export const useSignalementForm = () => {
     setLieu('');
     setFrequence('');
     setNbVictimes('');
+    setImage(null);
   };
 
   const handleSend = async () => {
@@ -53,6 +57,18 @@ export const useSignalementForm = () => {
 
     const processUpload = async () => {
       setLoading(true);
+      
+      // <-- NOUVEAU : 1. Gestion de l'upload de l'image
+      let imageUrl: string | null = null;
+      if (image) {
+        imageUrl = await uploadImageToSupabase(image, 'report-photos');
+        if (!imageUrl) {
+          const msg = "Échec de l'envoi de la photo. Le signalement va être transmis sans pièce jointe.";
+          isWeb ? alert(msg) : Alert.alert("Attention", msg);
+        }
+      }
+
+      // <-- MODIFIÉ : 2. Ajout de image_url dans l'insert
       const { error } = await supabase.from('reports').insert([
         {
           content: desc,
@@ -66,6 +82,7 @@ export const useSignalementForm = () => {
           lieu: lieu,
           frequence: frequence,
           nb_victimes: nbVictimes,
+          image_url: imageUrl, // <-- NOUVEAU : On sauvegarde le lien public
         },
       ]);
       setLoading(false);
@@ -90,6 +107,20 @@ export const useSignalementForm = () => {
     }
   };
 
+  const pickImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'], 
+      allowsEditing: true,
+      quality: 0.7, 
+    });
+
+    if (!result.canceled) {
+      setImage(result.assets[0].uri);
+    }
+  };
+
+  
+
   return {
     // États
     isAnonyme, setIsAnonyme,
@@ -101,6 +132,8 @@ export const useSignalementForm = () => {
     lieu, setLieu,
     frequence, setFrequence,
     nbVictimes, setNbVictimes,
+    image, setImage,
+    pickImage,
     loading,
     isSent,
     setIsSent,

@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Platform, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
+import { Platform, ScrollView, StyleSheet, Switch, 
+  Text, TextInput, View, Image, TouchableOpacity } from 'react-native';
 import { GradientButton } from '../../components/buttons/GradientButton';
 import CustomSelect from '../../components/signalement/CustomSelect';
 import SignalementSuccess from '../../components/signalement/SignalementSuccess';
@@ -24,6 +25,8 @@ export default function SignalementScreen() {
     lieu, setLieu,
     frequence, setFrequence,
     nbVictimes, setNbVictimes,
+    image, setImage, // <-- NOUVEAU
+    pickImage,
     loading,
     isSent,
     setIsSent,
@@ -127,6 +130,24 @@ export default function SignalementScreen() {
           value={desc}
           onChangeText={setDesc}
         />
+      </View>
+
+      {/* NOUVEAU BLOC : PIÈCE JOINTE */}
+      <View style={styles.section}>
+        <Text style={styles.label}>Pièce jointe (Optionnel) :</Text>
+        
+        {image ? (
+          <View style={styles.imagePreviewContainer}>
+            <Image source={{ uri: image }} style={styles.imagePreview} />
+            <TouchableOpacity style={styles.removeImageButton} onPress={() => setImage(null)}>
+              <Text style={styles.removeImageText}>Supprimer la photo</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <TouchableOpacity style={styles.uploadButton} onPress={pickImage} activeOpacity={0.7}>
+            <Text style={styles.uploadButtonText}>📸 Ajouter une photo / preuve</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       <View style={styles.warningBox}>
@@ -243,5 +264,42 @@ const styles = StyleSheet.create({
   column: {
     flex: 1,
     marginHorizontal: 5,
+  },
+  uploadButton: {
+    borderWidth: 2,
+    borderColor: '#e2e8f0',
+    borderStyle: 'dashed',
+    borderRadius: 15,
+    padding: 20,
+    alignItems: 'center',
+    backgroundColor: '#f8fafc',
+  },
+  uploadButtonText: {
+    color: '#023e8a',
+    fontWeight: '600',
+    fontSize: 15,
+  },
+  imagePreviewContainer: {
+    alignItems: 'center',
+    backgroundColor: '#f8fafc',
+    borderRadius: 15,
+    padding: 15,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+  },
+  imagePreview: {
+    width: '100%',
+    height: 200,
+    borderRadius: 10,
+    resizeMode: 'cover',
+  },
+  removeImageButton: {
+    marginTop: 10,
+    padding: 10,
+  },
+  removeImageText: {
+    color: '#ef4444',
+    fontWeight: '700',
+    fontSize: 15,
   },
 });
