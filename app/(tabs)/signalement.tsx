@@ -104,23 +104,49 @@ export default function SignalementScreen() {
       )}
 
       {/* Rendu dynamique des sélecteurs par paires */}
-      {[0, 2, 4].map((startIndex) => (
-        <View style={styles.row} key={`row-${startIndex}`}>
-          {SELECT_FIELDS.slice(startIndex, startIndex + 2).map((field) => (
-            <View style={styles.column} key={field.id}>
-              <CustomSelect
-                label={field.label}
-                value={getValueById(field.id)}
-                options={field.options}
-                visible={activeMenu === field.id}
-                onToggle={() => toggleMenu(field.id)}
-                onSelect={(val) => setterById(field.id, val)}
-                placeholder={field.placeholder}
-              />
-            </View>
-          ))}
-        </View>
-      ))}
+      {[0, 2, 4].map((startIndex) => {
+        // 1. On vérifie si l'un des menus de CETTE ligne est actif
+        const isRowActive = SELECT_FIELDS.slice(startIndex, startIndex + 2).some(
+          (field) => activeMenu === field.id
+        );
+
+        return (
+          <View 
+            style={[
+              styles.row, 
+              // 🟢 Si la ligne est active, on lui donne un zIndex immense (ex: 100) pour passer devant les lignes du dessous
+              isRowActive ? { zIndex: 100, elevation: 100 } : { zIndex: 1, elevation: 1 }
+            ]} 
+            key={`row-${startIndex}`}
+          >
+            {SELECT_FIELDS.slice(startIndex, startIndex + 2).map((field) => {
+              // 2. On vérifie si ce sélecteur précis est celui qui est ouvert
+              const isMenuOpen = activeMenu === field.id;
+
+              return (
+                <View 
+                  style={[
+                    styles.column,
+                    // 🟢 Si ce menu est ouvert, sa colonne passe aussi devant sa colonne voisine
+                    isMenuOpen ? { zIndex: 200, elevation: 200 } : { zIndex: 1, elevation: 1 }
+                  ]} 
+                  key={field.id}
+                >
+                  <CustomSelect
+                    label={field.label}
+                    value={getValueById(field.id)}
+                    options={field.options}
+                    visible={isMenuOpen}
+                    onToggle={() => toggleMenu(field.id)}
+                    onSelect={(val) => setterById(field.id, val)}
+                    placeholder={field.placeholder}
+                  />
+                </View>
+              );
+            })}
+          </View>
+        );
+      })}
 
       <View style={styles.section}>
         <Text style={styles.label}>Description des faits :</Text>

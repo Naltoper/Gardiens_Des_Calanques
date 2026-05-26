@@ -1,6 +1,6 @@
 import { ChevronDown, ChevronUp } from 'lucide-react-native';
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View, ScrollView } from 'react-native';
 
 type CustomSelectProps = {
   label: string;
@@ -39,18 +39,24 @@ export default function CustomSelect({
 
       {visible && (
         <View style={styles.optionsContainer}>
-          {options.map((item) => (
-            <TouchableOpacity
-              key={item}
-              style={styles.optionItem}
-              onPress={() => {
-                onSelect(item);
-                onToggle();
-              }}
-            >
-              <Text style={styles.optionText}>{item}</Text>
-            </TouchableOpacity>
-          ))}
+          {/* 🟢 On entoure la liste par un ScrollView pour activer le défilement vertical */}
+          <ScrollView 
+            nestedScrollEnabled={true} // Requis pour que le défilement fonctionne bien à l'intérieur d'un autre ScrollView parent
+            showsVerticalScrollIndicator={true} // On affiche la barre pour que l'élève comprenne qu'il y a une suite
+          >
+            {options.map((item) => (
+              <TouchableOpacity
+                key={item}
+                style={styles.optionItem}
+                onPress={() => {
+                  onSelect(item);
+                  onToggle();
+                }}
+              >
+                <Text style={styles.optionText}>{item}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
         </View>
       )}
     </View>
@@ -60,6 +66,8 @@ export default function CustomSelect({
 const styles = StyleSheet.create({
   section: {
     marginBottom: 18,
+    // 🟢 TRÈS IMPORTANT : Permet au zIndex de l'enfant (le menu) de s'appliquer
+    // par rapport à ce bloc de sélection précis. 
   },
   label: {
     fontSize: 15,
@@ -84,18 +92,30 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   optionsContainer: {
+    position: 'absolute',
+    top: 67,
+    left: 0,
+    right: 0,
+    zIndex: 9999,
+    elevation: 5,
     backgroundColor: '#ffffff',
-    borderWidth: 1,
-    borderColor: '#cbd5e1',
-    borderRadius: 12,
-    marginTop: 6,
+    borderWidth: 2,
+    borderColor: '#bdc7d3',
+    borderTopColor: '#ffffff', 
+    borderRadius: 1,
+    borderBottomRightRadius:12,
+    borderBottomLeftRadius: 12,
     overflow: 'hidden',
+    paddingTop:0,
+    
+    // 🟢 On augmente la hauteur maximale pour afficher plus d'éléments d'un coup
+    maxHeight: 220, 
   },
   optionItem: {
     paddingHorizontal: 14,
     paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
+    borderBottomWidth: 2,
+    borderBottomColor: '#abb2bc',
   },
   optionText: {
     fontSize: 15,
