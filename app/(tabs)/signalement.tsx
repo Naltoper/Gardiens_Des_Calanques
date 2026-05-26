@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Platform, ScrollView, StyleSheet, Switch, 
-  Text, TextInput, View, Image, TouchableOpacity } from 'react-native';
+  Text, TextInput, View, Image, TouchableOpacity, Modal } from 'react-native';
 import { GradientButton } from '../../components/buttons/GradientButton';
 import CustomSelect from '../../components/signalement/CustomSelect';
 import SignalementSuccess from '../../components/signalement/SignalementSuccess';
@@ -9,6 +9,7 @@ import { useUserToken } from '../../hooks/useUserToken';
 import { useSignalementForm } from '../../hooks/useSignalementForm';
 import { SELECT_FIELDS } from '../../constants/signalementFields';
 import { ScreenHeader } from '../../components/headers/ScreenHeader';
+import { LegalWarningModal } from '../../components/modals/LegalWarningModal';
 
 
 export default function SignalementScreen() {
@@ -37,6 +38,7 @@ export default function SignalementScreen() {
   const isWeb = Platform.OS === 'web';
 
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
+  const [showWarningModal, setShowWarningModal] = useState(false);
 
   const toggleMenu = (menuName: string) => {
     setActiveMenu(prev => (prev === menuName ? null : menuName));
@@ -102,23 +104,49 @@ export default function SignalementScreen() {
       )}
 
       {/* Rendu dynamique des sélecteurs par paires */}
-      {[0, 2, 4].map((startIndex) => (
-        <View style={styles.row} key={`row-${startIndex}`}>
-          {SELECT_FIELDS.slice(startIndex, startIndex + 2).map((field) => (
-            <View style={styles.column} key={field.id}>
-              <CustomSelect
-                label={field.label}
-                value={getValueById(field.id)}
-                options={field.options}
-                visible={activeMenu === field.id}
-                onToggle={() => toggleMenu(field.id)}
-                onSelect={(val) => setterById(field.id, val)}
-                placeholder={field.placeholder}
-              />
-            </View>
-          ))}
-        </View>
-      ))}
+      {[0, 2, 4].map((startIndex) => {
+        // 1. On vérifie si l'un des menus de CETTE ligne est actif
+        const isRowActive = SELECT_FIELDS.slice(startIndex, startIndex + 2).some(
+          (field) => activeMenu === field.id
+        );
+
+        return (
+          <View 
+            style={[
+              styles.row, 
+              // 🟢 Si la ligne est active, on lui donne un zIndex immense (ex: 100) pour passer devant les lignes du dessous
+              isRowActive ? { zIndex: 100, elevation: 100 } : { zIndex: 1, elevation: 1 }
+            ]} 
+            key={`row-${startIndex}`}
+          >
+            {SELECT_FIELDS.slice(startIndex, startIndex + 2).map((field) => {
+              // 2. On vérifie si ce sélecteur précis est celui qui est ouvert
+              const isMenuOpen = activeMenu === field.id;
+
+              return (
+                <View 
+                  style={[
+                    styles.column,
+                    // 🟢 Si ce menu est ouvert, sa colonne passe aussi devant sa colonne voisine
+                    isMenuOpen ? { zIndex: 200, elevation: 200 } : { zIndex: 1, elevation: 1 }
+                  ]} 
+                  key={field.id}
+                >
+                  <CustomSelect
+                    label={field.label}
+                    value={getValueById(field.id)}
+                    options={field.options}
+                    visible={isMenuOpen}
+                    onToggle={() => toggleMenu(field.id)}
+                    onSelect={(val) => setterById(field.id, val)}
+                    placeholder={field.placeholder}
+                  />
+                </View>
+              );
+            })}
+          </View>
+        );
+      })}
 
       <View style={styles.section}>
         <Text style={styles.label}>Description des faits :</Text>
@@ -158,7 +186,7 @@ export default function SignalementScreen() {
 
       <GradientButton
         title={loading ? "Transmission..." : "Envoyer le signalement"}
-        onPress={handleSend}
+        onPress={() => setShowWarningModal(true)} // 🟢 Ouvre la modale au lieu de lancer directement l'envoi
         colors={["#48a4f4", "#10ac56"]}
         height={60}
         style={{ marginTop: 10, opacity: loading ? 0.6 : 1 }}
@@ -171,7 +199,17 @@ export default function SignalementScreen() {
             : "👤 Ce signalement est nominatif. Seuls les intervenants autorisés pourront consulter ton nom."}
         </Text>
       </View>
-    </ScrollView>
+
+      {/* MODALE PERSONNALISÉE DE RAPPEL À LA LOI */}
+      <LegalWarningModal 
+        visible={showWarningModal}
+        onClose={() => setShowWarningModal(false)}
+        onConfirm={() => {
+          setShowWarningModal(false);
+          handleSend();
+        }}
+      />
+    </ScrollView> // Fin du ScrollView existant
   );
 }
 

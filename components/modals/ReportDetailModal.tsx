@@ -8,7 +8,12 @@ export const ReportDetailModal = ({ visible, onClose, report }: any) => {
   if (!report) return null;
 
   return (
-    <Modal animationType="slide" transparent={true} visible={visible} onRequestClose={onClose}>
+    <Modal 
+      animationType="fade" // 🟢 On passe en fondu pour une transition douce sans coupure visuelle
+      transparent={true} 
+      visible={visible} 
+      onRequestClose={onClose}
+    >
       <View style={styles.modalOverlay}>
         <View style={styles.modalView}>
           <View style={styles.modalHeader}>
@@ -77,20 +82,24 @@ const DetailRow = ({ label, value, color = '#334155' }: any) => (
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end', // Le modal arrive du bas
+    backgroundColor: 'rgba(0, 0, 0, 0.6)', // 🟢 Fond assombri légèrement plus dense pour isoler le contenu
+    justifyContent: 'center', // 🟢 Centre la modale verticalement
+    alignItems: 'center',     // 🟢 Centre la modale horizontalement
+    padding: 20,              // 🟢 Donne de l'espace autour de la carte pour qu'elle ne touche pas les bords de l'écran
   },
   modalView: {
+    width: '100%',            // Prend toute la largeur disponible dans le padding
     backgroundColor: 'white',
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
-    padding: 25,
-    maxHeight: '80%',
+    borderRadius: 24,         // 🟢 Arrondit joliment les 4 coins de la carte flottante
+    padding: 24,
+    maxHeight: '85%',         // Évite que la modale ne dépasse sur les écrans de smartphones plus petits
+    
+    // 🟢 Ombre premium pour donner l'impression que la carte flotte au-dessus de l'écran
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 5,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.25,
+    shadowRadius: 15,
+    elevation: 10,
   },
   modalHeader: {
     flexDirection: 'row',
