@@ -39,26 +39,24 @@ export const useSignalementForm = () => {
   };
 
   const handleSend = async () => {
-    // Validation
-    if (!desc.trim() || !typeHarcelement) {
-      const msg = "Veuillez remplir le type de harcèlement et la description.";
-      isWeb ? alert(msg) : Alert.alert("Erreur", msg);
-      return;
-    }
+      // 1. Validations de sécurité initiales (On les garde !)
+      if (!desc.trim() || !typeHarcelement) {
+        const msg = "Veuillez remplir le type de harcèlement et la description.";
+        isWeb ? alert(msg) : Alert.alert("Erreur", msg);
+        return;
+      }
 
-    if (!userToken) {
-      const msg = "Identifiant utilisateur non disponible.";
-      isWeb ? alert(msg) : Alert.alert("Erreur", msg);
-      return;
-    }
+      if (!userToken) {
+        const msg = "Identifiant utilisateur non disponible.";
+        isWeb ? alert(msg) : Alert.alert("Erreur", msg);
+        return;
+      }
 
-    const confirmationMessage =
-      "Je confirme que les informations transmises sont sincères. Un signalement volontairement inexact peut donner lieu à des sanctions (Art. 226-10 du Code pénal).";
-
-    const processUpload = async () => {
+      // 2. Lancement direct de l'envoi 
+      // (Plus besoin de window.confirm ou Alert.alert ici, la modale s'en est occupée !)
       setLoading(true);
       
-      // <-- NOUVEAU : 1. Gestion de l'upload de l'image
+      // Gestion de l'upload de l'image
       let imageUrl: string | null = null;
       if (image) {
         imageUrl = await uploadImageToSupabase(image, 'report-photos');
@@ -68,7 +66,7 @@ export const useSignalementForm = () => {
         }
       }
 
-      // <-- MODIFIÉ : 2. Ajout de image_url dans l'insert
+      // Insertion des données dans Supabase
       const { error } = await supabase.from('reports').insert([
         {
           content: desc,
@@ -82,9 +80,10 @@ export const useSignalementForm = () => {
           lieu: lieu,
           frequence: frequence,
           nb_victimes: nbVictimes,
-          image_url: imageUrl, // <-- NOUVEAU : On sauvegarde le lien public
+          image_url: imageUrl, 
         },
       ]);
+      
       setLoading(false);
 
       if (error) {
@@ -95,17 +94,6 @@ export const useSignalementForm = () => {
         setIsSent(true);
       }
     };
-
-    // Logique de confirmation selon la plateforme
-    if (isWeb) {
-      if (window.confirm(confirmationMessage)) processUpload();
-    } else {
-      Alert.alert("Confirmation importante", confirmationMessage, [
-        { text: "Modifier", style: "cancel" },
-        { text: "Confirmer l'envoi", onPress: () => processUpload() },
-      ]);
-    }
-  };
 
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
