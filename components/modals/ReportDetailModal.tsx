@@ -2,6 +2,7 @@ import React from 'react';
 import { Modal, View, Text, StyleSheet, 
   TouchableOpacity, ScrollView, Image } from 'react-native';
 import { X } from 'lucide-react-native';
+import * as WebBrowser from 'expo-web-browser';
 
 export const ReportDetailModal = ({ visible, onClose, report }: any) => {
   if (!report) return null;
@@ -36,12 +37,22 @@ export const ReportDetailModal = ({ visible, onClose, report }: any) => {
             {/* Affichage de la pièce jointe si elle existe */}
             {report?.image_url ? (
               <View style={styles.imageSection}>
-                <Text style={styles.imageLabel}>📸 Pièce jointe :</Text>
-                <Image 
-                  source={{ uri: report.image_url }} 
-                  style={styles.attachedImage} 
-                  resizeMode="cover"
-                />
+                <Text style={styles.imageLabel}>📸 Pièce jointe (Clique pour agrandir/télécharger) :</Text>
+                
+                {/* 2. ON ENTOUR L'IMAGE PAR UN BOUTON */}
+                <TouchableOpacity 
+                  activeOpacity={0.8}
+                  onPress={async () => {
+                    // Ouvre l'image directement dans un navigateur plein écran sécurisé
+                    await WebBrowser.openBrowserAsync(report.image_url);
+                  }}
+                >
+                  <Image 
+                    source={{ uri: report.image_url }} 
+                    style={styles.attachedImage} 
+                    resizeMode="cover"
+                  />
+                </TouchableOpacity>
               </View>
             ) : (
               <View style={styles.imageSection}>
