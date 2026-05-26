@@ -1,5 +1,6 @@
 import React from 'react';
-import { Modal, View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { Modal, View, Text, StyleSheet, 
+  TouchableOpacity, ScrollView, Image } from 'react-native';
 import { X } from 'lucide-react-native';
 
 export const ReportDetailModal = ({ visible, onClose, report }: any) => {
@@ -32,6 +33,21 @@ export const ReportDetailModal = ({ visible, onClose, report }: any) => {
               <Text style={styles.detailLabel}>Description complète :</Text>
               <Text style={styles.fullDescription}>{report.content}</Text>
             </View>
+            {/* Affichage de la pièce jointe si elle existe */}
+            {report?.image_url ? (
+              <View style={styles.imageSection}>
+                <Text style={styles.imageLabel}>📸 Pièce jointe :</Text>
+                <Image 
+                  source={{ uri: report.image_url }} 
+                  style={styles.attachedImage} 
+                  resizeMode="cover"
+                />
+              </View>
+            ) : (
+              <View style={styles.imageSection}>
+                <Text style={styles.noImageText}>🚫 Aucune pièce jointe associée</Text>
+              </View>
+            )}
           </ScrollView>
         </View>
       </View>
@@ -103,5 +119,27 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     marginTop: 5,
     fontStyle: 'italic'
+  },
+  imageSection: {
+    marginTop: 20,
+    marginBottom: 10,
+  },
+  imageLabel: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#1e293b',
+    marginBottom: 8,
+  },
+  attachedImage: {
+    width: '100%',
+    height: 220,
+    borderRadius: 15,
+    backgroundColor: '#cbd5e1', // Un fond gris en attendant le chargement de l'image
+  },
+  noImageText: {
+    fontSize: 13,
+    color: '#94a3b8',
+    fontStyle: 'italic',
+    marginTop: 10,
   },
 });
