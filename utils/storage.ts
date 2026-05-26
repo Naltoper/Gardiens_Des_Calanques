@@ -40,7 +40,7 @@ export const getUserToken = async (): Promise<string> => {
   let newToken = "";
 
   while (!isUnique) {
-    newToken = Crypto.randomUUID();
+    newToken = 'uf-' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
     const exists = await checkTokenExistsInDB(newToken);
     if (!exists) isUnique = true;
   }

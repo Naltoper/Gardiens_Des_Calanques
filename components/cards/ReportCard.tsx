@@ -1,4 +1,4 @@
-import { Info, MessageCircle, Trash2 } from 'lucide-react-native';
+import { Eye, FileText, MessageCircle, Trash2 } from 'lucide-react-native';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Report } from '../../types/report';
 
@@ -32,27 +32,28 @@ export const ReportCard = ({ item, onChat, onDetails, onDelete, formatDateTime }
       <View style={styles.cardHeader}>
         <Text style={styles.date}>Posté le {formatDateTime(item.created_at)}</Text>
 
-        <View style={styles.headerActions}>
-          <TouchableOpacity
-            onPress={(event) => {
-              event.stopPropagation();
-              onDetails();
-            }}
-            style={styles.iconButton}
-          >
-            <Info size={20} color="#94a3b8" />
-          </TouchableOpacity>
+        {/* Nouveau bouton de détails avec l'icône de document ET le texte */}
+        <TouchableOpacity
+          onPress={(event) => {
+            event.stopPropagation();
+            onDetails();
+          }}
+          style={styles.documentIconButton} // On garde ce nom de style
+        >
+          <FileText size={16} color="#023e8a" style={{ marginRight: 6 }} />
+          <Text style={styles.documentButtonText}>Détails</Text>
+        </TouchableOpacity> 
 
-          <TouchableOpacity
-            onPress={(event) => {
-              event.stopPropagation();
-              onDelete();
-            }}
-            style={styles.iconButton}
-          >
-            <Trash2 size={20} color="#ef4444" />
-          </TouchableOpacity>
-        </View>
+        {/* Bouton supprimer sorti des actions de groupe et positionné de manière absolue */}
+        <TouchableOpacity
+          onPress={(event) => {
+            event.stopPropagation();
+            onDelete();
+          }}
+          style={styles.absoluteDeleteButton}
+        >
+          <Trash2 size={18} color="#ef4444" />
+        </TouchableOpacity>
 
         <View style={[styles.badge, { backgroundColor: bgColor }]}>
           <View style={[styles.dot, { backgroundColor: statusColor }]} />
@@ -96,16 +97,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 12,
     gap: 8,
+    paddingRight: 24, // Place pour la poubelle
   },
   date: {
     color: '#94a3b8',
     fontSize: 12,
     fontWeight: '600',
     flex: 1,
-  },
-  headerActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
   },
   iconButton: {
     padding: 5,
@@ -156,5 +154,41 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: '#00b4d8',
     fontWeight: 'bold',
+  },
+  // Positionnement de la poubelle tout en haut à droite du conteneur de la carte
+  absoluteDeleteButton: {
+    position: 'absolute',
+    top: 0,
+    right: -16, // Décalé vers le bord extérieur droit
+    padding: 8,
+  },
+  // Look du nouveau bouton détails (fond gris léger, coins arrondis)
+  detailsButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f1f5f9',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+  },
+  detailsIconButton: {
+    backgroundColor: '#e0f2fe', // Un fond bleu très clair
+    padding: 8,
+    borderRadius: 12,
+  },
+  documentIconButton: {
+    flexDirection: 'row', // Force l'icône et le texte à être côte à côte
+    alignItems: 'center', // Centre verticalement l'icône et le texte
+    backgroundColor: '#e0f2fe',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  documentButtonText: {
+    fontSize: 12,
+    color: '#023e8a',
+    fontWeight: '700',
   },
 });

@@ -1,154 +1,79 @@
 import { useRouter } from 'expo-router';
-import { ChevronLeft } from 'lucide-react-native';
 import { useState } from 'react';
-import { Alert, Platform, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Platform, ScrollView, StyleSheet, Switch, 
+  Text, TextInput, View, Image, TouchableOpacity } from 'react-native';
 import { GradientButton } from '../../components/buttons/GradientButton';
 import CustomSelect from '../../components/signalement/CustomSelect';
 import SignalementSuccess from '../../components/signalement/SignalementSuccess';
 import { useUserToken } from '../../hooks/useUserToken';
-import { supabase } from '../../lib/supabase';
+import { useSignalementForm } from '../../hooks/useSignalementForm';
+import { SELECT_FIELDS } from '../../constants/signalementFields';
+import { ScreenHeader } from '../../components/headers/ScreenHeader';
 
 
 export default function SignalementScreen() {
   const router = useRouter();
+  
+  // On récupère tout ce dont on a besoin depuis le hook
+  const {
+    isAnonyme, setIsAnonyme,
+    nom, setNom,
+    desc, setDesc,
+    typeHarcelement, setTypeHarcelement,
+    urgence, setUrgence,
+    dateApproximative, setDateApproximative,
+    lieu, setLieu,
+    frequence, setFrequence,
+    nbVictimes, setNbVictimes,
+    image, setImage, // <-- NOUVEAU
+    pickImage,
+    loading,
+    isSent,
+    setIsSent,
+    handleSend
+  } = useSignalementForm();
+
   const userToken = useUserToken();
   const isWeb = Platform.OS === 'web';
 
-  const [isAnonyme, setIsAnonyme] = useState(true);
-  const [nom, setNom] = useState('');
-  const [desc, setDesc] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [isSent, setIsSent] = useState(false);
+  const [activeMenu, setActiveMenu] = useState<string | null>(null);
 
-  const [typeHarcelement, setTypeHarcelement] = useState('');
-  const [urgence, setUrgence] = useState('');
-  const [dateApproximative, setDateApproximative] = useState('');
-  const [lieu, setLieu] = useState('');
-  const [frequence, setFrequence] = useState('');
-  const [nbVictimes, setNbVictimes] = useState('');
-
-  const [showTypes, setShowTypes] = useState(false);
-  const [showUrgence, setShowUrgence] = useState(false);
-  const [showDate, setShowDate] = useState(false);
-  const [showLieu, setShowLieu] = useState(false);
-  const [showFrequence, setShowFrequence] = useState(false);
-  const [showNbVictimes, setShowNbVictimes] = useState(false);
-
-  const toggleMenu = (menu: string) => {
-    setShowTypes(menu === 'types' ? !showTypes : false);
-    setShowUrgence(menu === 'urgence' ? !showUrgence : false);
-    setShowDate(menu === 'date' ? !showDate : false);
-    setShowLieu(menu === 'lieu' ? !showLieu : false);
-    setShowFrequence(menu === 'frequence' ? !showFrequence : false);
-    setShowNbVictimes(menu === 'nbVictimes' ? !showNbVictimes : false);
+  const toggleMenu = (menuName: string) => {
+    setActiveMenu(prev => (prev === menuName ? null : menuName));
   };
 
-  const resetForm = () => {
-    setIsAnonyme(true);
-    setNom('');
-    setDesc('');
-    setTypeHarcelement('');
-    setUrgence('');
-    setDateApproximative('');
-    setLieu('');
-    setFrequence('');
-    setNbVictimes('');
-    setShowTypes(false);
-    setShowUrgence(false);
-    setShowDate(false);
-    setShowLieu(false);
-    setShowFrequence(false);
-    setShowNbVictimes(false);
-  };
-
-  const handleSend = async () => {
-    if (!desc.trim() || !typeHarcelement) {
-      if (isWeb) {
-        alert("Veuillez remplir le type de harcèlement et la description.");
-      } else {
-        Alert.alert("Erreur", "Veuillez remplir le type de harcèlement et la description.");
-      }
-      return;
-    }
-
-    if (!userToken) {
-      if (isWeb) {
-        alert("Erreur : identifiant utilisateur non disponible.");
-      } else {
-        Alert.alert("Erreur", "Identifiant utilisateur non disponible.");
-      }
-      return;
-    }
-
-    const confirmationMessage =
-      "Je confirme que les informations transmises sont sincères. Un signalement volontairement inexact peut donner lieu à des sanctions (Art. 226-10 du Code pénal).";
-
-    const processUpload = async () => {
-      setLoading(true);
-
-      const { error } = await supabase.from('reports').insert([
-        {
-          content: desc,
-          is_anonyme: isAnonyme,
-          author_name: isAnonyme ? "Anonyme" : nom,
-          user_token: userToken,
-          status: "Non traité",
-          type_harcelement: typeHarcelement,
-          urgence: urgence,
-          date_faits: dateApproximative,
-          lieu: lieu,
-          frequence: frequence,
-          nb_victimes: nbVictimes,
-        },
-      ]);
-
-      setLoading(false);
-
-      if (error) {
-        if (isWeb) {
-          alert("Erreur : impossible d'envoyer le signalement.");
-        } else {
-          Alert.alert("Erreur", "Impossible d'envoyer le signalement.");
-        }
-      } else {
-        resetForm();
-        setIsSent(true);
-      }
+  // 3. Helpers pour le mapping dynamique
+  const getValueById = (id: string) => {
+    const values: Record<string, string> = { 
+        types: typeHarcelement, urgence, dateApproximative, lieu, frequence, nbVictimes 
     };
+    // Petite correction pour correspondre aux noms des variables du hook
+    if (id === 'date') return dateApproximative;
+    return values[id];
+  };
 
-    if (isWeb) {
-      const hasConfirmed = window.confirm(confirmationMessage);
-      if (hasConfirmed) {
-        processUpload();
-      }
-    } else {
-      Alert.alert(
-        "Confirmation importante",
-        confirmationMessage,
-        [
-          { text: "Modifier", style: "cancel" },
-          { text: "Confirmer l'envoi", onPress: () => processUpload() },
-        ]
-      );
-    }
+  const setterById = (id: string, val: string) => {
+    const setters: Record<string, (v: string) => void> = {
+      types: setTypeHarcelement,
+      urgence: setUrgence,
+      date: setDateApproximative,
+      lieu: setLieu,
+      frequence: setFrequence,
+      nbVictimes: setNbVictimes
+    };
+    setters[id](val);
   };
 
   if (isSent) {
-  return (
-    <SignalementSuccess
-      onBackHome={() => router.replace('/(tabs)')}
-    />
-  );
+    return <SignalementSuccess onBackHome={() => router.replace('/(tabs)')} />;
   }
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
-      <View style={styles.headerContainer}>
-        <TouchableOpacity onPress={() => router.replace('/(tabs)')} style={styles.backButton} activeOpacity={0.7}>
-          <ChevronLeft color="#023e8a" size={32} strokeWidth={2.5} />
-        </TouchableOpacity>
-        <Text style={styles.title}>Fiche de Signalement</Text>
-      </View>
+      <ScreenHeader 
+      title="Fiche de Signalement" 
+      onBack={() => router.replace('/(tabs)')} 
+      />
 
       <View style={styles.switchContainer}>
         <View style={{ flex: 1 }}>
@@ -176,83 +101,24 @@ export default function SignalementScreen() {
         </View>
       )}
 
-      <View style={styles.row}>
-        <View style={styles.column}>
-          <CustomSelect
-            label="Type de harcèlement :"
-            value={typeHarcelement}
-            options={["Cyber-harcèlement", "Physique", "Moral", "Exclusion", "Autre"]}
-            visible={showTypes}
-            onToggle={() => toggleMenu('types')}
-            onSelect={setTypeHarcelement}
-            placeholder="Sélectionner..."
-          />
+      {/* Rendu dynamique des sélecteurs par paires */}
+      {[0, 2, 4].map((startIndex) => (
+        <View style={styles.row} key={`row-${startIndex}`}>
+          {SELECT_FIELDS.slice(startIndex, startIndex + 2).map((field) => (
+            <View style={styles.column} key={field.id}>
+              <CustomSelect
+                label={field.label}
+                value={getValueById(field.id)}
+                options={field.options}
+                visible={activeMenu === field.id}
+                onToggle={() => toggleMenu(field.id)}
+                onSelect={(val) => setterById(field.id, val)}
+                placeholder={field.placeholder}
+              />
+            </View>
+          ))}
         </View>
-
-        <View style={styles.column}>
-          <CustomSelect
-            label="Niveau d'urgence :"
-            value={urgence}
-            options={["Faible", "Moyen", "Élevé"]}
-            visible={showUrgence}
-            onToggle={() => toggleMenu('urgence')}
-            onSelect={setUrgence}
-            placeholder="Évaluer..."
-          />
-        </View>
-      </View>
-
-      <View style={styles.row}>
-        <View style={styles.column}>
-          <CustomSelect
-            label="Date :"
-            value={dateApproximative}
-            options={["Aujourd'hui", "Une semaine", "Un mois", "Plus d'un mois"]}
-            visible={showDate}
-            onToggle={() => toggleMenu('date')}
-            onSelect={setDateApproximative}
-            placeholder="Quand ?"
-          />
-        </View>
-
-        <View style={styles.column}>
-          <CustomSelect
-            label="Lieu des faits :"
-            value={lieu}
-            options={["Classe", "Récré", "Web", "Trajet", "Autre"]}
-            visible={showLieu}
-            onToggle={() => toggleMenu('lieu')}
-            onSelect={setLieu}
-            placeholder="Où ?"
-          />
-        </View>
-      </View>
-
-      <View style={styles.row}>
-        <View style={styles.column}>
-          <CustomSelect
-            label="Fréquence :"
-            value={frequence}
-            options={["Une seule fois", "De temps en temps", "Tous les jours"]}
-            visible={showFrequence}
-            onToggle={() => toggleMenu('frequence')}
-            onSelect={setFrequence}
-            placeholder="Souvent ?"
-          />
-        </View>
-
-        <View style={styles.column}>
-          <CustomSelect
-            label="Nombre de victimes :"
-            value={nbVictimes}
-            options={["Moi", "2-3", "Groupe"]}
-            visible={showNbVictimes}
-            onToggle={() => toggleMenu('nbVictimes')}
-            onSelect={setNbVictimes}
-            placeholder="Combien ?"
-          />
-        </View>
-      </View>
+      ))}
 
       <View style={styles.section}>
         <Text style={styles.label}>Description des faits :</Text>
@@ -264,6 +130,24 @@ export default function SignalementScreen() {
           value={desc}
           onChangeText={setDesc}
         />
+      </View>
+
+      {/* NOUVEAU BLOC : PIÈCE JOINTE */}
+      <View style={styles.section}>
+        <Text style={styles.label}>Pièce jointe (Optionnel) :</Text>
+        
+        {image ? (
+          <View style={styles.imagePreviewContainer}>
+            <Image source={{ uri: image }} style={styles.imagePreview} />
+            <TouchableOpacity style={styles.removeImageButton} onPress={() => setImage(null)}>
+              <Text style={styles.removeImageText}>Supprimer la photo</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <TouchableOpacity style={styles.uploadButton} onPress={pickImage} activeOpacity={0.7}>
+            <Text style={styles.uploadButtonText}>📸 Ajouter une photo / preuve</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       <View style={styles.warningBox}>
@@ -293,12 +177,6 @@ export default function SignalementScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 24, backgroundColor: 'transparent' },
-  title: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: '#023e8a',
-    flex: 1,
-  },
   switchContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -378,16 +256,6 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     textAlign: 'left',
   },
-  headerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 25,
-    marginLeft: -10,
-  },
-  backButton: {
-    padding: 10,
-    marginRight: 5,
-  },
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -396,5 +264,42 @@ const styles = StyleSheet.create({
   column: {
     flex: 1,
     marginHorizontal: 5,
+  },
+  uploadButton: {
+    borderWidth: 2,
+    borderColor: '#e2e8f0',
+    borderStyle: 'dashed',
+    borderRadius: 15,
+    padding: 20,
+    alignItems: 'center',
+    backgroundColor: '#f8fafc',
+  },
+  uploadButtonText: {
+    color: '#023e8a',
+    fontWeight: '600',
+    fontSize: 15,
+  },
+  imagePreviewContainer: {
+    alignItems: 'center',
+    backgroundColor: '#f8fafc',
+    borderRadius: 15,
+    padding: 15,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+  },
+  imagePreview: {
+    width: '100%',
+    height: 200,
+    borderRadius: 10,
+    resizeMode: 'cover',
+  },
+  removeImageButton: {
+    marginTop: 10,
+    padding: 10,
+  },
+  removeImageText: {
+    color: '#ef4444',
+    fontWeight: '700',
+    fontSize: 15,
   },
 });

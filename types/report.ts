@@ -12,4 +12,5 @@ export interface Report {
   lieu: string | null;
   frequence: string | null;
   nb_victimes: string | null;
+  image_url?: string | null;
 }
