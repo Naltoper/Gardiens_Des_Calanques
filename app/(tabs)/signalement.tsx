@@ -9,6 +9,7 @@ import { useUserToken } from '../../hooks/useUserToken';
 import { useSignalementForm } from '../../hooks/useSignalementForm';
 import { SELECT_FIELDS } from '../../constants/signalementFields';
 import { ScreenHeader } from '../../components/headers/ScreenHeader';
+import { LegalWarningModal } from '../../components/modals/LegalWarningModal';
 
 
 export default function SignalementScreen() {
@@ -174,36 +175,14 @@ export default function SignalementScreen() {
       </View>
 
       {/* MODALE PERSONNALISÉE DE RAPPEL À LA LOI */}
-      <Modal visible={showWarningModal} transparent animationType="fade" onRequestClose={() => setShowWarningModal(false)}>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalIcon}>⚖️</Text>
-            <Text style={styles.modalTitle}>Rappel juridique important</Text>
-            
-            <Text style={styles.modalWarningText}>
-              Afin de garantir la sécurité et la protection de tous les élèves, rappelle-toi que la création d&apos;un signalement contenant des faits <Text style={{ fontWeight: '700', color: '#dd5309' }}>volontairement inexacts ou mensongers</Text> est punie par la loi.
-            </Text>
-            
-            <Text style={styles.modalLawText}>
-              (Article 226-10 du Code pénal : la dénonciation calomnieuse est passible de sanctions pénales).
-            </Text>
-
-            <TouchableOpacity 
-              style={styles.confirmBtn} 
-              onPress={() => {
-                setShowWarningModal(false); // Ferme la modale
-                handleSend();               // Lance la procédure d'envoi vers Supabase
-              }}
-            >
-              <Text style={styles.confirmBtnText}>Je confirme l&apos;exactitude des faits</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity onPress={() => setShowWarningModal(false)} style={styles.cancelBtn}>
-              <Text style={styles.cancelBtnText}>Modifier mon signalement</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
+      <LegalWarningModal 
+        visible={showWarningModal}
+        onClose={() => setShowWarningModal(false)}
+        onConfirm={() => {
+          setShowWarningModal(false);
+          handleSend();
+        }}
+      />
     </ScrollView> // Fin du ScrollView existant
   );
 }
@@ -334,71 +313,5 @@ const styles = StyleSheet.create({
     color: '#ef4444',
     fontWeight: '700',
     fontSize: 15,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.6)", // Fond sombre transparent
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 24
-  },
-  modalContent: {
-    width: "100%",
-    backgroundColor: "white",
-    borderRadius: 24,
-    padding: 25,
-    alignItems: "center",
-    elevation: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.2,
-    shadowRadius: 15,
-  },
-  modalIcon: {
-    fontSize: 36,
-    marginBottom: 10,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: "800",
-    color: "#023e8a",
-    marginBottom: 15,
-    textAlign: "center",
-  },
-  modalWarningText: {
-    fontSize: 14,
-    color: "#475569",
-    lineHeight: 22,
-    textAlign: "center",
-    marginBottom: 12,
-  },
-  modalLawText: {
-    fontSize: 12,
-    color: "#94a3b8",
-    fontStyle: "italic",
-    textAlign: "center",
-    marginBottom: 25,
-  },
-  confirmBtn: {
-    width: "100%",
-    backgroundColor: "#f39f17", // Vert pour marquer la validation positive
-    padding: 16,
-    borderRadius: 15,
-    alignItems: "center",
-    elevation: 2,
-  },
-  confirmBtnText: {
-    color: "white",
-    fontWeight: "700",
-    fontSize: 15,
-  },
-  cancelBtn: {
-    marginTop: 15,
-    padding: 10,
-  },
-  cancelBtnText: {
-    color: "#64748b",
-    fontWeight: "600",
-    fontSize: 14,
   },
 });
