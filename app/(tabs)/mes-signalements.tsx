@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { ChevronLeft } from 'lucide-react-native';
+import { ChevronLeft, FolderOpen } from 'lucide-react-native';
 import { useState } from 'react';
 import {
   ActivityIndicator,
@@ -10,7 +10,8 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  View
+  View,
+  ImageBackground
 } from 'react-native';
 import { ReportCard } from '../../components/cards/ReportCard';
 import { ReportDetailModal } from '../../components/modals/ReportDetailModal';
@@ -127,28 +128,39 @@ export default function MesSignalementsScreen() {
         </TouchableOpacity>
         
         <Text style={styles.title}>Mes signalements</Text>
-        
-        {/* View vide pour équilibrer le centrage du texte face au bouton retour */}
         <View style={styles.placeholder} />
       </View>
       
-      {/* LISTE DES SIGNALEMENTS */}
-      <FlatList
-        data={reports}
-        keyExtractor={(item) => item.id.toString()}
-        renderItem={renderItem}
-        contentContainerStyle={styles.listContent}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#48a4f4" />
-        }
-        // Affichage si aucun signalement trouvé
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>Tu n&apos;as pas encore envoyé de signalement.</Text>
-            <Text style={styles.emptySubText}>Tes futurs messages s&apos;afficheront ici en toute sécurité.</Text>
-          </View>
-        }
-      />
+      {/* IMAGE BACKGROUND INTÉGRÉE POUR TOUT L'ÉCRAN */}
+      <ImageBackground
+        source={require('../../assets/images/chat-bg.jpg')}
+        style={styles.screenBackground}
+        imageStyle={styles.screenBackgroundImage}
+        resizeMode="cover"
+      >
+        <FlatList
+          data={reports}
+          keyExtractor={(item) => item.id.toString()}
+          renderItem={renderItem}
+          contentContainerStyle={[styles.listContent, reports.length === 0 && { flex: 1, justifyContent: 'center' }]}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#48a4f4" />
+          }
+          // COMPOSANT VIDE PREMIUM ET CONFORTABLE VISUELLEMENT
+          ListEmptyComponent={
+            <View style={styles.emptyWrapper}>
+              <View style={styles.emptyIconContainer}>
+                <FolderOpen color="#94a3b8" size={38} strokeWidth={1.5} />
+              </View>
+              <Text style={styles.emptyText}>Aucun signalement envoyé</Text>
+              <Text style={styles.emptySubText}>
+                Tu n&apos;as pas encore transmis de fiche. Tes futurs signalements et tes espaces de discussion sécurisés s&apos;afficheront ici.
+              </Text>
+            </View>
+          }
+        />
+      </ImageBackground>
+
       <ReportDetailModal 
         visible={modalVisible} 
         onClose={() => setModalVisible(false)} 
@@ -202,15 +214,42 @@ const styles = StyleSheet.create({
   },
   emptyText: { 
     textAlign: 'center', 
-    color: '#64748b', 
-    fontSize: 16,
-    fontWeight: '700',
-    marginBottom: 10
+    color: '#1e293b', 
+    fontSize: 17,
+    fontWeight: '800',
+    marginBottom: 8
   },
   emptySubText: {
     textAlign: 'center', 
-    color: '#94a3b8', 
+    color: '#64748b', 
     fontSize: 14,
-    lineHeight: 20
+    lineHeight: 22,
+    paddingHorizontal: 10
   },
+  screenBackground: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
+    backgroundColor: '#f8fafc',
+  },
+  screenBackgroundImage: {
+    opacity: 0.3,
+  },
+  emptyWrapper: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 32,
+    paddingVertical: 40,
+  },
+  emptyIconContainer: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    backgroundColor: '#f1f5f9',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+  },  
 });

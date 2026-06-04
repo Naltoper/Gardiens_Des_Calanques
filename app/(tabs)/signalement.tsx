@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Platform, ScrollView, StyleSheet, Switch, 
-  Text, TextInput, View, Image, TouchableOpacity, Modal } from 'react-native';
+  Text, TextInput, View, Image, TouchableOpacity, ImageBackground } from 'react-native';
 import { GradientButton } from '../../components/buttons/GradientButton';
 import CustomSelect from '../../components/signalement/CustomSelect';
 import SignalementSuccess from '../../components/signalement/SignalementSuccess';
@@ -71,11 +71,18 @@ export default function SignalementScreen() {
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
-      <ScreenHeader 
-      title="Fiche de Signalement" 
-      onBack={() => router.replace('/(tabs)')} 
-      />
+    <View style={styles.mainContainer}>
+      <ImageBackground
+        source={require('../../assets/images/chat-bg.jpg')} // Ton image de fond marine commune
+        style={styles.screenBackground}
+        imageStyle={styles.screenBackgroundImage}
+        resizeMode="cover"
+      >
+        <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
+          <ScreenHeader 
+          title="Fiche de Signalement" 
+          onBack={() => router.replace('/(tabs)')} 
+          />
 
       <View style={styles.switchContainer}>
         <View style={{ flex: 1 }}>
@@ -209,7 +216,9 @@ export default function SignalementScreen() {
           handleSend();
         }}
       />
-    </ScrollView> // Fin du ScrollView existant
+    </ScrollView>
+      </ImageBackground>
+    </View> // Fin du ScrollView existant
   );
 }
 
@@ -339,5 +348,17 @@ const styles = StyleSheet.create({
     color: '#ef4444',
     fontWeight: '700',
     fontSize: 15,
+  },
+  mainContainer: {
+    flex: 1,
+    backgroundColor: '#f8fafc',
+  },
+  screenBackground: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
+  },
+  screenBackgroundImage: {
+    opacity: 0.1, 
   },
 });

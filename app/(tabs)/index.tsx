@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Image, ImageBackground } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ShieldAlert, MessageSquare, Info, Phone, Mail, Shield } from 'lucide-react-native';
 import { GradientButton } from '../../components/buttons/GradientButton';
@@ -44,9 +44,15 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.safeArea}>
-      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-        
-        {/* --- INSTALL BANNER (s'affiche seulement sur web --- */}
+      <ImageBackground
+        source={require('../../assets/images/chat-bg.jpg')} // Réutilisation de ton image de fond marin
+        style={styles.homeBackground}
+        imageStyle={styles.homeBackgroundImage}
+        resizeMode="cover" // Force l'image à s'étirer et remplir l'écran sans distorsion
+      >
+        <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
+          
+          {/* --- INSTALL BANNER (s'affiche seulement sur web --- */}
         <InstallBanner 
           title="Application Intervenants"
           subtitle="Installez l'app pour recevoir les alertes en direct."
@@ -94,6 +100,7 @@ export default function HomeScreen() {
         </View>
 
       </ScrollView>
+      </ImageBackground>
     </View>
   );
 }
@@ -190,5 +197,13 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 2,
     fontWeight: '500'
+  },
+  homeBackground: {
+    flex: 1,
+    width: '100%',
+    height: '100%', // Force l'étirement rigide sur toute la hauteur de la vue
+  },
+  homeBackgroundImage: {
+    opacity: 0.1,
   },
 });
