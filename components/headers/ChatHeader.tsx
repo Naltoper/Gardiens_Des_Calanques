@@ -70,8 +70,17 @@ export const ChatHeader = ({ reportId, role, onShowDetails }: ChatHeaderProps) =
 
 const styles = StyleSheet.create({
   headerGradient: {
-    paddingTop: 35, // Un peu d'air pour la StatusBar
-    paddingBottom: 16, // Détend la bannière vers le bas
+    paddingTop: 35,
+    paddingBottom: 16,
+    width: '100%', // S'assure que la bannière prend bien tout l'écran
+    
+    // --- EFFET DE SUPERPOSITION CORRIGÉ (D'UN BORD À L'AUTRE) ---
+    zIndex: 10,
+    elevation: 8, // Augmenté légèrement pour Android pour accompagner le changement iOS
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 4 }, // <-- REMIS À 0 : L'ombre descend verticalement sans dévier à gauche ou à droite
+    shadowOpacity: 0.4, // Baissé un poil car l'étalement global (Radius) va intensifier l'ombre
+    shadowRadius: 10, // <-- AUGMENTÉ : Propulse et diffuse l'ombre plus loin sur les côtés (gauche et droite inclus)
   },
   headerContent: {
     flexDirection: 'row',
