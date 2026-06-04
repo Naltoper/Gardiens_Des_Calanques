@@ -1,8 +1,9 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams } from 'expo-router';
-import { Send } from 'lucide-react-native';
+import { Send, ShieldCheck } from 'lucide-react-native';
 import { useEffect, useRef, useState } from 'react';
-import { FlatList, KeyboardAvoidingView, Platform, StatusBar, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import { FlatList, KeyboardAvoidingView, Platform, StatusBar, 
+  StyleSheet, TextInput, TouchableOpacity, View, Text } from 'react-native';
 import { ChatHeader } from '../../components/headers/ChatHeader';
 import { ChatBubble } from '../../components/cards/ChatBubble';
 import { useChatMessages } from '../../hooks/useChatMessages';
@@ -74,17 +75,32 @@ export default function ChatScreen() {
         keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 35}
       >
         <FlatList
-        ref={flatListRef}
-        data={messages}
-        keyExtractor={(item) => item.id.toString()}
-        contentContainerStyle={styles.listContent}
-        onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
+          ref={flatListRef}
+          data={messages}
+          keyExtractor={(item) => item.id.toString()}
+          contentContainerStyle={[styles.listContent, messages.length === 0 && { flex: 1, justifyContent: 'center' }]}
+          onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
           renderItem={({ item }) => (
             <ChatBubble 
               item={item} 
               isMyMessage={item.sender_role === role} 
             />
           )}
+          // AJOUT DE L'ÉTAT VIDE STYLISÉ
+          ListEmptyComponent={
+            <View style={styles.emptyChatContainer}>
+              <View style={styles.emptyIconWrapper}>
+                <ShieldCheck color="#76c893" size={36} strokeWidth={2} />
+              </View>
+              <Text style={styles.emptyChatText}>Aucun message pour le moment.</Text>
+              <Text style={styles.emptyChatSubText}>
+                {role === 'user' 
+                  ? "Pose tes questions ou apporte des précisions. Ton échange avec la cellule est strictement confidentiel et sécurisé."
+                  : "Initiez la discussion avec l'élève de manière bienveillante. Cet espace d'échange est entièrement sécurisé."
+                }
+              </Text>
+            </View>
+          }
         />
 
         <View style={styles.inputWrapper}>
@@ -133,4 +149,32 @@ const styles = StyleSheet.create({
     maxHeight: 100,
   },
   sendBtn: { width: 42, height: 42, borderRadius: 21, justifyContent: 'center', alignItems: 'center' },
+  emptyChatContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 30,
+    paddingVertical: 40,
+  },
+  emptyIconWrapper: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#eff6ff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  emptyChatText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1e293b',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  emptyChatSubText: {
+    fontSize: 13,
+    color: '#64748b',
+    textAlign: 'center',
+    lineHeight: 20,
+  },
 });
