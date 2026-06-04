@@ -149,7 +149,21 @@ const styles = StyleSheet.create({
   mainContainer: { flex: 1, backgroundColor: '#f8fafc' },
   content: { flex: 1 },
   listContent: { padding: 20 },
-  inputWrapper: { paddingHorizontal: 15, paddingVertical: 15, backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: '#f1f5f9' },
+  inputWrapper: { 
+    paddingHorizontal: 15, 
+    paddingVertical: 15, 
+    backgroundColor: '#ffffff', 
+    borderTopWidth: 1, 
+    borderTopColor: '#e2e8f0', // Une couleur de bordure légèrement plus douce
+
+    // --- EFFET DE SUPERPOSITION / OMBRE VERS LE HAUT ---
+    zIndex: 10, // S'assure que la barre de saisie reste AU-DESSUS des messages qui défilent
+    elevation: 8, // Force l'ombre sur Android (se diffuse tout autour, y compris vers le haut)
+    shadowColor: '#000000', // Couleur de l'ombre sur iOS
+    shadowOffset: { width: 0, height: -2 }, // <-- HEIGHT NÉGATIF : Propulse l'ombre vers le HAUT de l'écran
+    shadowOpacity: 0.08, // Une opacité très douce pour ne pas alourdir le design
+    shadowRadius: 6, // Un floutage large pour que l'effet soit très diffus et élégant
+  },  
   inputContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#f1f5f9', borderRadius: 25, padding: 5 },
   input: { 
     flex: 1, 
