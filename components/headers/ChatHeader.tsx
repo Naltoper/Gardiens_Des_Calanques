@@ -1,28 +1,33 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { ChevronLeft, Lock, ShieldCheck } from 'lucide-react-native';
+import { ChevronLeft, Lock, Info, ShieldCheck, FileText } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 
 interface ChatHeaderProps {
   reportId: string | undefined;
-  role: string | string[] | undefined;
+  role: 'user' | 'admin' | string | string[] | undefined;
+  onShowDetails?: () => void; // <-- Callback pour déclencher l'ouverture de la modale
 }
 
-export const ChatHeader = ({ reportId, role }: ChatHeaderProps) => {
+export const ChatHeader = ({ reportId, role, onShowDetails }: ChatHeaderProps) => {
   const router = useRouter();
   const isUserAuthor = role === 'user';
 
-  const handleBack = () => {router.replace('/(tabs)/mes-signalements')};
+  const handleBack = () => {
+    // ! Si c'est l'intervenant, on le redirige vers dashboard
+    router.replace('/(tabs)/mes-signalements');
+  };
 
   return (
     <LinearGradient
-      colors={["#023e8aff", "#0077b6ff"]}
+      colors={["#0071aa", "#42bf6e"]} // <-- Ton nouveau dégradé harmonisé avec tes boutons
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 0 }}
       style={styles.headerGradient}
     >
-      <View style={styles.headerContent}>
+      {/* Ligne supérieure : Retour + Titre & ID */}
+      <View style={styles.headerTopContent}>
         <TouchableOpacity onPress={handleBack} style={styles.backButton}>
           <ChevronLeft color="white" size={30} strokeWidth={2.5} />
         </TouchableOpacity>
@@ -38,21 +43,42 @@ export const ChatHeader = ({ reportId, role }: ChatHeaderProps) => {
             </Text>
           </View>
         </View>
-
-        <View style={styles.shieldIcon}>
-          <ShieldCheck color="#76c893" size={24} />
-        </View>
+        
+        {/* Vue miroir invisible pour conserver le centrage parfait du titre */}
+        <View style={styles.topRightPlaceholder} />
       </View>
+
+      {/* Ligne inférieure : Bouton Détails centré en dessous */}
+      {onShowDetails && (
+        <View style={styles.headerBottomContent}>
+          <TouchableOpacity
+            onPress={(event) => {
+              event.stopPropagation();
+              onShowDetails();
+            }}
+            style={styles.documentIconButton}
+            activeOpacity={0.8}
+          >
+            <FileText size={15} color="#023e8a" style={{ marginRight: 6 }} />
+            <Text style={styles.documentButtonText}>Détails du signalement</Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </LinearGradient>
   );
 };
 
 const styles = StyleSheet.create({
   headerGradient: {
-    paddingTop: 30, // Ajuste selon la StatusBar
-    paddingBottom: 15,
+    paddingTop: 35, // Un peu d'air pour la StatusBar
+    paddingBottom: 16, // Détend la bannière vers le bas
   },
   headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+  },
+  headerTopContent: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 10,
@@ -62,12 +88,20 @@ const styles = StyleSheet.create({
   },
   headerTitleContainer: {
     flex: 1,
-    marginLeft: 10,
+    alignItems: 'center', // Centre le texte et le badge ID horizontalement
+    marginRight: 10,
   },
   headerTitle: {
     color: 'white',
     fontSize: 18,
     fontWeight: '800',
+  },
+  topRightPlaceholder: {
+    width: 40, // Équilibre exact avec la largeur du backButton pour un centrage parfait
+  },
+  headerBottomContent: {
+    alignItems: 'center',
+    marginTop: 14, // Espace sous le titre pour éviter tout empiètement
   },
   idBadge: {
     flexDirection: 'row',
@@ -80,7 +114,37 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     letterSpacing: 0.5,
   },
-  shieldIcon: {
-    paddingHorizontal: 10,
+  infoButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
+  detailsButton: {
+    padding: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  documentIconButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+    paddingVertical: 8,
+    paddingHorizontal: 20, // Plus large pour une meilleure prise tactile
+    borderRadius: 20,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+  },
+  documentButtonText: {
+    color: '#023e8a',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  placeholder: {
+    width: 75, // Équilibre parfait pour conserver le centrage du titre
+  },
+  
 });

@@ -6,6 +6,9 @@ import { FlatList, KeyboardAvoidingView, Platform, StatusBar, StyleSheet, TextIn
 import { ChatHeader } from '../../components/headers/ChatHeader';
 import { ChatBubble } from '../../components/cards/ChatBubble';
 import { useChatMessages } from '../../hooks/useChatMessages';
+import { ReportDetailModal } from '../../components/modals/ReportDetailModal';
+import { supabase } from '../../lib/supabase';
+import { Report } from '../../types/report';
 
 
 
@@ -17,12 +20,35 @@ export default function ChatScreen() {
   const [newMessage, setNewMessage] = useState('');
   const flatListRef = useRef<FlatList>(null);
 
+  // --- NOUVEAUX ÉTATS POUR LA MODALE ---
+  const [reportData, setReportData] = useState<Report | null>(null);
+  const [modalVisible, setModalVisible] = useState(false);
+
   const { messages, sendMessage, loading } = useChatMessages(reportId);
 
   const handleSend = async () => {
     const success = await sendMessage(newMessage, role);
     if (success) setNewMessage('');
   };
+
+  // Charger les détails du signalement pour la modale
+  useEffect(() => {
+    if (!reportId) return;
+
+    const fetchReportDetails = async () => {
+      const { data, error } = await supabase
+        .from('reports')
+        .select('*')
+        .eq('id', reportId)
+        .single();
+
+      if (!error && data) {
+        setReportData(data as Report);
+      }
+    };
+
+    fetchReportDetails();
+  }, [reportId]);
 
   // Auto-scroll à chaque nouveau message
   useEffect(() => {
@@ -35,16 +61,17 @@ export default function ChatScreen() {
     <View style={styles.mainContainer}>
       <StatusBar barStyle="light-content" />
       
-      {/* Compenent Header for chat screen */}
-      <ChatHeader reportId={reportId} role={role} />
+      {/* 1. PASSAGE DE LAFONCTION AU HEADER */}
+      <ChatHeader 
+        reportId={reportId} 
+        role={role} 
+        onShowDetails={() => setModalVisible(true)} 
+      />
 
       <KeyboardAvoidingView 
         style={styles.content} 
-        // Sur Android, 'height' est souvent plus stable qu' 'undefined' ou 'padding'
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        // On ajoute un offset uniquement si nécessaire (si le header cache l'input)
-        // ICI : On ajuste la hauteur manuellement
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 35} // <-- Augmente le 25 si c'est encore trop bas
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 35}
       >
         <FlatList
         ref={flatListRef}
@@ -82,6 +109,12 @@ export default function ChatScreen() {
           </View>
         </View>
       </KeyboardAvoidingView>
+      {/* 2. AJOUT DE LA MODALE EXISTANTE */}
+      <ReportDetailModal 
+        visible={modalVisible} 
+        onClose={() => setModalVisible(false)} 
+        report={reportData} 
+      />
     </View>
   );
 }
