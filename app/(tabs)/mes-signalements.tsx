@@ -233,7 +233,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f8fafc',
   },
   screenBackgroundImage: {
-    opacity: 0.3,
+    opacity: 0.5,
   },
   emptyWrapper: {
     alignItems: 'center',

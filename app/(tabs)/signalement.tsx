@@ -73,7 +73,7 @@ export default function SignalementScreen() {
   return (
     <View style={styles.mainContainer}>
       <ImageBackground
-        source={require('../../assets/images/lyceeBg.jpg')} // Ton image de fond marine commune
+        source={require('../../assets/images/lyceeBgBlur.png')} // Ton image de fond marine commune
         style={styles.screenBackground}
         imageStyle={styles.screenBackgroundImage}
         resizeMode="cover"
@@ -351,7 +351,7 @@ const styles = StyleSheet.create({
   },
   mainContainer: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#cbe7e6c3',
   },
   screenBackground: {
     flex: 1,
@@ -359,6 +359,6 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   screenBackgroundImage: {
-    opacity: 0.1, 
+    opacity: 0.6, 
   },
 });

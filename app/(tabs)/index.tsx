@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { ShieldAlert, MessageSquare, Info, Phone, Mail, Shield } from 'lucide-react-native';
 import { GradientButton } from '../../components/buttons/GradientButton';
 import { InstallBanner } from '../../components/banners/InstallBanner';
+import EngagementItem from '../../components/cards/EngagementItem';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -54,8 +55,8 @@ export default function HomeScreen() {
           
           {/* --- INSTALL BANNER (s'affiche seulement sur web --- */}
         <InstallBanner 
-          title="Application Intervenants"
-          subtitle="Installez l'app pour recevoir les alertes en direct."
+          title="Application élève"
+          subtitle="Installez l'app pour recevoir les notifications en direct."
           url="https://github.com/Naltoper/GardiensApp_v0/releases/download/v1.0.0/GDC.apk"
         />
 
@@ -70,9 +71,14 @@ export default function HomeScreen() {
           </View>
           <Text style={styles.headerTitle}>Les Gardiens des Calanques</Text>
           <View style={styles.divider} />
-          <Text style={styles.subtitle}>
-            {"Un espace sécurisé et bienveillant pour briser le silence et lutter contre le harcélement scolaire.\n\n Votre anonymat est notre priorité."}
-          </Text>
+          
+          {/* INTÉGRATION DE L'ENGAGEMENT ITEM POUR LA LISIBILITÉ */}
+          <EngagementItem 
+            icon={<Shield color="white" size={28} strokeWidth={2.5} />}
+            title="Votre anonymat est notre priorité"
+            desc="Un espace sécurisé et bienveillant pour briser le silence et lutter contre le harcèlement scolaire."
+            colors={["#023e8a", "#0077b6"]} // Dégradé bleu marine protecteur et lisible
+          />
         </View>
         
         
@@ -158,7 +164,8 @@ const styles = StyleSheet.create({
   },
   subtitle: { 
     fontSize: 20, 
-    color: '#52718e', 
+    fontWeight:"500",
+    color: '#141f2b', 
     textAlign: 'center', 
     lineHeight: 20,
     paddingHorizontal: 15
@@ -204,6 +211,6 @@ const styles = StyleSheet.create({
     height: '100%', // Force l'étirement rigide sur toute la hauteur de la vue
   },
   homeBackgroundImage: {
-    opacity: 0.1,
+    opacity: 0.5,
   },
 });
