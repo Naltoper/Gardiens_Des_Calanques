@@ -2,7 +2,6 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView, Image, ImageBackground } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Info, Mail, MessageSquare, Phone, Shield, ShieldAlert, Users } from 'lucide-react-native';
-import React from 'react';
 import { InstallBanner } from '../../components/banners/InstallBanner';
 import { GradientButton } from '../../components/buttons/GradientButton';
 import EngagementItem from '../../components/cards/EngagementItem';
@@ -14,7 +13,7 @@ export default function HomeScreen() {
     { 
         title: "Fiche de Signalement", 
         route: "/(tabs)/signalement", 
-        colors: ["#48a4f4ff", "#10ac56ff","#48a4f4ff"], 
+        colors: ["#56b0ff", "#52c686","#56b0ff"], 
         icon: <ShieldAlert color="white" size={32} />, 
         fullWidth: true,
     },
@@ -27,26 +26,20 @@ export default function HomeScreen() {
     { 
         title: "Communauté", 
         route: "/(tabs)/communaute", 
-        colors: ["#48a4f4", "#10ac56"], 
+        colors: ["#76c893", "#00b4d8"], 
         icon: <Users color="white" size={24} /> 
     },
     { 
         title: "La Cellule", 
         route: "/(tabs)/cellule", 
-        colors: ["#76c893","#00b4d8"], 
+        colors: ["#00b4d8","#76c893"], 
         icon: <Info color="white" size={24} /> 
     },
     { 
         title: "Numéros Utiles", 
         route: "/(tabs)/numeros", 
-        colors: ["#48cae4", "#99d98c"], 
+        colors: ["#76c893", "#00b4d8"], 
         icon: <Phone color="white" size={24} /> 
-    },
-    { 
-        title: "Nous Contacter", 
-        route: "/(tabs)/contact", 
-        colors: ["#99d98c","#48cae4"], 
-        icon: <Mail color="white" size={24} /> 
     },
   ];
 
