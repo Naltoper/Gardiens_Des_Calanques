@@ -54,11 +54,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 20,
-    elevation: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
+    
+    // --- NOUVEL EFFET D'OMBRE POUR LES BULLES DE CHAT ---
+    elevation: 2, // Légèrement augmenté pour se détacher proprement du fond sur Android
+    shadowColor: '#000000', // Couleur de l'ombre sur iOS
+    shadowOffset: { width: 2, height: 3 }, // Déplace l'ombre légèrement vers le bas de la bulle
+    shadowOpacity: 0.16, // Une opacité douce pour que l'ombre reste naturelle, surtout sous la bulle blanche
+    shadowRadius: 3, // Floutage de l'ombre pour éviter un effet de ligne noire rigide
   },
   myBubble: {
     backgroundColor: '#023e8a',

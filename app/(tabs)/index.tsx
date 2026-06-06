@@ -1,9 +1,11 @@
+import React from 'react';
+import { View, Text, StyleSheet, ScrollView, Image, ImageBackground } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Info, Mail, MessageSquare, Phone, Shield, ShieldAlert, Users } from 'lucide-react-native';
 import React from 'react';
-import { Image, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { InstallBanner } from '../../components/banners/InstallBanner';
 import { GradientButton } from '../../components/buttons/GradientButton';
+import EngagementItem from '../../components/cards/EngagementItem';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -50,12 +52,18 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.safeArea}>
-      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-        
-        {/* --- INSTALL BANNER (s'affiche seulement sur web --- */}
+      <ImageBackground
+        source={require('../../assets/images/lyceeBg.jpg')} // Réutilisation de ton image de fond marin
+        style={styles.homeBackground}
+        imageStyle={styles.homeBackgroundImage}
+        resizeMode="cover" // Force l'image à s'étirer et remplir l'écran sans distorsion
+      >
+        <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
+          
+          {/* --- INSTALL BANNER (s'affiche seulement sur web --- */}
         <InstallBanner 
-          title="Application Intervenants"
-          subtitle="Installez l'app pour recevoir les alertes en direct."
+          title="Application élève"
+          subtitle="Installez l'app pour recevoir les notifications en direct."
           url="https://github.com/Naltoper/GardiensApp_v0/releases/download/v1.0.0/GDC.apk"
         />
 
@@ -63,16 +71,21 @@ export default function HomeScreen() {
         <View style={styles.header}>
           <View style={styles.logoContainer}>
             <Image 
-              source={require('../../assets/images/logo.png')} 
+              source={require('../../assets/images/logo.jpg')} 
               style={styles.logo}
               resizeMode="cover"
             />
           </View>
           <Text style={styles.headerTitle}>Les Gardiens des Calanques</Text>
           <View style={styles.divider} />
-          <Text style={styles.subtitle}>
-            {"Un espace sécurisé et bienveillant pour briser le silence et lutter contre le harcélement scolaire.\n\n Votre anonymat est notre priorité."}
-          </Text>
+          
+          {/* INTÉGRATION DE L'ENGAGEMENT ITEM POUR LA LISIBILITÉ */}
+          <EngagementItem 
+            icon={<Shield color="white" size={28} strokeWidth={2.5} />}
+            title="Votre anonymat est notre priorité"
+            desc="Un espace sécurisé et bienveillant pour briser le silence et lutter contre le harcèlement scolaire."
+            colors={["#023e8a", "#0077b6"]} // Dégradé bleu marine protecteur et lisible
+          />
         </View>
         
         
@@ -100,6 +113,7 @@ export default function HomeScreen() {
         </View>
 
       </ScrollView>
+      </ImageBackground>
     </View>
   );
 }
@@ -157,7 +171,8 @@ const styles = StyleSheet.create({
   },
   subtitle: { 
     fontSize: 20, 
-    color: '#52718e', 
+    fontWeight:"500",
+    color: '#141f2b', 
     textAlign: 'center', 
     lineHeight: 20,
     paddingHorizontal: 15
@@ -196,5 +211,13 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 2,
     fontWeight: '500'
+  },
+  homeBackground: {
+    flex: 1,
+    width: '100%',
+    height: '100%', // Force l'étirement rigide sur toute la hauteur de la vue
+  },
+  homeBackgroundImage: {
+    opacity: 0.5,
   },
 });
