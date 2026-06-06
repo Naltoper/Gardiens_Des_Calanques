@@ -45,7 +45,7 @@ export default function HomeScreen() {
   return (
     <View style={styles.safeArea}>
       <ImageBackground
-        source={require('../../assets/images/chat-bg.jpg')} // Réutilisation de ton image de fond marin
+        source={require('../../assets/images/lyceeBg.jpg')} // Réutilisation de ton image de fond marin
         style={styles.homeBackground}
         imageStyle={styles.homeBackgroundImage}
         resizeMode="cover" // Force l'image à s'étirer et remplir l'écran sans distorsion
@@ -63,7 +63,7 @@ export default function HomeScreen() {
         <View style={styles.header}>
           <View style={styles.logoContainer}>
             <Image 
-              source={require('../../assets/images/logo.png')} 
+              source={require('../../assets/images/logo.jpg')} 
               style={styles.logo}
               resizeMode="cover"
             />

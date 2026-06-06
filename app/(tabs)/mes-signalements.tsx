@@ -133,7 +133,7 @@ export default function MesSignalementsScreen() {
       
       {/* IMAGE BACKGROUND INTÉGRÉE POUR TOUT L'ÉCRAN */}
       <ImageBackground
-        source={require('../../assets/images/chat-bg.jpg')}
+        source={require('../../assets/images/lyceeBg.jpg')}
         style={styles.screenBackground}
         imageStyle={styles.screenBackgroundImage}
         resizeMode="cover"

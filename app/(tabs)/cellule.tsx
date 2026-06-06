@@ -45,7 +45,7 @@ export default function CelluleScreen() {
   return (
     <View style={styles.mainContainer}>
       <ImageBackground
-        source={require('../../assets/images/backgroundCellule.jpg')}
+        source={require('../../assets/images/lyceeBg.jpg')}
         style={styles.backgroundImage}
         resizeMode="cover"
       >
@@ -77,7 +77,7 @@ export default function CelluleScreen() {
 
                 <View style={styles.portraitContainer}>
                   <Image
-                    source={require('../../assets/images/portraitCellule.png')}
+                    source={require('../../assets/images/portraitCellule.jpg')}
                     style={styles.portraitImage}
                     resizeMode="contain"
                   />

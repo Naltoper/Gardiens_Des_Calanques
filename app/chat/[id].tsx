@@ -76,7 +76,7 @@ export default function ChatScreen() {
       >
         {/* IMAGE BACKGROUND AJOUTÉE ICI */}
         <ImageBackground
-          source={require('../../assets/images/chat-bg.jpg')}
+          source={require('../../assets/images/lyceeBg.jpg')}
           style={styles.chatBackground}
           imageStyle={styles.chatBackgroundImage}
           resizeMode="cover" // Remplit l'écran sans déformer le ratio de l'image

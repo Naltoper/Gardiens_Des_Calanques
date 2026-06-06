@@ -73,7 +73,7 @@ export default function SignalementScreen() {
   return (
     <View style={styles.mainContainer}>
       <ImageBackground
-        source={require('../../assets/images/chat-bg.jpg')} // Ton image de fond marine commune
+        source={require('../../assets/images/lyceeBg.jpg')} // Ton image de fond marine commune
         style={styles.screenBackground}
         imageStyle={styles.screenBackgroundImage}
         resizeMode="cover"
