@@ -1,6 +1,7 @@
-import { View, Text, StyleSheet, Linking, ScrollView } from 'react-native';
-import { ShieldCheck } from 'lucide-react-native';
+import { View, Text, StyleSheet, Linking, ScrollView, ImageBackground } from 'react-native';
+import { ShieldCheck, Info } from 'lucide-react-native'; // <-- Ajout de Info ici
 import { useRouter } from 'expo-router';
+import EngagementItem from '../../components/cards/EngagementItem'; // <-- Ajout de l'import d'EngagementItem
 import { EMERGENCY_NUMBERS } from '../../constants/emergencyNumbers';
 import { CustomHeader } from '../../components/CustomHeader';
 import { EmergencyCard } from '../../components/EmergencyCard';
@@ -17,10 +18,25 @@ export default function NumerosScreen() {
         onBack={() => router.replace('/(tabs)')} 
       />
 
+      <ImageBackground
+        source={require('../../assets/images/lyceeBgBlur.png')} // Réutilisation de ton image de fond commune
+        style={styles.screenBackground}
+        imageStyle={styles.screenBackgroundImage}
+        resizeMode="cover"
+      >
+
       <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <Text style={styles.subtitle}>
-          Besoin d&apos;aide immédiatement ? Ces services sont gratuits, anonymes et disponibles partout en France.
-        </Text>
+        
+        {/* ENCAPSULATION DU TEXTE DANS L'ENGAGEMENT ITEM FORMAT CLAIR */}
+        <EngagementItem 
+          icon={<Info color="#023e8a" size={26} strokeWidth={2.5} />}
+          title={"Besoin d'aide immédiatement ?"}
+          desc={"Ces services sont gratuits, anonymes et disponibles partout en France."}
+          colors={["#023e8a", "#0077b6"]} // Fond clair pour détacher le texte de l'image floutée
+        />
+
+        {/* Espace de séparation entre la carte d'info et les numéros */}
+        <View style={{ marginBottom: 25 }} />
 
         {EMERGENCY_NUMBERS.map((item) => (
           <EmergencyCard 
@@ -35,6 +51,7 @@ export default function NumerosScreen() {
           <Text style={styles.footerText}>Appels gratuits et confidentiels</Text>
         </View>
       </ScrollView>
+      </ImageBackground>
     </View>
   );
 }
@@ -71,5 +88,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Colors.light.icon, // Cohérence avec le subtitle
     fontWeight: '600'
-  }
+  },
+  screenBackground: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
+  },
+  screenBackgroundImage: {
+    opacity: 0.7, // Opacité légère à 5% pour garantir le contraste de tes cartes de numéros
+  },
 });
