@@ -1,7 +1,7 @@
 import { Stack } from 'expo-router';
-import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
-import { Platform, StyleSheet,ViewStyle } from 'react-native';
+import { Platform, StyleSheet, ViewStyle } from 'react-native';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 export default function RootLayout() {
   const bgColor = '#cbe7e6c3'; // Définis ta couleur ici une seule fois
@@ -36,6 +36,8 @@ export default function RootLayout() {
           <Stack.Screen name="(tabs)/index" options={{ headerShown: false }} /> 
           <Stack.Screen name="(tabs)/signalement" options={{ headerShown: false }} />
           <Stack.Screen name="(tabs)/mes-signalements" options={{ headerShown: false }} />
+          <Stack.Screen name="(tabs)/communaute" options={{ headerShown: false }} />
+          <Stack.Screen name="community/[id]" options={{ headerShown: false }} />
           <Stack.Screen name="(tabs)/cellule" options={{ headerShown: false }} />
           <Stack.Screen name="(tabs)/numeros" options={{ headerShown: false }} />
           <Stack.Screen name="(tabs)/contact" options={{ headerShown: false }} />

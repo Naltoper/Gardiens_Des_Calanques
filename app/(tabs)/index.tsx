@@ -1,9 +1,10 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, Image, ImageBackground } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ShieldAlert, MessageSquare, Info, Phone, Mail, Shield } from 'lucide-react-native';
-import { GradientButton } from '../../components/buttons/GradientButton';
+import { Info, Mail, MessageSquare, Phone, Shield, ShieldAlert, Users } from 'lucide-react-native';
+import React from 'react';
 import { InstallBanner } from '../../components/banners/InstallBanner';
+import { GradientButton } from '../../components/buttons/GradientButton';
 import EngagementItem from '../../components/cards/EngagementItem';
 
 export default function HomeScreen() {
@@ -22,6 +23,12 @@ export default function HomeScreen() {
         route: "/(tabs)/mes-signalements", 
         colors: ["#00b4d8", "#76c893"], 
         icon: <MessageSquare color="white" size={24} /> 
+    },
+    { 
+        title: "Communauté", 
+        route: "/(tabs)/communaute", 
+        colors: ["#48a4f4", "#10ac56"], 
+        icon: <Users color="white" size={24} /> 
     },
     { 
         title: "La Cellule", 
