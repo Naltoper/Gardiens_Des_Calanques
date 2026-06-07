@@ -12,6 +12,7 @@ import {
     TextInput,
     TouchableOpacity,
     View,
+    ImageBackground
 } from 'react-native';
 import { GradientButton } from '../../components/buttons/GradientButton';
 import { useUserToken } from '../../hooks/useUserToken';
@@ -185,8 +186,14 @@ export default function CommunityPostDetailsScreen() {
 
   return (
     <View style={styles.safeArea}>
-      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+      <ImageBackground
+        source={require('../../assets/images/lyceeBgBlur.png')} // Reprise de l'image de fond marine
+        style={styles.screenBackground}
+        imageStyle={styles.screenBackgroundImage}
+        resizeMode="cover"
+      >
+        <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
+          <TouchableOpacity style={styles.backButton} onPress={() => router.replace('/(tabs)/communaute')}>
           <ChevronLeft color="#023e8a" size={24} />
           <Text style={styles.backText}>Retour</Text>
         </TouchableOpacity>
@@ -307,6 +314,7 @@ export default function CommunityPostDetailsScreen() {
           })
         )}
       </ScrollView>
+      </ImageBackground>
     </View>
   );
 }
@@ -539,5 +547,13 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     backgroundColor: '#fee2e2',
     alignSelf: 'flex-start',
+  },
+  screenBackground: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
+  },
+  screenBackgroundImage: {
+    opacity: 0.5, // Opacité ultra-légère (5%) pour préserver le contraste de tes cartes de discussion blanches
   },
 });

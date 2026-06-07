@@ -12,6 +12,7 @@ import {
     TextInput,
     TouchableOpacity,
     View,
+    ImageBackground
 } from 'react-native';
 import { GradientButton } from '../../components/buttons/GradientButton';
 import { ScreenHeader } from '../../components/headers/ScreenHeader';
@@ -237,8 +238,14 @@ export default function CommunauteScreen() {
 
   return (
     <View style={styles.safeArea}>
+      <ImageBackground
+        source={require('../../assets/images/lyceeBgBlur.png')} // Reprise de l'image de fond marine
+        style={styles.screenBackground}
+        imageStyle={styles.screenBackgroundImage}
+        resizeMode="cover"
+      >
       <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-        <ScreenHeader title="Communauté" onBack={() => router.back()} />
+        <ScreenHeader title="Communauté" onBack={() => router.replace('/(tabs)')} />
 
         <LinearGradient
           colors={['#48a4f4', '#10ac56']}
@@ -378,6 +385,7 @@ export default function CommunauteScreen() {
           })
         )}
       </ScrollView>
+      </ImageBackground>
     </View>
   );
 }
@@ -582,5 +590,13 @@ const styles = StyleSheet.create({
     color: '#023e8a',
     fontSize: 14,
     fontWeight: '700',
+  },
+  screenBackground: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
+  },
+  screenBackgroundImage: {
+    opacity: 0.5, // Opacité ultra-légère (5%) pour préserver le contraste de tes cartes de discussion blanches
   },
 });
