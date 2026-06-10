@@ -1,18 +1,20 @@
+import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { ChevronDown, ChevronUp, MessageCircle, Send, Trash2, Users } from 'lucide-react-native';
-import React, { useEffect, useState } from 'react';
+import { ChevronDown, ChevronUp, ImagePlus, MessageCircle, Send, Trash2, Users, X } from 'lucide-react-native';
+import { useEffect, useState } from 'react';
 import {
-    Alert,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Switch,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
-    ImageBackground
+  Alert,
+  Image,
+  ImageBackground,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import { GradientButton } from '../../components/buttons/GradientButton';
 import { ScreenHeader } from '../../components/headers/ScreenHeader';
@@ -23,6 +25,7 @@ type CommunityPost = {
   id: string;
   created_at: string;
   content: string;
+  image_url: string | null;
   is_anonyme: boolean;
   author_name: string | null;
   user_token: string;
@@ -33,6 +36,17 @@ type VoteRow = {
   vote_value: number;
 };
 
+type CommentRow = {
+  post_id: string;
+};
+
+type SelectedImage = {
+  uri: string;
+  fileName?: string | null;
+  mimeType?: string | null;
+  fileSize?: number | null;
+};
+
 export default function CommunauteScreen() {
   const router = useRouter();
   const userToken = useUserToken();
@@ -40,12 +54,14 @@ export default function CommunauteScreen() {
   const [posts, setPosts] = useState<CommunityPost[]>([]);
   const [votes, setVotes] = useState<Record<string, number>>({});
   const [myVotes, setMyVotes] = useState<Record<string, number>>({});
+  const [commentCounts, setCommentCounts] = useState<Record<string, number>>({});
 
   const [content, setContent] = useState('');
+  const [selectedImage, setSelectedImage] = useState<SelectedImage | null>(null);
   const [isAnonyme, setIsAnonyme] = useState(true);
   const [authorName, setAuthorName] = useState('');
   const [loading, setLoading] = useState(false);
-
+  
   useEffect(() => {
     fetchPosts();
   }, [userToken]);
@@ -79,6 +95,7 @@ export default function CommunauteScreen() {
     if (postIds.length === 0) {
       setVotes({});
       setMyVotes({});
+      setCommentCounts({});
       return;
     }
 
@@ -99,6 +116,23 @@ export default function CommunauteScreen() {
     });
 
     setVotes(scores);
+
+    const { data: commentsData, error: commentsError } = await supabase
+      .from('community_comments')
+      .select('post_id')
+      .in('post_id', postIds);
+
+    if (commentsError) {
+      console.error('Erreur chargement nombre commentaires:', commentsError.message);
+    } else {
+      const counts: Record<string, number> = {};
+
+      (commentsData as CommentRow[] | null)?.forEach((comment) => {
+        counts[comment.post_id] = (counts[comment.post_id] || 0) + 1;
+      });
+
+      setCommentCounts(counts);
+    }
 
     if (userToken) {
       const { data: myVotesData, error: myVotesError } = await supabase
@@ -122,6 +156,86 @@ export default function CommunauteScreen() {
     }
   };
 
+  const MAX_IMAGE_SIZE = 2 * 1024 * 1024; // 2 Mo
+
+  const pickImage = async () => {
+    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (!permissionResult.granted) {
+      Alert.alert(
+        'Permission refusée',
+        'Tu dois autoriser l’accès aux photos pour ajouter une image.'
+      );
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      quality: 0.8,
+    });
+
+    if (result.canceled) return;
+
+    const asset = result.assets[0];
+
+    if (asset.fileSize && asset.fileSize > MAX_IMAGE_SIZE) {
+      Alert.alert(
+        'Image trop lourde',
+        'La photo ne doit pas dépasser 2 Mo.'
+      );
+      return;
+    }
+
+    setSelectedImage({
+      uri: asset.uri,
+      fileName: asset.fileName,
+      mimeType: asset.mimeType,
+      fileSize: asset.fileSize,
+    });
+  };
+
+  const uploadPostImage = async (image: SelectedImage) => {
+    const response = await fetch(image.uri);
+    const blob = await response.blob();
+
+    if (blob.size > MAX_IMAGE_SIZE) {
+      Alert.alert(
+        'Image trop lourde',
+        'La photo ne doit pas dépasser 2 Mo.'
+      );
+      return null;
+    }
+
+    const extension =
+      image.fileName?.split('.').pop() ||
+      image.mimeType?.split('/').pop() ||
+      'jpg';
+
+    const filePath = `${Date.now()}-${Math.random()
+      .toString(36)
+      .substring(2)}.${extension}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('cummunity-images')
+      .upload(filePath, blob, {
+        contentType: image.mimeType || 'image/jpeg',
+        upsert: false,
+      });
+
+    if (uploadError) {
+      console.error('Erreur upload image:', uploadError.message);
+      Alert.alert('Erreur', "Impossible d'envoyer la photo.");
+      return null;
+    }
+
+    const { data } = supabase.storage
+      .from('cummunity-images')
+      .getPublicUrl(filePath);
+
+    return data.publicUrl;
+  };
+
   const handleCreatePost = async () => {
     if (!userToken) {
       Alert.alert('Erreur', 'Token utilisateur introuvable. Réessayez dans quelques secondes.');
@@ -137,11 +251,45 @@ export default function CommunauteScreen() {
       Alert.alert('Nom obligatoire', 'Entre un nom public ou active le mode anonyme.');
       return;
     }
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+
+    const { count: todayPostsCount, error: countError } = await supabase
+      .from('community_posts')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_token', userToken)
+      .gte('created_at', startOfToday.toISOString());
+
+    if (countError) {
+      console.error('Erreur vérification limite posts:', countError.message);
+      Alert.alert('Erreur', 'Impossible de vérifier la limite de publication.');
+      return;
+    }
+
+    if ((todayPostsCount || 0) >= 1) {
+      Alert.alert(
+        'Limite atteinte',
+        'Tu peux publier seulement 1 post par jour dans la communauté.'
+      );
+      return;
+    }
 
     setLoading(true);
 
+    let imageUrl: string | null = null;
+
+    if (selectedImage) {
+      imageUrl = await uploadPostImage(selectedImage);
+
+      if (!imageUrl) {
+        setLoading(false);
+        return;
+      }
+    }
+
     const { error } = await supabase.from('community_posts').insert({
       content: content.trim(),
+      image_url: imageUrl,
       is_anonyme: isAnonyme,
       author_name: isAnonyme ? null : authorName.trim(),
       user_token: userToken,
@@ -156,6 +304,7 @@ export default function CommunauteScreen() {
     }
 
     setContent('');
+    setSelectedImage(null);
     setAuthorName('');
     setIsAnonyme(true);
     fetchPosts();
@@ -273,6 +422,25 @@ export default function CommunauteScreen() {
             value={content}
             onChangeText={setContent}
           />
+          <TouchableOpacity style={styles.imagePickerButton} onPress={pickImage}>
+            <ImagePlus color="#023e8a" size={22} />
+            <Text style={styles.imagePickerText}>
+              {selectedImage ? 'Changer la photo' : 'Ajouter une photo'}
+            </Text>
+          </TouchableOpacity>
+
+          {selectedImage && (
+            <View style={styles.imagePreviewContainer}>
+              <Image source={{ uri: selectedImage.uri }} style={styles.imagePreview} />
+
+              <TouchableOpacity
+                style={styles.removeImageButton}
+                onPress={() => setSelectedImage(null)}
+              >
+                <X color="#ffffff" size={18} />
+              </TouchableOpacity>
+            </View>
+          )}
 
           <View style={styles.switchRow}>
             <View>
@@ -318,9 +486,10 @@ export default function CommunauteScreen() {
         ) : (
           posts.map((post) => {
             const score = votes[post.id] || 0;
+            const commentCount = commentCounts[post.id] || 0;
             const isMine = userToken === post.user_token;
             const displayName = post.is_anonyme ? 'Anonyme' : post.author_name || 'Utilisateur';
-
+            
             return (
               <View key={post.id} style={styles.postCard}>
                 <View style={styles.postHeader}>
@@ -340,6 +509,16 @@ export default function CommunauteScreen() {
                 </View>
 
                 <Text style={styles.postContent}>{post.content}</Text>
+                {post.image_url && (
+                  <Image
+                    source={{ uri: post.image_url }}
+                    style={styles.postImage}
+                    resizeMode="cover"
+                    onError={(error) => {
+                      console.error('Erreur affichage image:', error.nativeEvent);
+                }}
+              />
+            )}
 
                 <View style={styles.actionsRow}>
                   <View style={styles.voteBox}>
@@ -377,7 +556,7 @@ export default function CommunauteScreen() {
                     onPress={() => router.push(`/community/${post.id}` as any)}
                   >
                     <MessageCircle color="#023e8a" size={20} />
-                    <Text style={styles.commentText}>Commentaires</Text>
+                    <Text style={styles.commentText}>{commentCount} {commentCount > 1 ? 'commentaires' : 'commentaire'}</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -598,5 +777,52 @@ const styles = StyleSheet.create({
   },
   screenBackgroundImage: {
     opacity: 0.5, // Opacité ultra-légère (5%) pour préserver le contraste de tes cartes de discussion blanches
+  },
+  imagePickerButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#e0f2fe',
+    borderRadius: 16,
+    paddingVertical: 13,
+    paddingHorizontal: 14,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#caf0f8',
+  },
+  imagePickerText: {
+    color: '#023e8a',
+    fontSize: 15,
+    fontWeight: '800',
+  },
+  imagePreviewContainer: {
+    position: 'relative',
+    marginBottom: 16,
+  },
+  imagePreview: {
+    width: '100%',
+    height: 190,
+    borderRadius: 18,
+    backgroundColor: '#e2e8f0',
+  },
+  removeImageButton: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: 'rgba(15,23,42,0.75)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  postImage: {
+    width: '100%',
+    height: 210,
+    borderRadius: 18,
+    backgroundColor: '#e2e8f0',
+    marginBottom: 16,
+    resizeMode: 'cover',
   },
 });

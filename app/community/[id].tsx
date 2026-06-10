@@ -3,16 +3,16 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ChevronLeft, MessageCircle, Send, Trash2, UserRound } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import {
-    Alert,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Switch,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
-    ImageBackground
+  Alert,
+  ImageBackground,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import { GradientButton } from '../../components/buttons/GradientButton';
 import { useUserToken } from '../../hooks/useUserToken';
@@ -113,6 +113,29 @@ export default function CommunityPostDetailsScreen() {
 
     if (!isAnonyme && !authorName.trim()) {
       Alert.alert('Nom obligatoire', 'Entre un nom public ou active le mode anonyme.');
+      return;
+    }
+
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+
+    const { count: todayCommentsCount, error: countError } = await supabase
+      .from('community_comments')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_token', userToken)
+      .gte('created_at', startOfToday.toISOString());
+
+    if (countError) {
+      console.error('Erreur vérification limite commentaires:', countError.message);
+      Alert.alert('Erreur', 'Impossible de vérifier la limite de commentaires.');
+      return;
+    }
+
+    if ((todayCommentsCount || 0) >= 4) {
+      Alert.alert(
+        'Limite atteinte',
+        'Tu peux publier seulement 4 commentaires par jour dans la communauté.'
+      );
       return;
     }
 
