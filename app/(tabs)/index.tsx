@@ -1,111 +1,127 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, ImageBackground } from 'react-native';
-import { useRouter } from 'expo-router';
-import { Info, Mail, MessageSquare, Phone, Shield, ShieldAlert, Users } from 'lucide-react-native';
-import { InstallBanner } from '../../components/banners/InstallBanner';
-import { GradientButton } from '../../components/buttons/GradientButton';
-import EngagementItem from '../../components/cards/EngagementItem';
+import { useRouter } from "expo-router";
+import {
+  Info,
+  MessageSquare,
+  Phone,
+  Shield,
+  ShieldAlert,
+  Users
+} from "lucide-react-native";
+import React from "react";
+import {
+  Image,
+  ImageBackground,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import { InstallBanner } from "../../components/banners/InstallBanner";
+import { GradientButton } from "../../components/buttons/GradientButton";
+import EngagementItem from "../../components/cards/EngagementItem";
 
 export default function HomeScreen() {
   const router = useRouter();
 
   const menuButtons = [
-    { 
-        title: "Fiche de Signalement", 
-        route: "/(tabs)/signalement", 
-        colors: ["#56b0ff", "#52c686","#56b0ff"], 
-        icon: <ShieldAlert color="white" size={32} />, 
-        fullWidth: true,
+    {
+      title: "Fiche de Signalement",
+      route: "/(tabs)/signalement",
+      colors: ["#56b0ff", "#52c686", "#56b0ff"],
+      icon: <ShieldAlert color="white" size={32} />,
+      fullWidth: true,
     },
-    { 
-        title: "Mes signalements", 
-        route: "/(tabs)/mes-signalements", 
-        colors: ["#00b4d8", "#76c893"], 
-        icon: <MessageSquare color="white" size={24} /> 
+    {
+      title: "Mes signalements",
+      route: "/(tabs)/mes-signalements",
+      colors: ["#00b4d8", "#76c893"],
+      icon: <MessageSquare color="white" size={24} />,
     },
-    { 
-        title: "Communauté", 
-        route: "/(tabs)/communaute", 
-        colors: ["#76c893", "#00b4d8"], 
-        icon: <Users color="white" size={24} /> 
+    {
+      title: "Communauté",
+      route: "/(tabs)/communaute",
+      colors: ["#76c893", "#00b4d8"],
+      icon: <Users color="white" size={24} />,
     },
-    { 
-        title: "La Cellule", 
-        route: "/(tabs)/cellule", 
-        colors: ["#00b4d8","#76c893"], 
-        icon: <Info color="white" size={24} /> 
+    {
+      title: "La Cellule",
+      route: "/(tabs)/cellule",
+      colors: ["#00b4d8", "#76c893"],
+      icon: <Info color="white" size={24} />,
     },
-    { 
-        title: "Numéros Utiles", 
-        route: "/(tabs)/numeros", 
-        colors: ["#76c893", "#00b4d8"], 
-        icon: <Phone color="white" size={24} /> 
+    {
+      title: "Numéros Utiles",
+      route: "/(tabs)/numeros",
+      colors: ["#76c893", "#00b4d8"],
+      icon: <Phone color="white" size={24} />,
     },
   ];
 
   return (
     <View style={styles.safeArea}>
       <ImageBackground
-        source={require('../../assets/images/lyceeBg.jpg')} // Réutilisation de ton image de fond marin
+        source={require("../../assets/images/lyceeBg.jpg")} // Réutilisation de ton image de fond marin
         style={styles.homeBackground}
         imageStyle={styles.homeBackgroundImage}
         resizeMode="cover" // Force l'image à s'étirer et remplir l'écran sans distorsion
       >
-        <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-          
+        <ScrollView
+          contentContainerStyle={styles.container}
+          showsVerticalScrollIndicator={false}
+        >
           {/* --- INSTALL BANNER (s'affiche seulement sur web --- */}
-        <InstallBanner 
-          title="Application élève"
-          subtitle="Installez l'app pour recevoir les notifications en direct."
-          url="https://github.com/Naltoper/GardiensApp_v0/releases/download/v1.0.0/GDC.apk"
-        />
-
-        {/* En-tête avec votre logo en rond */}
-        <View style={styles.header}>
-          <View style={styles.logoContainer}>
-            <Image 
-              source={require('../../assets/images/logo.jpg')} 
-              style={styles.logo}
-              resizeMode="cover"
-            />
-          </View>
-          <Text style={styles.headerTitle}>Les Gardiens des Calanques</Text>
-          <View style={styles.divider} />
-          
-          {/* INTÉGRATION DE L'ENGAGEMENT ITEM POUR LA LISIBILITÉ */}
-          <EngagementItem 
-            icon={<Shield color="white" size={28} strokeWidth={2.5} />}
-            title="Votre anonymat est notre priorité"
-            desc="Un espace sécurisé et bienveillant pour briser le silence et lutter contre le harcèlement scolaire."
-            colors={["#023e8a", "#0077b6"]} // Dégradé bleu marine protecteur et lisible
+          <InstallBanner
+            title="Application élève"
+            subtitle="Installez l'app pour recevoir les notifications en direct."
+            url="https://github.com/Naltoper/GardiensApp_v0/releases/download/v1.0.0/GDC.apk"
           />
-        </View>
-        
-        
-        {/* Grille de navigation avec Gradients */}
-        <View style={styles.grid}>
-          {menuButtons.map((btn, index) => (
-            <GradientButton
-              key={index}
-              title={btn.title}
-              icon={btn.icon}
-              colors={btn.colors as [string, string, ...string[]]}
-              onPress={() => router.push(btn.route as any)}
-              width={btn.fullWidth ? '100%' : '48%'}// Logique pour la largeur : 100% si fullWidth, sinon 48%
+
+          {/* En-tête avec votre logo en rond */}
+          <View style={styles.header}>
+            <View style={styles.logoContainer}>
+              <Image
+                source={require("../../assets/images/logo.jpg")}
+                style={styles.logo}
+                resizeMode="cover"
+              />
+            </View>
+            <Text style={styles.headerTitle}>Les Gardiens des Calanques</Text>
+            <View style={styles.divider} />
+
+            {/* INTÉGRATION DE L'ENGAGEMENT ITEM POUR LA LISIBILITÉ */}
+            <EngagementItem
+              icon={<Shield color="white" size={28} strokeWidth={2.5} />}
+              title="Votre anonymat est notre priorité"
+              desc="Un espace sécurisé et bienveillant pour briser le silence et lutter contre le harcèlement scolaire."
+              colors={["#023e8a", "#0077b6"]} // Dégradé bleu marine protecteur et lisible
             />
-          ))}
-        </View>
-
-        {/* Pied de page */}
-        <View style={styles.footer}>
-          <View style={styles.securityBadge}>
-            <Shield size={14} color="#0077b6" />
-            <Text style={styles.footerNote}> Anonymat garanti</Text>
           </View>
-          <Text style={styles.lyceeNote}>Lycée des Calanques • Marseille</Text>
-        </View>
 
-      </ScrollView>
+          {/* Grille de navigation avec Gradients */}
+          <View style={styles.grid}>
+            {menuButtons.map((btn, index) => (
+              <GradientButton
+                key={index}
+                title={btn.title}
+                icon={btn.icon}
+                colors={btn.colors as [string, string, ...string[]]}
+                onPress={() => router.push(btn.route as any)}
+                width={btn.fullWidth ? "100%" : "48%"} // Logique pour la largeur : 100% si fullWidth, sinon 48%
+              />
+            ))}
+          </View>
+
+          {/* Pied de page */}
+          <View style={styles.footer}>
+            <View style={styles.securityBadge}>
+              <Shield size={14} color="#0077b6" />
+              <Text style={styles.footerNote}> Anonymat garanti</Text>
+            </View>
+            <Text style={styles.lyceeNote}>
+              Lycée des Calanques • Marseille
+            </Text>
+          </View>
+        </ScrollView>
       </ImageBackground>
     </View>
   );
@@ -114,14 +130,14 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: 'transparent', // Laisse le layout gérer la couleur
+    backgroundColor: "transparent", // Laisse le layout gérer la couleur
   },
-  container: { 
-    flexGrow: 1, 
-    padding: 24, 
+  container: {
+    flexGrow: 1,
+    padding: 24,
   },
   header: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: 30,
     paddingTop: 10,
   },
@@ -129,86 +145,86 @@ const styles = StyleSheet.create({
     width: 170,
     height: 200,
     borderRadius: 60,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     elevation: 10,
-    shadowColor: '#0077b6',
+    shadowColor: "#0077b6",
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.2,
     shadowRadius: 10,
     padding: 3,
     marginBottom: 15,
-    overflow: 'hidden',
-    justifyContent: 'center',
-    alignItems: 'center',
+    overflow: "hidden",
+    justifyContent: "center",
+    alignItems: "center",
     borderWidth: 3,
-    borderColor: '#48a4f4ff',
+    borderColor: "#48a4f4ff",
   },
   logo: {
-    width: '100%',
-    height: '100%',
+    width: "100%",
+    height: "100%",
     borderRadius: 55,
   },
-  headerTitle: { 
-    fontSize: 34, 
-    fontWeight: '800', 
-    color: '#023e8a', 
-    textAlign: 'center',
-    letterSpacing: 0.5
+  headerTitle: {
+    fontSize: 34,
+    fontWeight: "800",
+    color: "#023e8a",
+    textAlign: "center",
+    letterSpacing: 0.5,
   },
   divider: {
     width: 50,
     height: 4,
-    backgroundColor: '#76c893', 
+    backgroundColor: "#76c893",
     borderRadius: 2,
     marginVertical: 12,
   },
-  subtitle: { 
-    fontSize: 20, 
-    fontWeight:"500",
-    color: '#141f2b', 
-    textAlign: 'center', 
+  subtitle: {
+    fontSize: 20,
+    fontWeight: "500",
+    color: "#141f2b",
+    textAlign: "center",
     lineHeight: 20,
-    paddingHorizontal: 15
+    paddingHorizontal: 15,
   },
-  grid: { 
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
+  grid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
     gap: 12,
     paddingTop: 50,
   },
   footer: {
     marginTop: 40,
     paddingBottom: 20,
-    alignItems: 'center',
+    alignItems: "center",
   },
   securityBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.8)",
     paddingHorizontal: 15,
     paddingVertical: 8,
     borderRadius: 25,
     marginBottom: 10,
     borderWidth: 1,
-    borderColor: '#caf0f8',
+    borderColor: "#caf0f8",
   },
   footerNote: {
     fontSize: 15,
-    color: '#0077b6',
-    fontWeight: '600',
+    color: "#0077b6",
+    fontWeight: "600",
   },
   lyceeNote: {
     fontSize: 11,
-    color: '#94a3b8',
-    textTransform: 'uppercase',
+    color: "#94a3b8",
+    textTransform: "uppercase",
     letterSpacing: 2,
-    fontWeight: '500'
+    fontWeight: "500",
   },
   homeBackground: {
     flex: 1,
-    width: '100%',
-    height: '100%', // Force l'étirement rigide sur toute la hauteur de la vue
+    width: "100%",
+    height: "100%", // Force l'étirement rigide sur toute la hauteur de la vue
   },
   homeBackgroundImage: {
     opacity: 0.5,
