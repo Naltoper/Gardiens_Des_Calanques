@@ -1,7 +1,15 @@
-import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
-import { ChevronLeft, ExternalLink, Heart, Info, Shield, ShieldCheck, Zap } from 'lucide-react-native';
-import React from 'react';
+import { LinearGradient } from "expo-linear-gradient";
+import { useRouter } from "expo-router";
+import {
+  ChevronLeft,
+  ExternalLink,
+  Heart,
+  Info,
+  Shield,
+  ShieldCheck,
+  Zap,
+} from "lucide-react-native";
+import React from "react";
 import {
   Dimensions,
   Image,
@@ -13,17 +21,13 @@ import {
   Text,
   TouchableOpacity,
   View,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { ENGAGEMENTS, GENIALLY_URL } from '../../constants/cellule';
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { ENGAGEMENTS, GENIALLY_URL } from "../../constants/cellule";
 
-import EngagementItem from '../../components/cards/EngagementItem';
+import EngagementItem from "../../components/cards/EngagementItem";
 
-const { width, height } = Dimensions.get('window');
-
-
-
-
+const { width, height } = Dimensions.get("window");
 
 export default function CelluleScreen() {
   const router = useRouter();
@@ -45,16 +49,16 @@ export default function CelluleScreen() {
   return (
     <View style={styles.mainContainer}>
       <ImageBackground
-        source={require('../../assets/images/lyceeBg.jpg')}
+        source={require("../../assets/images/lyceeBg.jpg")}
         style={styles.backgroundImage}
         resizeMode="cover"
       >
         <LinearGradient
-          colors={['rgba(255, 255, 255, 0.1)', 'rgba(248, 250, 252, 0.4)']}
+          colors={["rgba(255, 255, 255, 0.1)", "rgba(248, 250, 252, 0.4)"]}
           style={styles.overlay}
         >
           <TouchableOpacity
-            onPress={() => router.replace('/(tabs)')}
+            onPress={() => router.replace("/(tabs)")}
             style={styles.backButton}
             activeOpacity={0.7}
           >
@@ -77,9 +81,9 @@ export default function CelluleScreen() {
 
                 <View style={styles.portraitContainer}>
                   <Image
-                    source={require('../../assets/images/portraitCellule.jpg')}
+                    source={require("../../assets/images/portraitCellule.jpg")}
                     style={styles.portraitImage}
-                    resizeMode="contain"
+                    resizeMode="stretch"
                   />
                 </View>
 
@@ -87,14 +91,16 @@ export default function CelluleScreen() {
 
                 <View style={styles.subtitleContainer}>
                   <Text style={styles.subtitle}>
-                    Les Gardiens des Calanques est une unité dédiée à votre protection et à votre écoute.
+                    Les Gardiens des Calanques est une unité dédiée à votre
+                    protection et à votre écoute.
                   </Text>
                 </View>
               </View>
 
               <View style={styles.introCard}>
                 <Text style={styles.introText}>
-                  Notre mission est d&apos;écouter, protéger et agir pour que chaque élève se sente en sécurité.
+                  Notre mission est d&apos;écouter, protéger et agir pour que
+                  chaque élève se sente en sécurité.
                   <Text style={styles.bold}> Brisons le silence ensemble.</Text>
                 </Text>
               </View>
@@ -108,9 +114,13 @@ export default function CelluleScreen() {
                   <EngagementItem
                     key={engagement.title}
                     icon={
-                      engagement.icon === 'shield' ? <ShieldCheck color="white" size={24} /> :
-                      engagement.icon === 'zap' ? <Zap color="white" size={24} /> :
-                      <Heart color="white" size={24} />
+                      engagement.icon === "shield" ? (
+                        <ShieldCheck color="white" size={24} />
+                      ) : engagement.icon === "zap" ? (
+                        <Zap color="white" size={24} />
+                      ) : (
+                        <Heart color="white" size={24} />
+                      )
                     }
                     title={engagement.title}
                     desc={engagement.desc}
@@ -125,7 +135,7 @@ export default function CelluleScreen() {
                 activeOpacity={0.8}
               >
                 <LinearGradient
-                  colors={['#f8fafc', '#f1f5f9']}
+                  colors={["#f8fafc", "#f1f5f9"]}
                   style={styles.webLinkGradient}
                 >
                   <View style={styles.webLinkContent}>
@@ -177,22 +187,22 @@ const styles = StyleSheet.create({
   },
 
   backButton: {
-    position: 'absolute',
-    top: Platform.OS === 'ios' ? 60 : 40,
+    position: "absolute",
+    top: Platform.OS === "ios" ? 60 : 40,
     left: 20,
     zIndex: 10,
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    backgroundColor: "rgba(255, 255, 255, 0.8)",
     padding: 8,
     borderRadius: 15,
     elevation: 5,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
   },
 
   header: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: 30,
     paddingTop: 10,
   },
@@ -200,11 +210,11 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#fff',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "#fff",
+    justifyContent: "center",
+    alignItems: "center",
     elevation: 8,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 10,
@@ -212,62 +222,60 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 32,
-    fontWeight: '900',
-    color: '#023e8a',
-    textAlign: 'center',
+    fontWeight: "900",
+    color: "#023e8a",
+    textAlign: "center",
     marginBottom: 20,
   },
   portraitContainer: {
     width: width * 0.7,
     height: width * 0.9,
     borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-    overflow: 'hidden',
+    backgroundColor: "rgba(255, 255, 255, 0.3)",
+    overflow: "hidden",
     borderWidth: 3,
-    borderColor: '#FFFFFF',
+    borderColor: "#FFFFFF",
     elevation: 8,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 5 },
     shadowOpacity: 0.2,
     shadowRadius: 10,
     marginBottom: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   portraitImage: {
-    width: '95%',
-    height: '95%',
+    width: "100%",
+    height: "100%",
   },
 
   divider: {
     width: 50,
     height: 4,
-    backgroundColor: '#76c893',
+    backgroundColor: "#76c893",
     borderRadius: 2,
     marginVertical: 12,
   },
   subtitleContainer: {
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    backgroundColor: "rgba(255, 255, 255, 0.8)",
     padding: 12,
     borderRadius: 15,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.5)',
+    borderColor: "rgba(255, 255, 255, 0.5)",
   },
   subtitle: {
     fontSize: 16,
-    color: '#1e293b',
-    textAlign: 'center',
+    color: "#1e293b",
+    textAlign: "center",
     lineHeight: 22,
-    fontWeight: '600',
+    fontWeight: "600",
   },
 
   introCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     padding: 20,
     borderRadius: 24,
     borderLeftWidth: 8,
-    borderLeftColor: '#48a4f4',
-    shadowColor: '#000',
+    borderLeftColor: "#48a4f4",
+    shadowColor: "#000",
     shadowOpacity: 0.2,
     shadowRadius: 15,
     elevation: 5,
@@ -276,18 +284,18 @@ const styles = StyleSheet.create({
   introText: {
     fontSize: 17,
     lineHeight: 26,
-    color: '#1e293b',
-    fontWeight: '500',
+    color: "#1e293b",
+    fontWeight: "500",
   },
   bold: {
-    fontWeight: '800',
-    color: '#023e8a',
+    fontWeight: "800",
+    color: "#023e8a",
   },
 
   sectionTitle: {
     fontSize: 22,
-    fontWeight: '800',
-    color: '#023e8a',
+    fontWeight: "800",
+    color: "#023e8a",
     marginBottom: 20,
   },
   listContainer: {
@@ -297,9 +305,9 @@ const styles = StyleSheet.create({
   webLinkButton: {
     marginTop: 30,
     borderRadius: 20,
-    overflow: 'hidden',
+    overflow: "hidden",
     elevation: 3,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOpacity: 0.1,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 4 },
@@ -308,26 +316,26 @@ const styles = StyleSheet.create({
     padding: 18,
   },
   webLinkContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   webLinkText: {
     fontSize: 14,
-    color: '#023e8a',
-    fontWeight: '700',
+    color: "#023e8a",
+    fontWeight: "700",
     flex: 1,
     marginRight: 10,
   },
 
   footer: {
     marginTop: 50,
-    alignItems: 'center',
+    alignItems: "center",
   },
   securityBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
     paddingHorizontal: 15,
     paddingVertical: 8,
     borderRadius: 25,
@@ -336,24 +344,24 @@ const styles = StyleSheet.create({
   },
   footerNote: {
     fontSize: 14,
-    color: '#0077b6',
-    fontWeight: '700',
+    color: "#0077b6",
+    fontWeight: "700",
   },
   lyceeNote: {
     fontSize: 11,
-    color: '#1e293b',
-    textTransform: 'uppercase',
+    color: "#1e293b",
+    textTransform: "uppercase",
     letterSpacing: 2,
-    fontWeight: '700',
+    fontWeight: "700",
   },
 
   textShadow: {
-    textShadowColor: 'rgba(255, 255, 255, 0.9)',
+    textShadowColor: "rgba(255, 255, 255, 0.9)",
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 10,
   },
   textShadowMini: {
-    textShadowColor: 'rgba(255, 255, 255, 0.8)',
+    textShadowColor: "rgba(255, 255, 255, 0.8)",
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 4,
   },
