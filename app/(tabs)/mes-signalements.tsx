@@ -230,8 +230,8 @@ export default function MesSignalementsScreen() {
               </View>
               <Text style={styles.emptyText}>Aucun signalement envoyé</Text>
               <Text style={styles.emptySubText}>
-                Tu n'as pas encore transmis de fiche. Tes futurs signalements et
-                tes espaces de discussion sécurisés s'afficheront ici.
+                Tu n&apos;as pas encore transmis de fiche. Tes futurs signalements et
+                tes espaces de discussion sécurisés s&apos;afficheront ici.
               </Text>
             </View>
           }
