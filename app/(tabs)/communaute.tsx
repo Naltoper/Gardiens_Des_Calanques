@@ -384,6 +384,16 @@ export default function CommunauteScreen() {
       );
     }
   };
+  const sortedPosts = [...posts].sort((a, b) => {
+    const scoreA = votes[a.id] || 0;
+    const scoreB = votes[b.id] || 0;
+
+    if (scoreA !== scoreB) {
+      return scoreB - scoreA;
+    }
+
+    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+  });
 
   return (
     <View style={styles.safeArea}>
@@ -484,7 +494,7 @@ export default function CommunauteScreen() {
             <Text style={styles.emptyText}>Aucun post pour le moment.</Text>
           </View>
         ) : (
-          posts.map((post) => {
+          sortedPosts.map((post) => {
             const score = votes[post.id] || 0;
             const commentCount = commentCounts[post.id] || 0;
             const isMine = userToken === post.user_token;
