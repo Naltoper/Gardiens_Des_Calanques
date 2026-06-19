@@ -1,35 +1,29 @@
 import { useRouter } from 'expo-router';
-import { ChevronDown, ChevronUp, ImagePlus, MessageCircle, Send, Trash2, X } from 'lucide-react-native';
-import { useState } from 'react';
+import { ChevronDown, ChevronUp, MessageCircle, Trash2 } from 'lucide-react-native';
 import {
-  Alert,
   Image,
   ImageBackground,
   ScrollView,
   StyleSheet,
-  Switch,
   Text,
-  TextInput,
   TouchableOpacity,
   View
 } from 'react-native';
-import { GradientButton } from '../../components/buttons/GradientButton';
 import { CommunityIntroCard } from '../../components/Community/CommunityIntroCard';
+import { CommunityCreateCard } from '../../components/Community/CommunityCreateCard'; 
 import { ScreenHeader } from '../../components/headers/ScreenHeader';
-import { useCommunityImage } from '../../hooks/community/useCommunityImage';
 import { useCommunityPosts } from '../../hooks/community/useCommunityPosts';
 import { useUserToken } from '../../hooks/useUserToken';
-import { supabase } from '../../lib/supabase';
 import {
-  COMMUNITY_GRADIENT_COLORS,
   formatCommunityDateTime,
-  getCommunityDisplayName,
-  getStartOfTodayIso
+  getCommunityDisplayName
 } from '../../utils/community';
+import { useCreatePost } from '../../hooks/community/useCreatePost';
 
 export default function CommunauteScreen() {
   const router = useRouter();
   const userToken = useUserToken();
+  
   const {
     posts,
     sortedPosts,
@@ -40,91 +34,9 @@ export default function CommunauteScreen() {
     handleVote,
     confirmDeletePost,
   } = useCommunityPosts(userToken);
-  const {
-    selectedImage,
-    pickImage,
-    removeSelectedImage,
-    uploadPostImage,
-  } = useCommunityImage();
 
+  const createPostProps = useCreatePost(userToken, fetchPosts);
   
-  const [content, setContent] = useState('');
-  const [isAnonyme, setIsAnonyme] = useState(true);
-  const [authorName, setAuthorName] = useState('');
-  const [loading, setLoading] = useState(false);
-
-
-  const handleCreatePost = async () => {
-    if (!userToken) {
-      Alert.alert('Erreur', 'Token utilisateur introuvable. Réessayez dans quelques secondes.');
-      return;
-    }
-
-    if (!content.trim()) {
-      Alert.alert('Champ obligatoire', 'Écris un message avant de publier.');
-      return;
-    }
-
-    if (!isAnonyme && !authorName.trim()) {
-      Alert.alert('Nom obligatoire', 'Entre un nom public ou active le mode anonyme.');
-      return;
-    }
-
-    const { count: todayPostsCount, error: countError } = await supabase
-      .from('community_posts')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_token', userToken)
-      .gte('created_at', getStartOfTodayIso());
-
-    if (countError) {
-      console.error('Erreur vérification limite posts:', countError.message);
-      Alert.alert('Erreur', 'Impossible de vérifier la limite de publication.');
-      return;
-    }
-
-    if ((todayPostsCount || 0) >= 1) {
-      Alert.alert(
-        'Limite atteinte',
-        'Tu peux publier seulement 1 post par jour dans la communauté.'
-      );
-      return;
-    }
-
-    setLoading(true);
-  
-    
-
-    const imageUrl = await uploadPostImage();
-
-    if (selectedImage && !imageUrl) {
-      setLoading(false);
-      return;
-    }
-    
-
-    const { error } = await supabase.from('community_posts').insert({
-      content: content.trim(),
-      image_url: imageUrl,
-      is_anonyme: isAnonyme,
-      author_name: isAnonyme ? null : authorName.trim(),
-      user_token: userToken,
-    });
-
-    setLoading(false);
-
-    if (error) {
-      console.error('Erreur création post:', error.message);
-      Alert.alert('Erreur', "Impossible de publier le post.");
-      return;
-    }
-
-    setContent('');
-    removeSelectedImage();
-    setAuthorName('');
-    setIsAnonyme(true);
-    fetchPosts();
-  };
-
   return (
     <View style={styles.safeArea}>
       <ImageBackground
@@ -138,71 +50,8 @@ export default function CommunauteScreen() {
 
         <CommunityIntroCard />
 
-        <View style={styles.createCard}>
-          <Text style={styles.sectionTitle}>Nouveau post</Text>
-
-          <TextInput
-            style={styles.textArea}
-            placeholder="Écris ton message..."
-            placeholderTextColor="#94a3b8"
-            multiline
-            value={content}
-            onChangeText={setContent}
-          />
-          <TouchableOpacity style={styles.imagePickerButton} onPress={pickImage}>
-            <ImagePlus color="#023e8a" size={22} />
-            <Text style={styles.imagePickerText}>
-              {selectedImage ? 'Changer la photo' : 'Ajouter une photo'}
-            </Text>
-          </TouchableOpacity>
-
-          {selectedImage && (
-            <View style={styles.imagePreviewContainer}>
-              <Image source={{ uri: selectedImage.uri }} style={styles.imagePreview} />
-
-              <TouchableOpacity
-                style={styles.removeImageButton}
-                onPress={removeSelectedImage}
-              >
-                <X color="#ffffff" size={18} />
-              </TouchableOpacity>
-            </View>
-          )}
-
-          <View style={styles.switchRow}>
-            <View>
-              <Text style={styles.switchTitle}>Publier anonymement</Text>
-              <Text style={styles.switchSubtitle}>
-                Ton nom ne sera pas affiché.
-              </Text>
-            </View>
-            <Switch
-              value={isAnonyme}
-              onValueChange={setIsAnonyme}
-              trackColor={{ false: '#cbd5e1', true: '#76c893' }}
-              thumbColor={isAnonyme ? '#10ac56' : '#f4f4f5'}
-            />
-          </View>
-
-          {!isAnonyme && (
-            <TextInput
-              style={styles.input}
-              placeholder="Ton nom public"
-              placeholderTextColor="#94a3b8"
-              value={authorName}
-              onChangeText={setAuthorName}
-            />
-          )}
-
-          <GradientButton
-            title={loading ? 'Publication...' : 'Publier'}
-            icon={<Send color="white" size={20} />}
-            colors={COMMUNITY_GRADIENT_COLORS}
-            onPress={handleCreatePost}
-            disabled={loading}
-            height={64}
-          />
-        </View>
+        {/* RENDU MODULAIRE SÉPARÉ (SOLID) */}
+          <CommunityCreateCard {...createPostProps} />
 
         <Text style={styles.postsTitle}>Publications récentes</Text>
 
@@ -304,64 +153,6 @@ const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
     padding: 24,
-  },
-  createCard: {
-    backgroundColor: 'rgba(255,255,255,0.92)',
-    borderRadius: 24,
-    padding: 18,
-    marginBottom: 24,
-    borderWidth: 1,
-    borderColor: '#caf0f8',
-    shadowColor: '#0077b6',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: '#023e8a',
-    marginBottom: 14,
-  },
-  textArea: {
-    minHeight: 120,
-    backgroundColor: '#f8fafc',
-    borderRadius: 18,
-    padding: 16,
-    fontSize: 16,
-    color: '#0f172a',
-    textAlignVertical: 'top',
-    borderWidth: 1,
-    borderColor: '#dbeafe',
-    marginBottom: 16,
-  },
-  input: {
-    backgroundColor: '#f8fafc',
-    borderRadius: 16,
-    padding: 14,
-    fontSize: 16,
-    color: '#0f172a',
-    borderWidth: 1,
-    borderColor: '#dbeafe',
-    marginBottom: 16,
-  },
-  switchRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-    gap: 12,
-  },
-  switchTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#023e8a',
-  },
-  switchSubtitle: {
-    fontSize: 13,
-    color: '#64748b',
-    marginTop: 3,
   },
   postsTitle: {
     fontSize: 22,
@@ -471,45 +262,6 @@ const styles = StyleSheet.create({
   },
   screenBackgroundImage: {
     opacity: 0.5, // Opacité ultra-légère (5%) pour préserver le contraste de tes cartes de discussion blanches
-  },
-  imagePickerButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: '#e0f2fe',
-    borderRadius: 16,
-    paddingVertical: 13,
-    paddingHorizontal: 14,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#caf0f8',
-  },
-  imagePickerText: {
-    color: '#023e8a',
-    fontSize: 15,
-    fontWeight: '800',
-  },
-  imagePreviewContainer: {
-    position: 'relative',
-    marginBottom: 16,
-  },
-  imagePreview: {
-    width: '100%',
-    height: 190,
-    borderRadius: 18,
-    backgroundColor: '#e2e8f0',
-  },
-  removeImageButton: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: 'rgba(15,23,42,0.75)',
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   postImage: {
     width: '100%',
