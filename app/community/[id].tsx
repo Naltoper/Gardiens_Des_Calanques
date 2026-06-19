@@ -1,7 +1,7 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ChevronLeft, MessageCircle, Send, Trash2, UserRound } from 'lucide-react-native';
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Alert,
   ImageBackground,
@@ -17,25 +17,17 @@ import {
 import { GradientButton } from '../../components/buttons/GradientButton';
 import { useUserToken } from '../../hooks/useUserToken';
 import { supabase } from '../../lib/supabase';
+import type {
+  CommunityComment,
+  CommunityPost,
+} from '../../types/community';
+import {
+  COMMUNITY_GRADIENT_COLORS,
+  formatCommunityDateTime,
+  getCommunityDisplayName,
+  getStartOfTodayIso,
+} from '../../utils/community';
 
-type CommunityPost = {
-  id: string;
-  created_at: string;
-  content: string;
-  is_anonyme: boolean;
-  author_name: string | null;
-  user_token: string;
-};
-
-type CommunityComment = {
-  id: string;
-  created_at: string;
-  post_id: string;
-  content: string;
-  is_anonyme: boolean;
-  author_name: string | null;
-  user_token: string;
-};
 
 export default function CommunityPostDetailsScreen() {
   const router = useRouter();
@@ -59,15 +51,6 @@ export default function CommunityPostDetailsScreen() {
     }
   }, [postId]);
 
-  const formatDateTime = (date: string) => {
-    return new Date(date).toLocaleDateString('fr-FR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
 
   const fetchPost = async () => {
     const { data, error } = await supabase
@@ -116,14 +99,12 @@ export default function CommunityPostDetailsScreen() {
       return;
     }
 
-    const startOfToday = new Date();
-    startOfToday.setHours(0, 0, 0, 0);
 
     const { count: todayCommentsCount, error: countError } = await supabase
       .from('community_comments')
       .select('*', { count: 'exact', head: true })
       .eq('user_token', userToken)
-      .gte('created_at', startOfToday.toISOString());
+      .gte('created_at', getStartOfTodayIso());
 
     if (countError) {
       console.error('Erreur vérification limite commentaires:', countError.message);
@@ -205,7 +186,7 @@ export default function CommunityPostDetailsScreen() {
     );
   }
 
-  const displayName = post.is_anonyme ? 'Anonyme' : post.author_name || 'Utilisateur';
+  const displayName = getCommunityDisplayName(post.is_anonyme, post.author_name);
 
   return (
     <View style={styles.safeArea}>
@@ -222,7 +203,7 @@ export default function CommunityPostDetailsScreen() {
         </TouchableOpacity>
 
         <LinearGradient
-          colors={['#48a4f4', '#10ac56']}
+          colors={COMMUNITY_GRADIENT_COLORS}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.headerCard}
@@ -242,7 +223,7 @@ export default function CommunityPostDetailsScreen() {
 
             <View style={{ flex: 1 }}>
               <Text style={styles.author}>{displayName}</Text>
-              <Text style={styles.date}>{formatDateTime(post.created_at)}</Text>
+              <Text style={styles.date}>{formatCommunityDateTime(post.created_at)}</Text>
             </View>
           </View>
 
@@ -288,7 +269,7 @@ export default function CommunityPostDetailsScreen() {
           <GradientButton
             title={loading ? 'Publication...' : 'Publier le commentaire'}
             icon={<Send color="white" size={20} />}
-            colors={['#48a4f4', '#10ac56']}
+            colors={COMMUNITY_GRADIENT_COLORS}
             onPress={handleCreateComment}
             disabled={loading}
             height={64}
@@ -305,9 +286,10 @@ export default function CommunityPostDetailsScreen() {
           </View>
         ) : (
           comments.map((comment) => {
-            const commentName = comment.is_anonyme
-              ? 'Anonyme'
-              : comment.author_name || 'Utilisateur';
+            const commentName = getCommunityDisplayName(
+              comment.is_anonyme,
+              comment.author_name
+            );
 
             const isMine = userToken === comment.user_token;
 
@@ -317,7 +299,7 @@ export default function CommunityPostDetailsScreen() {
                   <View>
                     <Text style={styles.commentAuthor}>{commentName}</Text>
                     <Text style={styles.commentDate}>
-                      {formatDateTime(comment.created_at)}
+                      {formatCommunityDateTime(comment.created_at)}
                     </Text>
                   </View>
 
