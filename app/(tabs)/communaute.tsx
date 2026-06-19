@@ -1,13 +1,10 @@
-import * as ImagePicker from 'expo-image-picker';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { ChevronDown, ChevronUp, ImagePlus, MessageCircle, Send, Trash2, Users, X } from 'lucide-react-native';
-import { useEffect, useState } from 'react';
+import { ChevronDown, ChevronUp, ImagePlus, MessageCircle, Send, Trash2, X } from 'lucide-react-native';
+import { useState } from 'react';
 import {
   Alert,
   Image,
   ImageBackground,
-  Platform,
   ScrollView,
   StyleSheet,
   Switch,
@@ -17,224 +14,45 @@ import {
   View
 } from 'react-native';
 import { GradientButton } from '../../components/buttons/GradientButton';
+import { CommunityIntroCard } from '../../components/Community/CommunityIntroCard';
 import { ScreenHeader } from '../../components/headers/ScreenHeader';
+import { useCommunityImage } from '../../hooks/community/useCommunityImage';
+import { useCommunityPosts } from '../../hooks/community/useCommunityPosts';
 import { useUserToken } from '../../hooks/useUserToken';
 import { supabase } from '../../lib/supabase';
-
-type CommunityPost = {
-  id: string;
-  created_at: string;
-  content: string;
-  image_url: string | null;
-  is_anonyme: boolean;
-  author_name: string | null;
-  user_token: string;
-};
-
-type VoteRow = {
-  post_id: string;
-  vote_value: number;
-};
-
-type CommentRow = {
-  post_id: string;
-};
-
-type SelectedImage = {
-  uri: string;
-  fileName?: string | null;
-  mimeType?: string | null;
-  fileSize?: number | null;
-};
+import {
+  COMMUNITY_GRADIENT_COLORS,
+  formatCommunityDateTime,
+  getCommunityDisplayName,
+  getStartOfTodayIso
+} from '../../utils/community';
 
 export default function CommunauteScreen() {
   const router = useRouter();
   const userToken = useUserToken();
+  const {
+    posts,
+    sortedPosts,
+    votes,
+    myVotes,
+    commentCounts,
+    fetchPosts,
+    handleVote,
+    confirmDeletePost,
+  } = useCommunityPosts(userToken);
+  const {
+    selectedImage,
+    pickImage,
+    removeSelectedImage,
+    uploadPostImage,
+  } = useCommunityImage();
 
-  const [posts, setPosts] = useState<CommunityPost[]>([]);
-  const [votes, setVotes] = useState<Record<string, number>>({});
-  const [myVotes, setMyVotes] = useState<Record<string, number>>({});
-  const [commentCounts, setCommentCounts] = useState<Record<string, number>>({});
-
+  
   const [content, setContent] = useState('');
-  const [selectedImage, setSelectedImage] = useState<SelectedImage | null>(null);
   const [isAnonyme, setIsAnonyme] = useState(true);
   const [authorName, setAuthorName] = useState('');
   const [loading, setLoading] = useState(false);
-  
-  useEffect(() => {
-    fetchPosts();
-  }, [userToken]);
 
-  const formatDateTime = (date: string) => {
-    return new Date(date).toLocaleDateString('fr-FR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
-
-  const fetchPosts = async () => {
-    const { data: postsData, error: postsError } = await supabase
-      .from('community_posts')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (postsError) {
-      console.error('Erreur chargement posts:', postsError.message);
-      return;
-    }
-
-    const safePosts = postsData || [];
-    setPosts(safePosts);
-
-    const postIds = safePosts.map((post) => post.id);
-
-    if (postIds.length === 0) {
-      setVotes({});
-      setMyVotes({});
-      setCommentCounts({});
-      return;
-    }
-
-    const { data: votesData, error: votesError } = await supabase
-      .from('community_votes')
-      .select('post_id, vote_value')
-      .in('post_id', postIds);
-
-    if (votesError) {
-      console.error('Erreur chargement votes:', votesError.message);
-      return;
-    }
-
-    const scores: Record<string, number> = {};
-
-    (votesData as VoteRow[] | null)?.forEach((vote) => {
-      scores[vote.post_id] = (scores[vote.post_id] || 0) + vote.vote_value;
-    });
-
-    setVotes(scores);
-
-    const { data: commentsData, error: commentsError } = await supabase
-      .from('community_comments')
-      .select('post_id')
-      .in('post_id', postIds);
-
-    if (commentsError) {
-      console.error('Erreur chargement nombre commentaires:', commentsError.message);
-    } else {
-      const counts: Record<string, number> = {};
-
-      (commentsData as CommentRow[] | null)?.forEach((comment) => {
-        counts[comment.post_id] = (counts[comment.post_id] || 0) + 1;
-      });
-
-      setCommentCounts(counts);
-    }
-
-    if (userToken) {
-      const { data: myVotesData, error: myVotesError } = await supabase
-        .from('community_votes')
-        .select('post_id, vote_value')
-        .eq('user_token', userToken)
-        .in('post_id', postIds);
-
-      if (myVotesError) {
-        console.error('Erreur chargement mes votes:', myVotesError.message);
-        return;
-      }
-
-      const userVotes: Record<string, number> = {};
-
-      (myVotesData as VoteRow[] | null)?.forEach((vote) => {
-        userVotes[vote.post_id] = vote.vote_value;
-      });
-
-      setMyVotes(userVotes);
-    }
-  };
-
-  const MAX_IMAGE_SIZE = 2 * 1024 * 1024; // 2 Mo
-
-  const pickImage = async () => {
-    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-
-    if (!permissionResult.granted) {
-      Alert.alert(
-        'Permission refusée',
-        'Tu dois autoriser l’accès aux photos pour ajouter une image.'
-      );
-      return;
-    }
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      quality: 0.8,
-    });
-
-    if (result.canceled) return;
-
-    const asset = result.assets[0];
-
-    if (asset.fileSize && asset.fileSize > MAX_IMAGE_SIZE) {
-      Alert.alert(
-        'Image trop lourde',
-        'La photo ne doit pas dépasser 2 Mo.'
-      );
-      return;
-    }
-
-    setSelectedImage({
-      uri: asset.uri,
-      fileName: asset.fileName,
-      mimeType: asset.mimeType,
-      fileSize: asset.fileSize,
-    });
-  };
-
-  const uploadPostImage = async (image: SelectedImage) => {
-    const response = await fetch(image.uri);
-    const blob = await response.blob();
-
-    if (blob.size > MAX_IMAGE_SIZE) {
-      Alert.alert(
-        'Image trop lourde',
-        'La photo ne doit pas dépasser 2 Mo.'
-      );
-      return null;
-    }
-
-    const extension =
-      image.fileName?.split('.').pop() ||
-      image.mimeType?.split('/').pop() ||
-      'jpg';
-
-    const filePath = `${Date.now()}-${Math.random()
-      .toString(36)
-      .substring(2)}.${extension}`;
-
-    const { error: uploadError } = await supabase.storage
-      .from('cummunity-images')
-      .upload(filePath, blob, {
-        contentType: image.mimeType || 'image/jpeg',
-        upsert: false,
-      });
-
-    if (uploadError) {
-      console.error('Erreur upload image:', uploadError.message);
-      Alert.alert('Erreur', "Impossible d'envoyer la photo.");
-      return null;
-    }
-
-    const { data } = supabase.storage
-      .from('cummunity-images')
-      .getPublicUrl(filePath);
-
-    return data.publicUrl;
-  };
 
   const handleCreatePost = async () => {
     if (!userToken) {
@@ -251,14 +69,12 @@ export default function CommunauteScreen() {
       Alert.alert('Nom obligatoire', 'Entre un nom public ou active le mode anonyme.');
       return;
     }
-    const startOfToday = new Date();
-    startOfToday.setHours(0, 0, 0, 0);
 
     const { count: todayPostsCount, error: countError } = await supabase
       .from('community_posts')
       .select('*', { count: 'exact', head: true })
       .eq('user_token', userToken)
-      .gte('created_at', startOfToday.toISOString());
+      .gte('created_at', getStartOfTodayIso());
 
     if (countError) {
       console.error('Erreur vérification limite posts:', countError.message);
@@ -275,17 +91,16 @@ export default function CommunauteScreen() {
     }
 
     setLoading(true);
+  
+    
 
-    let imageUrl: string | null = null;
+    const imageUrl = await uploadPostImage();
 
-    if (selectedImage) {
-      imageUrl = await uploadPostImage(selectedImage);
-
-      if (!imageUrl) {
-        setLoading(false);
-        return;
-      }
+    if (selectedImage && !imageUrl) {
+      setLoading(false);
+      return;
     }
+    
 
     const { error } = await supabase.from('community_posts').insert({
       content: content.trim(),
@@ -304,96 +119,11 @@ export default function CommunauteScreen() {
     }
 
     setContent('');
-    setSelectedImage(null);
+    removeSelectedImage();
     setAuthorName('');
     setIsAnonyme(true);
     fetchPosts();
   };
-
-  const handleVote = async (postId: string, value: 1 | -1) => {
-    if (!userToken) {
-      Alert.alert('Erreur', 'Token utilisateur introuvable.');
-      return;
-    }
-
-    const currentVote = myVotes[postId];
-
-    if (currentVote === value) {
-      const { error } = await supabase
-        .from('community_votes')
-        .delete()
-        .eq('post_id', postId)
-        .eq('user_token', userToken);
-
-      if (error) {
-        console.error('Erreur suppression vote:', error.message);
-        return;
-      }
-
-      fetchPosts();
-      return;
-    }
-
-    const { error } = await supabase
-      .from('community_votes')
-      .upsert(
-        {
-          post_id: postId,
-          user_token: userToken,
-          vote_value: value,
-        },
-        { onConflict: 'post_id,user_token' }
-      );
-
-    if (error) {
-      console.error('Erreur vote:', error.message);
-      return;
-    }
-
-    fetchPosts();
-  };
-
-  const confirmDeletePost = (postId: string) => {
-    const deletePost = async () => {
-      const { error } = await supabase
-        .from('community_posts')
-        .delete()
-        .eq('id', postId)
-        .eq('user_token', userToken);
-
-      if (error) {
-        console.error('Erreur suppression post:', error.message);
-        Alert.alert('Erreur', "Impossible de supprimer ce post.");
-        return;
-      }
-
-      fetchPosts();
-    };
-
-    if (Platform.OS === 'web') {
-      const confirmed = window.confirm('Supprimer ce post ?');
-      if (confirmed) deletePost();
-    } else {
-      Alert.alert(
-        'Supprimer le post',
-        'Tu veux vraiment supprimer ce post ?',
-        [
-          { text: 'Annuler', style: 'cancel' },
-          { text: 'Supprimer', style: 'destructive', onPress: deletePost },
-        ]
-      );
-    }
-  };
-  const sortedPosts = [...posts].sort((a, b) => {
-    const scoreA = votes[a.id] || 0;
-    const scoreB = votes[b.id] || 0;
-
-    if (scoreA !== scoreB) {
-      return scoreB - scoreA;
-    }
-
-    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-  });
 
   return (
     <View style={styles.safeArea}>
@@ -406,20 +136,7 @@ export default function CommunauteScreen() {
       <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
         <ScreenHeader title="Communauté" onBack={() => router.replace('/(tabs)')} />
 
-        <LinearGradient
-          colors={['#48a4f4', '#10ac56']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.introCard}
-        >
-          <View style={styles.introIcon}>
-            <Users color="#ffffff" size={32} />
-          </View>
-          <Text style={styles.introTitle}>Espace d’échange</Text>
-          <Text style={styles.introText}>
-            Publie un message, partage ton ressenti et échange avec les autres élèves.
-          </Text>
-        </LinearGradient>
+        <CommunityIntroCard />
 
         <View style={styles.createCard}>
           <Text style={styles.sectionTitle}>Nouveau post</Text>
@@ -445,7 +162,7 @@ export default function CommunauteScreen() {
 
               <TouchableOpacity
                 style={styles.removeImageButton}
-                onPress={() => setSelectedImage(null)}
+                onPress={removeSelectedImage}
               >
                 <X color="#ffffff" size={18} />
               </TouchableOpacity>
@@ -480,7 +197,7 @@ export default function CommunauteScreen() {
           <GradientButton
             title={loading ? 'Publication...' : 'Publier'}
             icon={<Send color="white" size={20} />}
-            colors={['#48a4f4', '#10ac56']}
+            colors={COMMUNITY_GRADIENT_COLORS}
             onPress={handleCreatePost}
             disabled={loading}
             height={64}
@@ -498,14 +215,14 @@ export default function CommunauteScreen() {
             const score = votes[post.id] || 0;
             const commentCount = commentCounts[post.id] || 0;
             const isMine = userToken === post.user_token;
-            const displayName = post.is_anonyme ? 'Anonyme' : post.author_name || 'Utilisateur';
+            const displayName = getCommunityDisplayName(post.is_anonyme, post.author_name);
             
             return (
               <View key={post.id} style={styles.postCard}>
                 <View style={styles.postHeader}>
                   <View>
                     <Text style={styles.author}>{displayName}</Text>
-                    <Text style={styles.date}>{formatDateTime(post.created_at)}</Text>
+                    <Text style={styles.date}>{formatCommunityDateTime(post.created_at)}</Text>
                   </View>
 
                   {isMine && (
@@ -587,39 +304,6 @@ const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
     padding: 24,
-  },
-  introCard: {
-    borderRadius: 24,
-    padding: 24,
-    marginBottom: 22,
-    alignItems: 'center',
-    shadowColor: '#0077b6',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.18,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  introIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: 'rgba(255,255,255,0.22)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 12,
-  },
-  introTitle: {
-    fontSize: 25,
-    fontWeight: '800',
-    color: '#ffffff',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  introText: {
-    fontSize: 15,
-    color: '#e0f2fe',
-    textAlign: 'center',
-    lineHeight: 22,
   },
   createCard: {
     backgroundColor: 'rgba(255,255,255,0.92)',
