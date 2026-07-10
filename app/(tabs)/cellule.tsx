@@ -24,7 +24,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ENGAGEMENTS, GENIALLY_URL } from "../../constants/cellule";
-
+import { AudioPlayer } from '../../components/ui/AudioPlayer';
 import EngagementItem from "../../components/cards/EngagementItem";
 
 const { width, height } = Dimensions.get("window");
@@ -103,6 +103,17 @@ export default function CelluleScreen() {
                   chaque élève se sente en sécurité.
                   <Text style={styles.bold}> Brisons le silence ensemble.</Text>
                 </Text>
+              </View>
+      
+              <Text style={styles.title}></Text>
+
+              {/* Bulle blanche contenant tout le bloc audio */}
+              <View style={styles.audioCard}>
+                <Text style={styles.audioTitle}>Notre cellule « Les gardiens des calanques » en musique 🎵</Text>
+                <Text style={styles.audioSubtitle}>Une chanson pour mieux nous connaître et partager nos valeurs.</Text>
+
+                {/* Ton lecteur audio */}
+                <AudioPlayer />
               </View>
 
               <Text style={[styles.sectionTitle, styles.textShadow]}>
@@ -368,4 +379,36 @@ const styles = StyleSheet.create({
   bottomSpacer: {
     height: 40,
   },
+  title: {
+    fontSize: 24,           
+    fontWeight: '700',      
+    color: '#1A1A1E',     
+    marginBottom: 8,         
+    marginTop: 16,          
+    letterSpacing: 0.3,      
+  },
+  audioCard: {
+  backgroundColor: 'rgba(255, 255, 255, 0.95)', 
+  borderRadius: 16,                          
+  padding: 16,                 
+  marginVertical: 12,                           
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.1,
+  shadowRadius: 4,
+  elevation: 3,                                 
+},
+audioTitle: {
+  fontSize: 20,             
+  fontWeight: '600',        
+  color: '#2C3E50',         
+  marginBottom: 6,          
+  lineHeight: 23,           
+},
+audioSubtitle: {
+  fontSize: 15,
+  color: '#7F8C8D',         
+  marginBottom: 12,    
+  lineHeight: 18,           
+},
 });
