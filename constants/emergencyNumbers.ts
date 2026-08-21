@@ -31,3 +31,17 @@ export const EMERGENCY_NUMBERS: EmergencyNumber[] = [
     colors: ["#023e8a", "#48cae4"],
   }
 ];
+
+/** Numéros affichés sur la page Numéros Utiles */
+export const NUMEROS_UTILES: EmergencyNumber[] = [
+  EMERGENCY_NUMBERS.find((n) => n.id === '3020')!,
+  EMERGENCY_NUMBERS.find((n) => n.id === '3018')!,
+  {
+    id: 'vie-scolaire',
+    title: 'Vie Scolaire',
+    number: '0491096980',
+    description: 'Contactez la vie scolaire du Lycée des Calanques.',
+    colors: ['#023e8a', '#0077b6'],
+  },
+  EMERGENCY_NUMBERS.find((n) => n.id === '119')!,
+];

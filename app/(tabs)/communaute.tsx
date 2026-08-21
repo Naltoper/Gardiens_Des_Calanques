@@ -7,23 +7,23 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  View
+  View,
 } from 'react-native';
 import { CommunityIntroCard } from '../../components/Community/CommunityIntroCard';
-import { CommunityCreateCard } from '../../components/Community/CommunityCreateCard'; 
-import { ScreenHeader } from '../../components/headers/ScreenHeader';
+import { CommunityCreateCard } from '../../components/Community/CommunityCreateCard';
+import { PageHeader } from '../../components/headers/PageHeader';
 import { useCommunityPosts } from '../../hooks/community/useCommunityPosts';
+import { useCreatePost } from '../../hooks/community/useCreatePost';
 import { useUserToken } from '../../hooks/useUserToken';
 import {
   formatCommunityDateTime,
-  getCommunityDisplayName
+  getCommunityDisplayName,
 } from '../../utils/community';
-import { useCreatePost } from '../../hooks/community/useCreatePost';
 
 export default function CommunauteScreen() {
   const router = useRouter();
   const userToken = useUserToken();
-  
+
   const {
     posts,
     sortedPosts,
@@ -36,110 +36,110 @@ export default function CommunauteScreen() {
   } = useCommunityPosts(userToken);
 
   const createPostProps = useCreatePost(userToken, fetchPosts);
-  
+
   return (
     <View style={styles.safeArea}>
       <ImageBackground
-        source={require('../../assets/images/lyceeBgBlur.png')} // Reprise de l'image de fond marine
+        source={require('../../assets/images/lyceeBgBlur.png')}
         style={styles.screenBackground}
         imageStyle={styles.screenBackgroundImage}
         resizeMode="cover"
       >
-      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-        <ScreenHeader title="Communauté" onBack={() => router.replace('/(tabs)')} />
+        <PageHeader
+          title="Communauté"
+          subtitle="Espace d'échange entre élèves, dans le respect et la bienveillance."
+        />
 
-        <CommunityIntroCard />
-
-        {/* RENDU MODULAIRE SÉPARÉ (SOLID) */}
+        <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
+          <CommunityIntroCard />
           <CommunityCreateCard {...createPostProps} />
 
-        <Text style={styles.postsTitle}>Publications récentes</Text>
+          <Text style={styles.postsTitle}>Publications récentes</Text>
 
-        {posts.length === 0 ? (
-          <View style={styles.emptyCard}>
-            <Text style={styles.emptyText}>Aucun post pour le moment.</Text>
-          </View>
-        ) : (
-          sortedPosts.map((post) => {
-            const score = votes[post.id] || 0;
-            const commentCount = commentCounts[post.id] || 0;
-            const isMine = userToken === post.user_token;
-            const displayName = getCommunityDisplayName(post.is_anonyme, post.author_name);
-            
-            return (
-              <View key={post.id} style={styles.postCard}>
-                <View style={styles.postHeader}>
-                  <View>
-                    <Text style={styles.author}>{displayName}</Text>
-                    <Text style={styles.date}>{formatCommunityDateTime(post.created_at)}</Text>
+          {posts.length === 0 ? (
+            <View style={styles.emptyCard}>
+              <Text style={styles.emptyText}>Aucun post pour le moment.</Text>
+            </View>
+          ) : (
+            sortedPosts.map((post) => {
+              const score = votes[post.id] || 0;
+              const commentCount = commentCounts[post.id] || 0;
+              const isMine = userToken === post.user_token;
+              const displayName = getCommunityDisplayName(post.is_anonyme, post.author_name);
+
+              return (
+                <View key={post.id} style={styles.postCard}>
+                  <View style={styles.postHeader}>
+                    <View>
+                      <Text style={styles.author}>{displayName}</Text>
+                      <Text style={styles.date}>{formatCommunityDateTime(post.created_at)}</Text>
+                    </View>
+
+                    {isMine && (
+                      <TouchableOpacity
+                        style={styles.deleteButton}
+                        onPress={() => confirmDeletePost(post.id)}
+                      >
+                        <Trash2 color="#ef4444" size={20} />
+                      </TouchableOpacity>
+                    )}
                   </View>
 
-                  {isMine && (
-                    <TouchableOpacity
-                      style={styles.deleteButton}
-                      onPress={() => confirmDeletePost(post.id)}
-                    >
-                      <Trash2 color="#ef4444" size={20} />
-                    </TouchableOpacity>
+                  <Text style={styles.postContent}>{post.content}</Text>
+                  {post.image_url && (
+                    <Image
+                      source={{ uri: post.image_url }}
+                      style={styles.postImage}
+                      resizeMode="cover"
+                    />
                   )}
-                </View>
 
-                <Text style={styles.postContent}>{post.content}</Text>
-                {post.image_url && (
-                  <Image
-                    source={{ uri: post.image_url }}
-                    style={styles.postImage}
-                    resizeMode="cover"
-                    onError={(error) => {
-                      console.error('Erreur affichage image:', error.nativeEvent);
-                }}
-              />
-            )}
+                  <View style={styles.actionsRow}>
+                    <View style={styles.voteBox}>
+                      <TouchableOpacity
+                        style={[
+                          styles.voteButton,
+                          myVotes[post.id] === 1 && styles.activeVoteButton,
+                        ]}
+                        onPress={() => handleVote(post.id, 1)}
+                      >
+                        <ChevronUp
+                          color={myVotes[post.id] === 1 ? '#10ac56' : '#64748b'}
+                          size={22}
+                        />
+                      </TouchableOpacity>
 
-                <View style={styles.actionsRow}>
-                  <View style={styles.voteBox}>
+                      <Text style={styles.score}>{score}</Text>
+
+                      <TouchableOpacity
+                        style={[
+                          styles.voteButton,
+                          myVotes[post.id] === -1 && styles.activeVoteButton,
+                        ]}
+                        onPress={() => handleVote(post.id, -1)}
+                      >
+                        <ChevronDown
+                          color={myVotes[post.id] === -1 ? '#10ac56' : '#64748b'}
+                          size={22}
+                        />
+                      </TouchableOpacity>
+                    </View>
+
                     <TouchableOpacity
-                      style={[
-                        styles.voteButton,
-                        myVotes[post.id] === 1 && styles.activeVoteButton,
-                      ]}
-                      onPress={() => handleVote(post.id, 1)}
+                      style={styles.commentButton}
+                      onPress={() => router.push(`/community/${post.id}` as any)}
                     >
-                      <ChevronUp
-                        color={myVotes[post.id] === 1 ? '#10ac56' : '#64748b'}
-                        size={22}
-                      />
-                    </TouchableOpacity>
-
-                    <Text style={styles.score}>{score}</Text>
-
-                    <TouchableOpacity
-                      style={[
-                        styles.voteButton,
-                        myVotes[post.id] === -1 && styles.activeVoteButton,
-                      ]}
-                      onPress={() => handleVote(post.id, -1)}
-                    >
-                      <ChevronDown
-                        color={myVotes[post.id] === -1 ? '#10ac56' : '#64748b'}
-                        size={22}
-                      />
+                      <MessageCircle color="#023e8a" size={20} />
+                      <Text style={styles.commentText}>
+                        {commentCount} {commentCount > 1 ? 'commentaires' : 'commentaire'}
+                      </Text>
                     </TouchableOpacity>
                   </View>
-
-                  <TouchableOpacity
-                    style={styles.commentButton}
-                    onPress={() => router.push(`/community/${post.id}` as any)}
-                  >
-                    <MessageCircle color="#023e8a" size={20} />
-                    <Text style={styles.commentText}>{commentCount} {commentCount > 1 ? 'commentaires' : 'commentaire'}</Text>
-                  </TouchableOpacity>
                 </View>
-              </View>
-            );
-          })
-        )}
-      </ScrollView>
+              );
+            })
+          )}
+        </ScrollView>
       </ImageBackground>
     </View>
   );
@@ -152,7 +152,9 @@ const styles = StyleSheet.create({
   },
   container: {
     flexGrow: 1,
-    padding: 24,
+    padding: 20,
+    paddingTop: 12,
+    paddingBottom: 32,
   },
   postsTitle: {
     fontSize: 22,
@@ -261,7 +263,7 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   screenBackgroundImage: {
-    opacity: 0.5, // Opacité ultra-légère (5%) pour préserver le contraste de tes cartes de discussion blanches
+    opacity: 0.5,
   },
   postImage: {
     width: '100%',
