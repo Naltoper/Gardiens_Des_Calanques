@@ -20,7 +20,7 @@ export default function SignalementSuccess({ onBackHome }: SignalementSuccessPro
       </Text>
 
       <TouchableOpacity style={styles.btnSecondary} onPress={onBackHome}>
-        <Text style={styles.btnSecondaryText}>Retour à l&apos;écran d&apos;accueil</Text>
+        <Text style={styles.btnSecondaryText}>Voir mes suivis</Text>
       </TouchableOpacity>
     </View>
   );

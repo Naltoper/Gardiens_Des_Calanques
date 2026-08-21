@@ -8,4 +8,5 @@ expo-env.d.ts
 ./expo
 node_modules
 .vercel
+dist
 .env*

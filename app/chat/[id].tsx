@@ -60,7 +60,7 @@ export default function ChatScreen() {
 
   return (
     <View style={styles.mainContainer}>
-      <StatusBar barStyle="light-content" />
+      <StatusBar barStyle="dark-content" />
       
       {/* 1. PASSAGE DE LAFONCTION AU HEADER */}
       <ChatHeader 
@@ -87,10 +87,11 @@ export default function ChatScreen() {
               keyExtractor={(item) => item.id.toString()}
               contentContainerStyle={styles.listContent}
               onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
-              renderItem={({ item }) => (
+              renderItem={({ item, index }) => (
                 <ChatBubble 
                   item={item} 
-                  isMyMessage={item.sender_role === role} 
+                  isMyMessage={item.sender_role === role}
+                  index={index}
                 />
               )}
               // AJOUT DE L'ÉTAT VIDE STYLISÉ (Avec étirement forcé pour occuper le fond)
@@ -126,7 +127,7 @@ export default function ChatScreen() {
 
             <TouchableOpacity onPress={handleSend} disabled={!newMessage.trim() || loading}>
               <LinearGradient
-                colors={newMessage.trim() ? ["#48a4f4", "#10ac56"] : ["#e2e8f0", "#cbd5e1"]}
+                colors={newMessage.trim() ? ['#48a4f4', '#10ac56'] : ['#e2e8f0', '#cbd5e1']}
                 style={styles.sendBtn}
               >
                 <Send size={18} color="white" />
@@ -154,15 +155,15 @@ const styles = StyleSheet.create({
     paddingVertical: 15, 
     backgroundColor: '#ffffff', 
     borderTopWidth: 1, 
-    borderTopColor: '#e2e8f0', // Une couleur de bordure légèrement plus douce
+    borderTopColor: '#e2e8f0',
 
     // --- EFFET DE SUPERPOSITION / OMBRE VERS LE HAUT ---
-    zIndex: 10, // S'assure que la barre de saisie reste AU-DESSUS des messages qui défilent
-    elevation: 8, // Force l'ombre sur Android (se diffuse tout autour, y compris vers le haut)
-    shadowColor: '#000000', // Couleur de l'ombre sur iOS
-    shadowOffset: { width: 0, height: -2 }, // <-- HEIGHT NÉGATIF : Propulse l'ombre vers le HAUT de l'écran
-    shadowOpacity: 0.08, // Une opacité très douce pour ne pas alourdir le design
-    shadowRadius: 6, // Un floutage large pour que l'effet soit très diffus et élégant
+    zIndex: 10,
+    elevation: 8,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
   },  
   inputContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#f1f5f9', borderRadius: 25, padding: 5 },
   input: { 
@@ -204,15 +205,15 @@ const styles = StyleSheet.create({
   chatBackground: {
     flex: 1,
     width: '100%',
-    height: '100%', // Force l'étirement rigide jusqu'au bout du parent
+    height: '100%',
     backgroundColor: '#f8fafc',
   },
   chatBackgroundImage: {
-    opacity: 0.16, // Conserve ton superbe effet filigrane opaque
+    opacity: 0.16,
   },
   emptyChatWrapper: {
     flex: 1,
-    minHeight: 400, // Donne une hauteur minimale pour forcer le composant à se détendre vers le bas
+    minHeight: 400,
     justifyContent: 'center',
     alignItems: 'center',
   },

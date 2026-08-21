@@ -1,21 +1,109 @@
-import React from 'react';
-import { Modal, View, Text, StyleSheet, 
-  TouchableOpacity, ScrollView, Image } from 'react-native';
 import { X } from 'lucide-react-native';
 import * as WebBrowser from 'expo-web-browser';
+import React, { useEffect, useRef } from 'react';
+import {
+  Animated,
+  Easing,
+  Image,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
-export const ReportDetailModal = ({ visible, onClose, report }: any) => {
-  if (!report) return null;
+const ANIM_DURATION = 140;
+
+interface ReportDetailModalProps {
+  visible: boolean;
+  onClose: () => void;
+  report: Record<string, unknown> | null;
+}
+
+export const ReportDetailModal = ({
+  visible,
+  onClose,
+  report,
+}: ReportDetailModalProps) => {
+  const overlayOpacity = useRef(new Animated.Value(0)).current;
+  const cardScale = useRef(new Animated.Value(0.96)).current;
+  const cardOpacity = useRef(new Animated.Value(0)).current;
+  const [mounted, setMounted] = React.useState(visible);
+
+  useEffect(() => {
+    if (visible) {
+      setMounted(true);
+      overlayOpacity.setValue(0);
+      cardScale.setValue(0.96);
+      cardOpacity.setValue(0);
+
+      Animated.parallel([
+        Animated.timing(overlayOpacity, {
+          toValue: 1,
+          duration: ANIM_DURATION,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.timing(cardOpacity, {
+          toValue: 1,
+          duration: ANIM_DURATION,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.timing(cardScale, {
+          toValue: 1,
+          duration: ANIM_DURATION,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+      ]).start();
+      return;
+    }
+
+    if (!mounted) return;
+
+    Animated.parallel([
+      Animated.timing(overlayOpacity, {
+        toValue: 0,
+        duration: ANIM_DURATION,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(cardOpacity, {
+        toValue: 0,
+        duration: ANIM_DURATION,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(cardScale, {
+        toValue: 0.96,
+        duration: ANIM_DURATION,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+    ]).start(({ finished }) => {
+      if (finished) setMounted(false);
+    });
+  }, [visible, mounted, overlayOpacity, cardOpacity, cardScale]);
+
+  if (!report || !mounted) return null;
+
+  const imageUrl =
+    typeof report.image_url === 'string' ? report.image_url : undefined;
 
   return (
-    <Modal 
-      animationType="fade" // 🟢 On passe en fondu pour une transition douce sans coupure visuelle
-      transparent={true} 
-      visible={visible} 
-      onRequestClose={onClose}
-    >
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalView}>
+    <Modal animationType="none" transparent visible={mounted} onRequestClose={onClose}>
+      <Animated.View style={[styles.modalOverlay, { opacity: overlayOpacity }]}>
+        <Animated.View
+          style={[
+            styles.modalView,
+            {
+              opacity: cardOpacity,
+              transform: [{ scale: cardScale }],
+            },
+          ]}
+        >
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Détails du signalement</Text>
             <TouchableOpacity onPress={onClose}>
@@ -24,37 +112,43 @@ export const ReportDetailModal = ({ visible, onClose, report }: any) => {
           </View>
 
           <ScrollView showsVerticalScrollIndicator={false}>
-            <DetailRow label="Type de harcèlement" value={report.type_harcelement} />
-            <DetailRow 
-                label="Niveau d'urgence" 
-                value={report.urgence} 
-                color={report.urgence?.includes('Élevé') ? '#e63946' : '#334155'} 
+            <DetailRow
+              label="Type de harcèlement"
+              value={report.type_harcelement as string}
             />
-            <DetailRow label="Lieu des faits" value={report.lieu} />
-            <DetailRow label="Date / Période" value={report.date_faits} />
-            <DetailRow label="Fréquence" value={report.frequence} />
-            <DetailRow label="Victimes" value={report.nb_victimes} />
+            <DetailRow
+              label="Niveau d'urgence"
+              value={report.urgence as string}
+              color={
+                String(report.urgence ?? '').includes('Élevé')
+                  ? '#e63946'
+                  : '#334155'
+              }
+            />
+            <DetailRow label="Lieu des faits" value={report.lieu as string} />
+            <DetailRow label="Date / Période" value={report.date_faits as string} />
+            <DetailRow label="Fréquence" value={report.frequence as string} />
+            <DetailRow label="Victimes" value={report.nb_victimes as string} />
 
             <View style={[styles.detailRow, { borderBottomWidth: 0 }]}>
               <Text style={styles.detailLabel}>Description complète :</Text>
-              <Text style={styles.fullDescription}>{report.content}</Text>
+              <Text style={styles.fullDescription}>{String(report.content ?? '')}</Text>
             </View>
-            {/* Affichage de la pièce jointe si elle existe */}
-            {report?.image_url ? (
+
+            {imageUrl ? (
               <View style={styles.imageSection}>
-                <Text style={styles.imageLabel}>📸 Pièce jointe (Clique pour agrandir/télécharger) :</Text>
-                
-                {/* 2. ON ENTOUR L'IMAGE PAR UN BOUTON */}
-                <TouchableOpacity 
+                <Text style={styles.imageLabel}>
+                  📸 Pièce jointe (Clique pour agrandir/télécharger) :
+                </Text>
+                <TouchableOpacity
                   activeOpacity={0.8}
                   onPress={async () => {
-                    // Ouvre l'image directement dans un navigateur plein écran sécurisé
-                    await WebBrowser.openBrowserAsync(report.image_url);
+                    await WebBrowser.openBrowserAsync(imageUrl);
                   }}
                 >
-                  <Image 
-                    source={{ uri: report.image_url }} 
-                    style={styles.attachedImage} 
+                  <Image
+                    source={{ uri: imageUrl }}
+                    style={styles.attachedImage}
                     resizeMode="cover"
                   />
                 </TouchableOpacity>
@@ -65,36 +159,41 @@ export const ReportDetailModal = ({ visible, onClose, report }: any) => {
               </View>
             )}
           </ScrollView>
-        </View>
-      </View>
+        </Animated.View>
+      </Animated.View>
     </Modal>
   );
 };
 
-// Petit composant interne pour éviter de répéter les View des lignes
-const DetailRow = ({ label, value, color = '#334155' }: any) => (
+const DetailRow = ({
+  label,
+  value,
+  color = '#334155',
+}: {
+  label: string;
+  value?: string;
+  color?: string;
+}) => (
   <View style={styles.detailRow}>
     <Text style={styles.detailLabel}>{label} :</Text>
-    <Text style={[styles.detailValue, { color }]}>{value || "Non précisé"}</Text>
+    <Text style={[styles.detailValue, { color }]}>{value || 'Non précisé'}</Text>
   </View>
 );
 
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)', // 🟢 Fond assombri légèrement plus dense pour isoler le contenu
-    justifyContent: 'center', // 🟢 Centre la modale verticalement
-    alignItems: 'center',     // 🟢 Centre la modale horizontalement
-    padding: 20,              // 🟢 Donne de l'espace autour de la carte pour qu'elle ne touche pas les bords de l'écran
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
   },
   modalView: {
-    width: '100%',            // Prend toute la largeur disponible dans le padding
+    width: '100%',
     backgroundColor: 'white',
-    borderRadius: 24,         // 🟢 Arrondit joliment les 4 coins de la carte flottante
+    borderRadius: 24,
     padding: 24,
-    maxHeight: '85%',         // Évite que la modale ne dépasse sur les écrans de smartphones plus petits
-    
-    // 🟢 Ombre premium pour donner l'impression que la carte flotte au-dessus de l'écran
+    maxHeight: '85%',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.25,
@@ -138,7 +237,7 @@ const styles = StyleSheet.create({
     color: '#475569',
     lineHeight: 22,
     marginTop: 5,
-    fontStyle: 'italic'
+    fontStyle: 'italic',
   },
   imageSection: {
     marginTop: 20,
@@ -154,7 +253,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 220,
     borderRadius: 15,
-    backgroundColor: '#cbd5e1', // Un fond gris en attendant le chargement de l'image
+    backgroundColor: '#cbd5e1',
   },
   noImageText: {
     fontSize: 13,

@@ -1,91 +1,122 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { ChevronLeft, Lock, Info, ShieldCheck, FileText } from 'lucide-react-native';
+import { ChevronLeft, FileText } from 'lucide-react-native';
+import React, { useEffect, useRef } from 'react';
+import {
+  Animated,
+  Platform,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 
 interface ChatHeaderProps {
-  reportId: string | undefined;
+  reportId?: string | undefined;
   role: 'user' | 'admin' | string | string[] | undefined;
-  onShowDetails?: () => void; // <-- Callback pour déclencher l'ouverture de la modale
+  onShowDetails?: () => void;
 }
 
-export const ChatHeader = ({ reportId, role, onShowDetails }: ChatHeaderProps) => {
+const HEADER_FG = '#1e293b';
+const HEADER_FG_MUTED = '#475569';
+
+export const ChatHeader = ({ role, onShowDetails }: ChatHeaderProps) => {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const topPadding = Math.max(insets.top, Platform.OS === 'android' ? 12 : 0);
   const isUserAuthor = role === 'user';
+  const detailsAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (!onShowDetails) return;
+    Animated.spring(detailsAnim, {
+      toValue: 1,
+      friction: 7,
+      tension: 60,
+      useNativeDriver: true,
+    }).start();
+  }, [onShowDetails, detailsAnim]);
 
   const handleBack = () => {
-    // ! Si c'est l'intervenant, on le redirige vers dashboard
-    router.replace('/(tabs)/mes-signalements');
+    router.replace('/(tabs)/suivis');
   };
 
   return (
     <LinearGradient
-      colors={["#0071aa", "#42bf6e"]} // <-- Ton nouveau dégradé harmonisé avec tes boutons
+      colors={['rgba(0, 113, 170, 0.35)', 'rgba(66, 191, 110, 0.35)']}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 0 }}
-      style={styles.headerGradient}
+      style={[styles.headerGradient, { paddingTop: topPadding + 12 }]}
     >
-      {/* Ligne supérieure : Retour + Titre & ID */}
       <View style={styles.headerTopContent}>
-        <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-          <ChevronLeft color="white" size={30} strokeWidth={2.5} />
+        <TouchableOpacity
+          onPress={handleBack}
+          style={styles.backButton}
+          activeOpacity={0.7}
+          accessibilityRole="button"
+          accessibilityLabel="Retour"
+        >
+          <ChevronLeft color={HEADER_FG} size={30} strokeWidth={2.5} />
         </TouchableOpacity>
-        
+
         <View style={styles.headerTitleContainer}>
-          <Text style={styles.headerTitle} numberOfLines={1}>
-            {isUserAuthor ? "Échange avec un intervenant" : "Échange avec un élève"}
+          <Text style={styles.headerTitle} numberOfLines={2}>
+            {isUserAuthor ? 'Échange avec un intervenant' : 'Échange avec un élève'}
           </Text>
-          <View style={styles.idBadge}>
-            <Lock size={10} color="#caf0f8" style={{ marginRight: 4 }} />
-            <Text style={styles.idText}>
-                ID: {reportId?.toString().toUpperCase().slice(0, 8)}
-            </Text>
-          </View>
+          <Text style={styles.headerSubtitle} numberOfLines={1}>
+            Discussion sécurisée et confidentielle
+          </Text>
         </View>
-        
-        {/* Vue miroir invisible pour conserver le centrage parfait du titre */}
+
         <View style={styles.topRightPlaceholder} />
       </View>
 
-      {/* Ligne inférieure : Bouton Détails centré en dessous */}
-      {onShowDetails && (
-        <View style={styles.headerBottomContent}>
+      {onShowDetails ? (
+        <Animated.View
+          style={[
+            styles.headerBottomContent,
+            {
+              opacity: detailsAnim,
+              transform: [
+                {
+                  translateY: detailsAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [8, 0],
+                  }),
+                },
+              ],
+            },
+          ]}
+        >
           <TouchableOpacity
-            onPress={(event) => {
-              event.stopPropagation();
-              onShowDetails();
-            }}
+            onPress={onShowDetails}
             style={styles.documentIconButton}
             activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityLabel="Voir les détails du signalement"
           >
             <FileText size={15} color="#023e8a" style={{ marginRight: 6 }} />
             <Text style={styles.documentButtonText}>Détails du signalement</Text>
           </TouchableOpacity>
-        </View>
-      )}
+        </Animated.View>
+      ) : null}
     </LinearGradient>
   );
 };
 
 const styles = StyleSheet.create({
   headerGradient: {
-    paddingTop: 35,
     paddingBottom: 16,
-    width: '100%', // S'assure que la bannière prend bien tout l'écran
-    
-    // --- EFFET DE SUPERPOSITION CORRIGÉ (D'UN BORD À L'AUTRE) ---
+    width: '100%',
     zIndex: 10,
-    elevation: 8, // Augmenté légèrement pour Android pour accompagner le changement iOS
+    elevation: 6,
     shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 4 }, // <-- REMIS À 0 : L'ombre descend verticalement sans dévier à gauche ou à droite
-    shadowOpacity: 0.4, // Baissé un poil car l'étalement global (Radius) va intensifier l'ombre
-    shadowRadius: 10, // <-- AUGMENTÉ : Propulse et diffuse l'ombre plus loin sur les côtés (gauche et droite inclus)
-  },
-  headerContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 10,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(148, 163, 184, 0.35)',
   },
   headerTopContent: {
     flexDirection: 'row',
@@ -97,63 +128,48 @@ const styles = StyleSheet.create({
   },
   headerTitleContainer: {
     flex: 1,
-    alignItems: 'center', // Centre le texte et le badge ID horizontalement
-    marginRight: 10,
+    alignItems: 'center',
+    paddingHorizontal: 6,
   },
   headerTitle: {
-    color: 'white',
+    color: HEADER_FG,
     fontSize: 18,
     fontWeight: '800',
+    textAlign: 'center',
+  },
+  headerSubtitle: {
+    color: HEADER_FG_MUTED,
+    fontSize: 12,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginTop: 3,
   },
   topRightPlaceholder: {
-    width: 40, // Équilibre exact avec la largeur du backButton pour un centrage parfait
+    width: 40,
   },
   headerBottomContent: {
     alignItems: 'center',
-    marginTop: 14, // Espace sous le titre pour éviter tout empiètement
-  },
-  idBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 2,
-  },
-  idText: {
-    color: '#caf0f8',
-    fontSize: 10,
-    fontWeight: '600',
-    letterSpacing: 0.5,
-  },
-  infoButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  detailsButton: {
-    padding: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
+    marginTop: 14,
   },
   documentIconButton: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#ffffff',
     paddingVertical: 8,
-    paddingHorizontal: 20, // Plus large pour une meilleure prise tactile
+    paddingHorizontal: 20,
     borderRadius: 20,
     elevation: 3,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
+    shadowOpacity: 0.12,
     shadowRadius: 3,
+    minHeight: 40,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
   },
   documentButtonText: {
     color: '#023e8a',
     fontSize: 13,
     fontWeight: '700',
   },
-  placeholder: {
-    width: 75, // Équilibre parfait pour conserver le centrage du titre
-  },
-  
 });

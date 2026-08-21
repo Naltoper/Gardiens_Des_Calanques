@@ -1,163 +1,202 @@
 import { useRouter } from "expo-router";
 import {
+  ChevronRight,
   Info,
-  MessageSquare,
   Phone,
   Shield,
   ShieldAlert,
-  Users
 } from "lucide-react-native";
 import React from "react";
 import {
   Image,
-  ImageBackground,
   ScrollView,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from "react-native";
+import { AnonymityBadge } from "../../components/banners/AnonymityBadge";
 import { InstallBanner } from "../../components/banners/InstallBanner";
-import { GradientButton } from "../../components/buttons/GradientButton";
-import EngagementItem from "../../components/cards/EngagementItem";
+import { LyceeBackground } from "../../components/backgrounds/LyceeBackground";
+import { Colors } from "../../constants/theme";
+
+const C = {
+  primary: Colors.light.primary,
+  surface: "#FFFFFF",
+  border: "#E2E8F0",
+  text: "#0F172A",
+  textMuted: "#64748B",
+  textOnPrimary: "#FFFFFF",
+};
+
+type ShortcutItem = {
+  title: string;
+  subtitle: string;
+  route: "/(tabs)/signaler" | "/(tabs)/cellule" | "/(tabs)/numeros";
+  icon: React.ReactNode;
+  primary?: boolean;
+};
+
+function ShortcutTile({
+  item,
+  onPress,
+}: {
+  item: ShortcutItem;
+  onPress: () => void;
+}) {
+  if (item.primary) {
+    return (
+      <TouchableOpacity
+        style={styles.primaryTile}
+        onPress={onPress}
+        activeOpacity={0.88}
+      >
+        <View style={styles.primaryIconWrap}>{item.icon}</View>
+        <View style={styles.primaryTextWrap}>
+          <Text style={styles.primaryTitle}>{item.title}</Text>
+          <Text style={styles.primarySubtitle}>{item.subtitle}</Text>
+        </View>
+        <ChevronRight size={22} color="rgba(255,255,255,0.7)" strokeWidth={2.5} />
+      </TouchableOpacity>
+    );
+  }
+
+  return (
+    <TouchableOpacity
+      style={styles.secondaryTile}
+      onPress={onPress}
+      activeOpacity={0.82}
+    >
+      <View style={styles.secondaryIconWrap}>{item.icon}</View>
+      <Text style={styles.secondaryTitle} numberOfLines={2}>
+        {item.title}
+      </Text>
+    </TouchableOpacity>
+  );
+}
 
 export default function HomeScreen() {
   const router = useRouter();
 
-  const menuButtons = [
+  const shortcuts: ShortcutItem[] = [
     {
       title: "Fiche de Signalement",
-      route: "/(tabs)/signalement",
-      colors: ["#56b0ff", "#52c686", "#56b0ff"],
-      icon: <ShieldAlert color="white" size={32} />,
-      fullWidth: true,
-    },
-    {
-      title: "Mes signalements",
-      route: "/(tabs)/mes-signalements",
-      colors: ["#00b4d8", "#76c893"],
-      icon: <MessageSquare color="white" size={24} />,
-    },
-    {
-      title: "Communauté",
-      route: "/(tabs)/communaute",
-      colors: ["#76c893", "#00b4d8"],
-      icon: <Users color="white" size={24} />,
+      subtitle: "Signaler une situation en toute confidentialité",
+      route: "/(tabs)/signaler",
+      icon: <ShieldAlert color={C.textOnPrimary} size={28} strokeWidth={2.5} />,
+      primary: true,
     },
     {
       title: "La Cellule",
+      subtitle: "",
       route: "/(tabs)/cellule",
-      colors: ["#00b4d8", "#76c893"],
-      icon: <Info color="white" size={24} />,
+      icon: <Info color={C.primary} size={22} strokeWidth={2.5} />,
     },
     {
       title: "Numéros Utiles",
+      subtitle: "",
       route: "/(tabs)/numeros",
-      colors: ["#76c893", "#00b4d8"],
-      icon: <Phone color="white" size={24} />,
+      icon: <Phone color={C.primary} size={22} strokeWidth={2.5} />,
     },
   ];
 
+  const [primaryShortcut, ...secondaryShortcuts] = shortcuts;
+
   return (
-    <View style={styles.safeArea}>
-      <ImageBackground
-        source={require("../../assets/images/lyceeBg.jpg")} // Réutilisation de ton image de fond marin
-        style={styles.homeBackground}
-        imageStyle={styles.homeBackgroundImage}
-        resizeMode="cover" // Force l'image à s'étirer et remplir l'écran sans distorsion
+    <LyceeBackground>
+      <ScrollView
+        contentContainerStyle={styles.container}
+        showsVerticalScrollIndicator={false}
       >
-        <ScrollView
-          contentContainerStyle={styles.container}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* --- INSTALL BANNER (s'affiche seulement sur web --- */}
-          <InstallBanner
-            title="Application élève"
-            subtitle="Installez l'app pour recevoir les notifications en direct."
-            url="https://github.com/Naltoper/GardiensApp_v0/releases/download/v1.0.0/GDC.apk"
-          />
+        <InstallBanner
+          title="Application élève"
+          subtitle="Installez l'app pour recevoir les notifications en direct."
+          url="https://github.com/Naltoper/GardiensApp_v0/releases/download/v1.0.0/GDC.apk"
+        />
 
-          {/* En-tête avec votre logo en rond */}
-          <View style={styles.header}>
-            <View style={styles.logoContainer}>
-              <Image
-                source={require("../../assets/images/logo.jpg")}
-                style={styles.logo}
-                resizeMode="cover"
-              />
-            </View>
-            <Text style={styles.headerTitle}>Les Gardiens des Calanques</Text>
-            <View style={styles.divider} />
-
-            {/* INTÉGRATION DE L'ENGAGEMENT ITEM POUR LA LISIBILITÉ */}
-            <EngagementItem
-              icon={<Shield color="white" size={28} strokeWidth={2.5} />}
-              title="Votre anonymat est notre priorité"
-              desc="Un espace sécurisé et bienveillant pour briser le silence et lutter contre le harcèlement scolaire."
-              colors={["#023e8a", "#0077b6"]} // Dégradé bleu marine protecteur et lisible
+        <View style={styles.header}>
+          <View style={styles.logoContainer}>
+            <Image
+              source={require("../../assets/images/logo.jpg")}
+              style={styles.logo}
+              resizeMode="cover"
             />
           </View>
+          <Text style={styles.headerTitle}>Les Gardiens des Calanques</Text>
+        </View>
 
-          {/* Grille de navigation avec Gradients */}
-          <View style={styles.grid}>
-            {menuButtons.map((btn, index) => (
-              <GradientButton
-                key={index}
-                title={btn.title}
-                icon={btn.icon}
-                colors={btn.colors as [string, string, ...string[]]}
-                onPress={() => router.push(btn.route as any)}
-                width={btn.fullWidth ? "100%" : "48%"} // Logique pour la largeur : 100% si fullWidth, sinon 48%
-              />
-            ))}
+        <View style={styles.engagementCard}>
+          <View style={styles.engagementIconWrap}>
+            <Shield color={C.primary} size={22} strokeWidth={2.5} />
           </View>
-
-          {/* Pied de page */}
-          <View style={styles.footer}>
-            <View style={styles.securityBadge}>
-              <Shield size={14} color="#0077b6" />
-              <Text style={styles.footerNote}> Anonymat garanti</Text>
-            </View>
-            <Text style={styles.lyceeNote}>
-              Lycée des Calanques • Marseille
+          <View style={styles.engagementTextWrap}>
+            <Text style={styles.engagementTitle}>Votre anonymat est notre priorité</Text>
+            <Text style={styles.engagementDesc}>
+              Un espace sécurisé et bienveillant pour briser le silence et lutter
+              contre le harcèlement scolaire.
             </Text>
           </View>
-        </ScrollView>
-      </ImageBackground>
-    </View>
+        </View>
+
+        <View style={styles.actionsCard}>
+          <Text style={styles.actionsHeading}>Raccourcis</Text>
+
+          <ShortcutTile
+            item={primaryShortcut}
+            onPress={() => router.push(primaryShortcut.route)}
+          />
+
+          <View style={styles.secondaryGrid}>
+            <View style={styles.secondaryRow}>
+              {secondaryShortcuts.map((item) => (
+                <ShortcutTile
+                  key={item.route}
+                  item={item}
+                  onPress={() => router.push(item.route)}
+                />
+              ))}
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.footerBadges}>
+          <AnonymityBadge />
+        </View>
+        <Text style={styles.footerSubtitle}>Lycée des Calanques • Marseille</Text>
+      </ScrollView>
+    </LyceeBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: "transparent", // Laisse le layout gérer la couleur
-  },
   container: {
     flexGrow: 1,
-    padding: 24,
+    padding: 20,
+    paddingTop: 16,
+    paddingBottom: 32,
   },
   header: {
     alignItems: "center",
-    marginBottom: 30,
-    paddingTop: 10,
+    marginBottom: 20,
+    paddingTop: 8,
   },
   logoContainer: {
     width: 170,
     height: 200,
     borderRadius: 60,
-    backgroundColor: "#fff",
-    elevation: 10,
-    shadowColor: "#0077b6",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
-    padding: 3,
-    marginBottom: 15,
+    backgroundColor: C.surface,
+    marginBottom: 16,
     overflow: "hidden",
+    borderWidth: 3,
+    borderColor: "#48a4f4",
+    shadowColor: C.primary,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.18,
+    shadowRadius: 12,
+    elevation: 6,
     justifyContent: "center",
     alignItems: "center",
-    borderWidth: 3,
-    borderColor: "#48a4f4ff",
+    padding: 3,
   },
   logo: {
     width: "100%",
@@ -167,66 +206,156 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 34,
     fontWeight: "800",
-    color: "#023e8a",
+    color: C.primary,
     textAlign: "center",
-    letterSpacing: 0.5,
+    letterSpacing: 0.3,
+    lineHeight: 40,
   },
-  divider: {
-    width: 50,
-    height: 4,
-    backgroundColor: "#76c893",
-    borderRadius: 2,
-    marginVertical: 12,
-  },
-  subtitle: {
-    fontSize: 20,
-    fontWeight: "500",
-    color: "#141f2b",
-    textAlign: "center",
-    lineHeight: 20,
-    paddingHorizontal: 15,
-  },
-  grid: {
+  engagementCard: {
     flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-    gap: 12,
-    paddingTop: 50,
-  },
-  footer: {
-    marginTop: 40,
-    paddingBottom: 20,
-    alignItems: "center",
-  },
-  securityBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.8)",
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    borderRadius: 25,
-    marginBottom: 10,
+    backgroundColor: "rgba(255, 255, 255, 0.95)",
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 20,
     borderWidth: 1,
-    borderColor: "#caf0f8",
+    borderColor: C.border,
+    gap: 14,
+    alignItems: "flex-start",
+    width: "100%",
   },
-  footerNote: {
+  engagementIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: "#F1F5F9",
+    justifyContent: "center",
+    alignItems: "center",
+    flexShrink: 0,
+  },
+  engagementTextWrap: {
+    flex: 1,
+  },
+  engagementTitle: {
     fontSize: 15,
-    color: "#0077b6",
-    fontWeight: "600",
+    fontWeight: "700",
+    color: C.text,
+    marginBottom: 4,
   },
-  lyceeNote: {
+  engagementDesc: {
+    fontSize: 13,
+    color: C.textMuted,
+    lineHeight: 19,
+  },
+  actionsCard: {
+    backgroundColor: "rgba(255, 255, 255, 0.95)",
+    borderRadius: 20,
+    padding: 18,
+    borderWidth: 1,
+    borderColor: C.border,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  actionsHeading: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: C.textMuted,
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+    marginBottom: 14,
+  },
+  primaryTile: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: C.primary,
+    borderRadius: 16,
+    padding: 18,
+    marginBottom: 14,
+    gap: 14,
+    shadowColor: C.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  primaryIconWrap: {
+    width: 52,
+    height: 52,
+    borderRadius: 14,
+    backgroundColor: "rgba(255,255,255,0.15)",
+    justifyContent: "center",
+    alignItems: "center",
+    flexShrink: 0,
+  },
+  primaryTextWrap: {
+    flex: 1,
+  },
+  primaryTitle: {
+    fontSize: 17,
+    fontWeight: "800",
+    color: C.textOnPrimary,
+    marginBottom: 3,
+  },
+  primarySubtitle: {
+    fontSize: 13,
+    color: "rgba(255,255,255,0.75)",
+    lineHeight: 18,
+  },
+  secondaryGrid: {
+    gap: 10,
+  },
+  secondaryRow: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  secondaryTile: {
+    flex: 1,
+    backgroundColor: C.surface,
+    borderRadius: 14,
+    padding: 16,
+    alignItems: "center",
+    borderWidth: 1.5,
+    borderColor: "#CBD5E1",
+    minHeight: 108,
+    justifyContent: "center",
+    gap: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  secondaryIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: "#F1F5F9",
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+  },
+  secondaryTitle: {
+    fontSize: 13,
+    fontWeight: "800",
+    color: C.text,
+    textAlign: "center",
+    lineHeight: 18,
+  },
+  footerBadges: {
+    marginTop: 28,
+    alignItems: "center",
+    width: "100%",
+  },
+  footerSubtitle: {
+    marginTop: 12,
     fontSize: 11,
-    color: "#94a3b8",
+    color: "#1a1a1a",
     textTransform: "uppercase",
     letterSpacing: 2,
-    fontWeight: "500",
-  },
-  homeBackground: {
-    flex: 1,
-    width: "100%",
-    height: "100%", // Force l'étirement rigide sur toute la hauteur de la vue
-  },
-  homeBackgroundImage: {
-    opacity: 0.5,
+    fontWeight: "600",
+    textAlign: "center",
   },
 });

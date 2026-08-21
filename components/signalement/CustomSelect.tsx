@@ -1,16 +1,30 @@
-import { ChevronDown, ChevronUp } from 'lucide-react-native';
-import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View, ScrollView } from 'react-native';
+import { Check, ChevronDown } from 'lucide-react-native';
+import React, { useEffect, useRef } from 'react';
+import {
+  Animated,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+
+import { Colors } from '../../constants/theme';
 
 type CustomSelectProps = {
   label: string;
-  value: string;
+  value: string | string[];
   options: string[];
   visible: boolean;
   onToggle: () => void;
-  onSelect: (value: string) => void;
+  onSelect: (value: string | string[]) => void;
   placeholder: string;
+  multiSelect?: boolean;
+  required?: boolean;
 };
+
+const LABEL_MIN_HEIGHT = 38;
 
 export default function CustomSelect({
   label,
@@ -20,105 +34,265 @@ export default function CustomSelect({
   onToggle,
   onSelect,
   placeholder,
+  multiSelect = false,
+  required = false,
 }: CustomSelectProps) {
+  const animHeight = useRef(new Animated.Value(0)).current;
+  const animOpacity = useRef(new Animated.Value(0)).current;
+
+  const selectedValues = multiSelect
+    ? (Array.isArray(value) ? value : value ? [value] : [])
+    : [];
+  const displayValue = multiSelect
+    ? selectedValues.length > 0
+      ? selectedValues.join(', ')
+      : ''
+    : (typeof value === 'string' ? value : '');
+
+  const isSelected = (option: string) =>
+    multiSelect ? selectedValues.includes(option) : displayValue === option;
+
+  useEffect(() => {
+    if (visible) {
+      Animated.parallel([
+        Animated.timing(animHeight, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: false,
+        }),
+        Animated.timing(animOpacity, {
+          toValue: 1,
+          duration: 160,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    } else {
+      animHeight.setValue(0);
+      animOpacity.setValue(0);
+    }
+  }, [visible, animHeight, animOpacity]);
+
+  const handleSelect = (option: string) => {
+    if (multiSelect) {
+      const next = selectedValues.includes(option)
+        ? selectedValues.filter((v) => v !== option)
+        : [...selectedValues, option];
+      onSelect(next);
+    } else {
+      onSelect(option);
+      if (visible) onToggle();
+    }
+  };
+
+  const maxDropdownHeight = Math.min(options.length * 44 + 4, 220);
+
   return (
-    <View style={styles.section}>
-      <Text style={styles.label}>{label}</Text>
-
-      <TouchableOpacity style={styles.customSelect} onPress={onToggle} activeOpacity={0.7}>
-        <Text style={[styles.selectText, !value && { color: '#94a3b8' }]}>
-          {value ? value : placeholder}
+    <View style={[styles.wrapper, visible && styles.wrapperOpen]}>
+      <View style={styles.labelContainer}>
+        <Text style={styles.label} numberOfLines={2}>
+          {label}
+          {required && <Text style={styles.required}> *</Text>}
         </Text>
+      </View>
 
-        {visible ? (
-          <ChevronUp size={20} color="#023e8a" />
-        ) : (
-          <ChevronDown size={20} color="#023e8a" />
-        )}
-      </TouchableOpacity>
-
-      {visible && (
-        <View style={styles.optionsContainer}>
-          {/* 🟢 On entoure la liste par un ScrollView pour activer le défilement vertical */}
-          <ScrollView 
-            nestedScrollEnabled={true} // Requis pour que le défilement fonctionne bien à l'intérieur d'un autre ScrollView parent
-            showsVerticalScrollIndicator={true} // On affiche la barre pour que l'élève comprenne qu'il y a une suite
+      <View style={styles.selectContainer}>
+        <TouchableOpacity
+          style={[styles.trigger, visible && styles.triggerOpen]}
+          onPress={onToggle}
+          activeOpacity={0.75}
+        >
+          <Text
+            style={[styles.triggerText, !displayValue && styles.placeholderText]}
+            numberOfLines={1}
           >
-            {options.map((item) => (
-              <TouchableOpacity
-                key={item}
-                style={styles.optionItem}
-                onPress={() => {
-                  onSelect(item);
-                  onToggle();
-                }}
-              >
-                <Text style={styles.optionText}>{item}</Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
+            {displayValue || placeholder}
+          </Text>
+          <ChevronDown
+            size={18}
+            color={visible ? Colors.light.primary : Colors.light.textMuted}
+            style={{ transform: [{ rotate: visible ? '180deg' : '0deg' }] }}
+          />
+        </TouchableOpacity>
+
+        {visible && (
+          <Animated.View
+            style={[
+              styles.dropdown,
+              {
+                opacity: animOpacity,
+                maxHeight: animHeight.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0, maxDropdownHeight],
+                }),
+              },
+            ]}
+          >
+            <ScrollView
+              nestedScrollEnabled
+              showsVerticalScrollIndicator={options.length > 4}
+              bounces={false}
+              keyboardShouldPersistTaps="handled"
+            >
+              {options.map((option, index) => {
+                const selected = isSelected(option);
+                return (
+                  <TouchableOpacity
+                    key={option}
+                    style={[
+                      styles.optionItem,
+                      index === options.length - 1 && styles.optionItemLast,
+                      selected && styles.optionItemSelected,
+                    ]}
+                    onPress={() => handleSelect(option)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={[styles.optionText, selected && styles.optionTextSelected]}>
+                      {option}
+                    </Text>
+                    {selected && (
+                      <View style={styles.checkCircle}>
+                        <Check size={12} color="#ffffff" strokeWidth={3} />
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          </Animated.View>
+        )}
+      </View>
+
+      {multiSelect && visible && (
+        <TouchableOpacity
+          style={styles.doneButton}
+          onPress={onToggle}
+          activeOpacity={0.85}
+        >
+          <Text style={styles.doneButtonText}>Valider</Text>
+        </TouchableOpacity>
       )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  section: {
-    marginBottom: 18,
-    // 🟢 TRÈS IMPORTANT : Permet au zIndex de l'enfant (le menu) de s'appliquer
-    // par rapport à ce bloc de sélection précis. 
+  wrapper: {
+    marginBottom: 16,
+    zIndex: 1,
   },
-  label: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#1e293b',
+  wrapperOpen: {
+    zIndex: 999,
+    elevation: 12,
+  },
+  labelContainer: {
+    minHeight: LABEL_MIN_HEIGHT,
+    justifyContent: 'flex-end',
     marginBottom: 8,
   },
-  customSelect: {
-    backgroundColor: '#ffffff',
-    borderWidth: 1.5,
-    borderColor: '#cbd5e1',
-    borderRadius: 12,
+  label: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: Colors.light.text,
+    lineHeight: 18,
+  },
+  required: {
+    color: Colors.light.status.error,
+    fontWeight: '800',
+  },
+  selectContainer: {
+    position: 'relative',
+    zIndex: 2,
+  },
+  trigger: {
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    borderRadius: 14,
     paddingHorizontal: 14,
-    paddingVertical: 14,
+    paddingVertical: Platform.OS === 'web' ? 13 : 14,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    gap: 8,
   },
-  selectText: {
-    fontSize: 15,
-    color: '#1e293b',
+  triggerOpen: {
+    borderColor: Colors.light.primary,
+    backgroundColor: Colors.light.surface,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
+  },
+  triggerText: {
+    fontSize: 14,
+    color: Colors.light.text,
     flex: 1,
+    fontWeight: '500',
   },
-  optionsContainer: {
+  placeholderText: {
+    color: Colors.light.textMuted,
+    fontWeight: '400',
+  },
+  dropdown: {
     position: 'absolute',
-    top: 67,
+    top: '100%',
     left: 0,
     right: 0,
-    zIndex: 9999,
-    elevation: 5,
-    backgroundColor: '#ffffff',
-    borderWidth: 2,
-    borderColor: '#bdc7d3',
-    borderTopColor: '#ffffff', 
-    borderRadius: 1,
-    borderBottomRightRadius:12,
-    borderBottomLeftRadius: 12,
     overflow: 'hidden',
-    paddingTop:0,
-    
-    // 🟢 On augmente la hauteur maximale pour afficher plus d'éléments d'un coup
-    maxHeight: 220, 
+    backgroundColor: Colors.light.surface,
+    borderWidth: 1,
+    borderTopWidth: 0,
+    borderColor: Colors.light.primary,
+    borderBottomLeftRadius: 14,
+    borderBottomRightRadius: 14,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 10,
+    zIndex: 9999,
   },
   optionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 11,
     paddingHorizontal: 14,
-    paddingVertical: 12,
-    borderBottomWidth: 2,
-    borderBottomColor: '#abb2bc',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: Colors.light.borderSubtle,
+  },
+  optionItemLast: {
+    borderBottomWidth: 0,
+  },
+  optionItemSelected: {
+    backgroundColor: '#F0F9FF',
   },
   optionText: {
-    fontSize: 15,
-    color: '#1e293b',
+    fontSize: 14,
+    color: '#334155',
+    flex: 1,
+  },
+  optionTextSelected: {
+    color: Colors.light.primary,
+    fontWeight: '600',
+  },
+  checkCircle: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: Colors.light.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 8,
+  },
+  doneButton: {
+    marginTop: 8,
+    backgroundColor: Colors.light.primary,
+    paddingVertical: 10,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  doneButtonText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '700',
   },
 });

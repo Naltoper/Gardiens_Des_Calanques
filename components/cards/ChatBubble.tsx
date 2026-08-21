@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { Animated, StyleSheet, Text, View } from 'react-native';
 
 interface ChatBubbleProps {
   item: {
@@ -8,32 +8,63 @@ interface ChatBubbleProps {
     sender_role: string;
   };
   isMyMessage: boolean;
+  /** Index pour un léger décalage à l'ouverture de la page */
+  index?: number;
 }
 
-export const ChatBubble = ({ item, isMyMessage }: ChatBubbleProps) => {
+export const ChatBubble = ({ item, isMyMessage, index = 0 }: ChatBubbleProps) => {
+  const appearAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const delay = Math.min(index, 12) * 45;
+    const timer = setTimeout(() => {
+      Animated.spring(appearAnim, {
+        toValue: 1,
+        friction: 7,
+        tension: 60,
+        useNativeDriver: true,
+      }).start();
+    }, delay);
+    return () => clearTimeout(timer);
+  }, [appearAnim, index]);
+
   return (
-    <View style={[
-      styles.msgContainer, 
-      isMyMessage ? styles.myMsgContainer : styles.theirMsgContainer
-    ]}>
-      <View style={[
-        styles.msgBubble, 
-        isMyMessage ? styles.myBubble : styles.theirBubble
-      ]}>
-        <Text style={[
-          styles.msgText, 
-          isMyMessage ? styles.myText : styles.theirText
-        ]}>
+    <Animated.View
+      style={[
+        styles.msgContainer,
+        isMyMessage ? styles.myMsgContainer : styles.theirMsgContainer,
+        {
+          opacity: appearAnim,
+          transform: [
+            {
+              translateY: appearAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [8, 0],
+              }),
+            },
+          ],
+        },
+      ]}
+    >
+      <View
+        style={[
+          styles.msgBubble,
+          isMyMessage ? styles.myBubble : styles.theirBubble,
+        ]}
+      >
+        <Text
+          style={[styles.msgText, isMyMessage ? styles.myText : styles.theirText]}
+        >
           {item.content}
         </Text>
       </View>
       <Text style={styles.timeText}>
-        {new Date(item.created_at).toLocaleTimeString([], { 
-          hour: '2-digit', 
-          minute: '2-digit' 
+        {new Date(item.created_at).toLocaleTimeString([], {
+          hour: '2-digit',
+          minute: '2-digit',
         })}
       </Text>
-    </View>
+    </Animated.View>
   );
 };
 
@@ -54,13 +85,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 20,
-    
-    // --- NOUVEL EFFET D'OMBRE POUR LES BULLES DE CHAT ---
-    elevation: 2, // Légèrement augmenté pour se détacher proprement du fond sur Android
-    shadowColor: '#000000', // Couleur de l'ombre sur iOS
-    shadowOffset: { width: 2, height: 3 }, // Déplace l'ombre légèrement vers le bas de la bulle
-    shadowOpacity: 0.16, // Une opacité douce pour que l'ombre reste naturelle, surtout sous la bulle blanche
-    shadowRadius: 3, // Floutage de l'ombre pour éviter un effet de ligne noire rigide
+    elevation: 2,
+    shadowColor: '#000000',
+    shadowOffset: { width: 2, height: 3 },
+    shadowOpacity: 0.16,
+    shadowRadius: 3,
   },
   myBubble: {
     backgroundColor: '#023e8a',

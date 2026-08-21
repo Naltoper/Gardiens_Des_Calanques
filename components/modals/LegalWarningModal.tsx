@@ -1,6 +1,8 @@
-// components/modals/LegalWarningModal.tsx
-import React from 'react';
+import { ShieldAlert, X } from 'lucide-react-native';
+import React, { useEffect } from 'react';
 import { Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+
+import { Colors } from '../../constants/theme';
 
 interface LegalWarningModalProps {
   visible: boolean;
@@ -9,33 +11,43 @@ interface LegalWarningModalProps {
 }
 
 export const LegalWarningModal = ({ visible, onClose, onConfirm }: LegalWarningModalProps) => {
-
-    // 🟢 Nouvel état pour la case à cocher
   const [isChecked, setIsChecked] = React.useState(false);
 
+  useEffect(() => {
+    if (!visible) setIsChecked(false);
+  }, [visible]);
+
   return (
-    <Modal 
-      visible={visible} 
-      transparent 
-      animationType="fade" 
-      onRequestClose={onClose}
-    >
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
-          <Text style={styles.modalIcon}>⚖️</Text>
-          <Text style={styles.modalTitle}>Rappel juridique important</Text>
-          
-          <Text style={styles.modalWarningText}>
-            Je confirme que les informations transmises sont sincères. Un signalement <Text style={{ fontWeight: '700', color: '#dd5309' }}>volontairement inexacts ou mensongers</Text> peut donner lieu à des sanctions.
-          </Text>
-          
-          <Text style={styles.modalLawText}>
-            (Article 226-10 du Code pénal : la dénonciation calomnieuse est passible de sanctions pénales).
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <View style={styles.overlay}>
+        <View style={styles.card}>
+          <TouchableOpacity style={styles.closeButton} onPress={onClose} hitSlop={12}>
+            <X size={20} color={Colors.light.textMuted} />
+          </TouchableOpacity>
+
+          <View style={styles.iconCircle}>
+            <ShieldAlert size={26} color={Colors.light.primary} strokeWidth={2.2} />
+          </View>
+
+          <Text style={styles.title}>Rappel juridique important</Text>
+
+          <View style={styles.messageBox}>
+            <Text style={styles.messageText}>
+              Je confirme que les informations transmises sont sincères. Un signalement{' '}
+              <Text style={styles.messageHighlight}>
+                volontairement inexacts ou mensongers
+              </Text>{' '}
+              peut donner lieu à des sanctions.
+            </Text>
+          </View>
+
+          <Text style={styles.lawText}>
+            Article 226-10 du Code pénal : la dénonciation calomnieuse est passible de
+            sanctions pénales.
           </Text>
 
-          {/* 🟢 BLOC CASE À COCHER */}
-          <TouchableOpacity 
-            style={styles.checkboxContainer} 
+          <TouchableOpacity
+            style={styles.checkboxContainer}
             activeOpacity={0.8}
             onPress={() => setIsChecked(!isChecked)}
           >
@@ -45,21 +57,18 @@ export const LegalWarningModal = ({ visible, onClose, onConfirm }: LegalWarningM
             <Text style={styles.checkboxLabel}>Je confirme l&apos;exactitude des faits</Text>
           </TouchableOpacity>
 
-          
-
-          <TouchableOpacity onPress={onClose} style={styles.cancelBtn}>
-            <Text style={styles.cancelBtnText}>Modifier mon signalement</Text>
-          </TouchableOpacity>
-
-          {/* 🟡 BOUTON CONFIRMER L'ENVOI (Modifié) */}
-          <TouchableOpacity 
-            style={[styles.confirmBtn, !isChecked && styles.confirmBtnDisabled]} // Applique un style grisé si décoché
+          <TouchableOpacity
+            style={[styles.confirmBtn, !isChecked && styles.confirmBtnDisabled]}
             onPress={onConfirm}
-            disabled={!isChecked} // Bloque l'action du bouton tant que ce n'est pas coché
+            disabled={!isChecked}
+            activeOpacity={0.85}
           >
             <Text style={styles.confirmBtnText}>Confirmer l&apos;envoi</Text>
           </TouchableOpacity>
 
+          <TouchableOpacity onPress={onClose} style={styles.cancelBtn} activeOpacity={0.75}>
+            <Text style={styles.cancelBtnText}>Modifier mon signalement</Text>
+          </TouchableOpacity>
         </View>
       </View>
     </Modal>
@@ -67,101 +76,99 @@ export const LegalWarningModal = ({ visible, onClose, onConfirm }: LegalWarningM
 };
 
 const styles = StyleSheet.create({
-  modalOverlay: {
+  overlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.6)",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 24
+    backgroundColor: 'rgba(15, 23, 42, 0.55)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
   },
-  modalContent: {
-    width: "100%",
-    backgroundColor: "white",
+  card: {
+    width: '100%',
+    maxWidth: 420,
+    backgroundColor: Colors.light.surface,
     borderRadius: 24,
-    padding: 25,
-    alignItems: "center",
-    elevation: 10,
+    padding: 24,
+    paddingTop: 20,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.2,
-    shadowRadius: 15,
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.18,
+    shadowRadius: 24,
+    elevation: 12,
   },
-  modalIcon: {
-    fontSize: 36,
-    marginBottom: 10,
+  closeButton: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    zIndex: 1,
+    padding: 4,
   },
-  modalTitle: {
+  iconCircle: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#E0F2FE',
+    justifyContent: 'center',
+    alignItems: 'center',
+    alignSelf: 'center',
+    marginBottom: 14,
+  },
+  title: {
     fontSize: 22,
-    fontWeight: "800",
-    color: "#141132",
-    marginBottom: 22,
-    textAlign: "center",
+    fontWeight: '800',
+    color: Colors.light.primary,
+    textAlign: 'center',
+    marginBottom: 18,
   },
-  modalWarningText: {
-    fontSize: 16,
-    color: "#000000",
-    lineHeight: 19,
-    textAlign: "center",
-    marginBottom: 22,
-    fontWeight: "800", // 👈 Ajoute ou modifie cette ligne (600 ou 700)
+  messageBox: {
+    backgroundColor: '#FFF7ED',
+    borderRadius: 14,
+    padding: 14,
+    borderLeftWidth: 4,
+    borderLeftColor: Colors.light.status.warning,
+    marginBottom: 12,
   },
-  modalLawText: {
-    fontSize: 12,
-    color: "#71777f",
-    fontStyle: "italic",
-    textAlign: "center",
-    marginBottom: 25,
-  },
-  confirmBtn: {
-    width: "100%",
-    backgroundColor: "#022d69", // Vert d'origine pour validation ou #f39f17 selon ton choix
-    padding: 16,
-    borderRadius: 15,
-    alignItems: "center",
-    elevation: 2,
-    marginTop: 15,
-  },
-  confirmBtnText: {
-    color: "white",
-    fontWeight: "700",
+  messageText: {
     fontSize: 15,
+    color: Colors.light.text,
+    lineHeight: 22,
+    fontWeight: '500',
   },
-  cancelBtn: {
-    width: "100%",
-    backgroundColor: "#184ff5", // Vert d'origine pour validation ou #f39f17 selon ton choix
-    padding: 16,
-    borderRadius: 15,
-    alignItems: "center",
-    elevation: 2,
-    marginTop: 5,
+  messageHighlight: {
+    fontWeight: '800',
+    color: Colors.light.status.warning,
   },
-  cancelBtnText: {
-    color: "rgb(255, 255, 255)",
-    fontWeight: "600",
-    fontSize: 17,
+  lawText: {
+    fontSize: 12,
+    color: Colors.light.textMuted,
+    fontStyle: 'italic',
+    textAlign: 'center',
+    lineHeight: 18,
+    marginBottom: 20,
   },
-  // Styles pour la case à cocher
   checkboxContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     width: '100%',
     marginBottom: 20,
-    paddingHorizontal: 5,
+    paddingHorizontal: 4,
   },
   checkbox: {
     width: 22,
     height: 22,
     borderWidth: 2,
-    borderColor: '#71777f',
-    borderRadius: 10,
+    borderColor: Colors.light.border,
+    borderRadius: 6,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
-    backgroundColor: '#fff',
+    backgroundColor: Colors.light.surface,
   },
   checkboxChecked: {
-    backgroundColor: '#022d69',
-    borderColor: '#022d69',
+    backgroundColor: Colors.light.primary,
+    borderColor: Colors.light.primary,
   },
   checkboxCheckmark: {
     color: '#fff',
@@ -169,15 +176,46 @@ const styles = StyleSheet.create({
     fontWeight: '900',
   },
   checkboxLabel: {
-    fontSize: 15,
-    color: '#000000',
-    fontWeight: '700',
+    fontSize: 14,
+    color: Colors.light.text,
+    fontWeight: '600',
     flex: 1,
   },
-  // Style pour griser le bouton s'il est désactivé
+  confirmBtn: {
+    width: '100%',
+    backgroundColor: Colors.light.primary,
+    paddingVertical: 15,
+    borderRadius: 14,
+    alignItems: 'center',
+    shadowColor: Colors.light.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 3,
+  },
   confirmBtnDisabled: {
-    backgroundColor: '#94a3b8',
-    opacity: 0.5,
+    backgroundColor: '#94A3B8',
+    shadowOpacity: 0,
     elevation: 0,
+  },
+  confirmBtnText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+    fontSize: 16,
+  },
+  cancelBtn: {
+    width: '100%',
+    paddingVertical: 14,
+    borderRadius: 14,
+    alignItems: 'center',
+    marginTop: 10,
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+  },
+  cancelBtnText: {
+    color: Colors.light.primary,
+    fontWeight: '600',
+    fontSize: 15,
   },
 });

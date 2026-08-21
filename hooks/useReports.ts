@@ -8,8 +8,7 @@ export const useReports = () => {
   const [loading, setLoading] = useState(true); 
   const [refreshing, setRefreshing] = useState(false);
 
-  const fetchReports = async () => {
-
+  const fetchReports = useCallback(async () => {
     const userToken = await getUserToken();
 
     if (!userToken) {
@@ -30,17 +29,16 @@ export const useReports = () => {
     }
     setLoading(false);
     setRefreshing(false);
-  };
+  }, []);
 
   useEffect(() => {
     fetchReports();
-  }, []);
+  }, [fetchReports]);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     fetchReports();
-  }, []);
+  }, [fetchReports]);
 
-  // On retourne uniquement ce dont le composant a besoin
-  return { reports, loading, refreshing, onRefresh };
+  return { reports, loading, refreshing, onRefresh, fetchReports };
 };
