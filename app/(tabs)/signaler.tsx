@@ -20,7 +20,7 @@ import { LegalWarningModal } from '../../components/modals/LegalWarningModal';
 import CustomSelect from '../../components/signalement/CustomSelect';
 import SignalementSuccess from '../../components/signalement/SignalementSuccess';
 import { SELECT_FIELDS } from '../../constants/signalementFields';
-import { Colors } from '../../constants/theme';
+import { Colors, PAGE_SCENE_BACKDROP } from '../../constants/theme';
 import { useSignalementForm } from '../../hooks/useSignalementForm';
 
 const C = {
@@ -371,14 +371,16 @@ export default function SignalerScreen() {
 const styles = StyleSheet.create({
   mainContainer: {
     flex: 1,
+    backgroundColor: PAGE_SCENE_BACKDROP,
   },
   screenBackground: {
     flex: 1,
     width: '100%',
     height: '100%',
+    backgroundColor: PAGE_SCENE_BACKDROP,
   },
   screenBackgroundImage: {
-    opacity: 0.55,
+    opacity: 1,
   },
   toast: {
     position: 'absolute',

@@ -149,9 +149,7 @@ export const ReportCard = ({
 
       <View style={[styles.actionsRow, isCompact && styles.actionsRowCompact]}>
         <View style={styles.actionsSide}>
-          <View
-            style={[styles.statusLabel, { backgroundColor: colors.bg }]}
-          >
+          <View style={styles.statusLabel}>
             <View style={[styles.statusDot, { backgroundColor: colors.dot }]} />
             <Text
               style={[styles.statusText, { color: colors.text }]}
@@ -171,15 +169,17 @@ export const ReportCard = ({
         </View>
 
         <View style={[styles.actionsSide, styles.actionsSideRight]}>
-          <GradientButton
-            icon={<MessageCircle size={28} color="white" />}
-            colors={[APP_COLORS.gradient.start, APP_COLORS.gradient.start]}
-            onPress={onChat}
-            width={isCompact ? 56 : 60}
-            height={isCompact ? 56 : 60}
-            style={styles.chatButton}
-            title=""
-          />
+          <View style={styles.chatButtonWrap}>
+            <GradientButton
+              icon={<MessageCircle size={28} color="white" />}
+              colors={[APP_COLORS.gradient.start, APP_COLORS.gradient.start]}
+              onPress={onChat}
+              width={isCompact ? 56 : 60}
+              height={isCompact ? 56 : 60}
+              style={styles.chatButton}
+              title=""
+            />
+          </View>
         </View>
       </View>
     </Animated.View>
@@ -312,10 +312,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 5,
-    paddingHorizontal: 8,
+    gap: 6,
+    paddingHorizontal: 0,
     paddingVertical: 4,
-    borderRadius: 8,
+    backgroundColor: 'transparent',
   },
   statusDot: {
     width: 6,
@@ -340,6 +340,17 @@ const styles = StyleSheet.create({
     letterSpacing: 0.2,
     textAlign: 'center',
     lineHeight: 15,
+  },
+  chatButtonWrap: {
+    borderRadius: 30,
+    borderWidth: 1.5,
+    borderColor: 'rgba(2, 62, 138, 0.28)',
+    backgroundColor: APP_COLORS.gradient.start,
+    shadowColor: '#023e8a',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 5,
+    elevation: 6,
   },
   chatButton: {
     borderRadius: 30,

@@ -15,6 +15,7 @@ import {
   View
 } from 'react-native';
 import { GradientButton } from '../../components/buttons/GradientButton';
+import { PAGE_SCENE_BACKDROP } from '../../constants/theme';
 import { useUserToken } from '../../hooks/useUserToken';
 import { supabase } from '../../lib/supabase';
 import type {
@@ -327,7 +328,7 @@ export default function CommunityPostDetailsScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: 'transparent',
+    backgroundColor: PAGE_SCENE_BACKDROP,
   },
   container: {
     flexGrow: 1,
@@ -557,8 +558,9 @@ const styles = StyleSheet.create({
     flex: 1,
     width: '100%',
     height: '100%',
+    backgroundColor: PAGE_SCENE_BACKDROP,
   },
   screenBackgroundImage: {
-    opacity: 0.5, // Opacité ultra-légère (5%) pour préserver le contraste de tes cartes de discussion blanches
+    opacity: 1,
   },
 });

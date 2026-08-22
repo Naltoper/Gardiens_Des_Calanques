@@ -12,14 +12,19 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 
+import {
+  HEADER_FG,
+  HEADER_FG_MUTED,
+  HEADER_GRADIENT_COLORS,
+  HEADER_GRADIENT_END,
+  HEADER_GRADIENT_START,
+} from '../../constants/theme';
+
 interface ChatHeaderProps {
   reportId?: string | undefined;
   role: 'user' | 'admin' | string | string[] | undefined;
   onShowDetails?: () => void;
 }
-
-const HEADER_FG = '#1e293b';
-const HEADER_FG_MUTED = '#475569';
 
 export const ChatHeader = ({ role, onShowDetails }: ChatHeaderProps) => {
   const router = useRouter();
@@ -44,9 +49,9 @@ export const ChatHeader = ({ role, onShowDetails }: ChatHeaderProps) => {
 
   return (
     <LinearGradient
-      colors={['rgba(0, 113, 170, 0.35)', 'rgba(66, 191, 110, 0.35)']}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 0 }}
+      colors={[...HEADER_GRADIENT_COLORS]}
+      start={HEADER_GRADIENT_START}
+      end={HEADER_GRADIENT_END}
       style={[styles.headerGradient, { paddingTop: topPadding + 12 }]}
     >
       <View style={styles.headerTopContent}>

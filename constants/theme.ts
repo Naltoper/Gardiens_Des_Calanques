@@ -91,6 +91,19 @@ export const APP_COLORS = {
     end: "#10ac56",
   },
 };
+
+/** Dégradé et couleurs texte partagés par ChatHeader et PageHeader */
+export const HEADER_GRADIENT_COLORS = [
+  "rgba(0, 113, 170, 0.35)",
+  "rgba(66, 191, 110, 0.35)",
+] as const;
+export const HEADER_GRADIENT_START = { x: 0, y: 0 };
+export const HEADER_GRADIENT_END = { x: 1, y: 0 };
+export const HEADER_FG = "#1e293b";
+export const HEADER_FG_MUTED = "#475569";
+export const HEADER_BACKDROP = "#f8fafc";
+/** Filet opaque sous les images de fond semi-transparentes (évite le bleed des onglets) */
+export const PAGE_SCENE_BACKDROP = "#dce8ea";
 export const Fonts = Platform.select({
   ios: {
     /** iOS `UIFontDescriptorSystemDesignDefault` */

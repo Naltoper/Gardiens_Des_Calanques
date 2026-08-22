@@ -9,9 +9,10 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { CommunityIntroCard } from '../../components/Community/CommunityIntroCard';
 import { CommunityCreateCard } from '../../components/Community/CommunityCreateCard';
+import { CommunityIntroCard } from '../../components/Community/CommunityIntroCard';
 import { PageHeader } from '../../components/headers/PageHeader';
+import { PAGE_SCENE_BACKDROP } from '../../constants/theme';
 import { useCommunityPosts } from '../../hooks/community/useCommunityPosts';
 import { useCreatePost } from '../../hooks/community/useCreatePost';
 import { useUserToken } from '../../hooks/useUserToken';
@@ -148,7 +149,7 @@ export default function CommunauteScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: 'transparent',
+    backgroundColor: PAGE_SCENE_BACKDROP,
   },
   container: {
     flexGrow: 1,
@@ -261,9 +262,10 @@ const styles = StyleSheet.create({
     flex: 1,
     width: '100%',
     height: '100%',
+    backgroundColor: PAGE_SCENE_BACKDROP,
   },
   screenBackgroundImage: {
-    opacity: 0.5,
+    opacity: 1,
   },
   postImage: {
     width: '100%',
