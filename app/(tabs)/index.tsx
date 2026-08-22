@@ -104,6 +104,7 @@ export default function HomeScreen() {
   const [primaryShortcut, ...secondaryShortcuts] = shortcuts;
 
   return (
+    <View style={styles.screenRoot}>
     <LyceeBackground>
       <PageHeader
         title="Accueil"
@@ -170,10 +171,17 @@ export default function HomeScreen() {
         <Text style={styles.footerSubtitle}>Lycée des Calanques • Marseille</Text>
       </ScrollView>
     </LyceeBackground>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  screenRoot: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
+    backgroundColor: GARDIAN_CLAIR,
+  },
   container: {
     flexGrow: 1,
     padding: 20,

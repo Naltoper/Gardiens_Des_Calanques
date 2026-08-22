@@ -278,7 +278,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 12,
     borderWidth: 1,
-    borderColor: Colors.light.borderSubtle,
+    borderColor: '#94A3B8',
   },
   reportText: {
     fontSize: 15,

@@ -147,13 +147,13 @@ export default function ChatScreen() {
 }
 
 const styles = StyleSheet.create({
-  mainContainer: { flex: 1, backgroundColor: '#CBE7E6' },
+  mainContainer: { flex: 1, backgroundColor: '#D5EDEC' },
   content: { flex: 1 },
   listContent: { padding: 20 },
   inputWrapper: { 
     paddingHorizontal: 15, 
     paddingVertical: 15, 
-    backgroundColor: '#CBE7E6', 
+    backgroundColor: '#D5EDEC', 
     borderTopWidth: 1, 
     borderTopColor: '#e2e8f0',
 
@@ -206,7 +206,7 @@ const styles = StyleSheet.create({
     flex: 1,
     width: '100%',
     height: '100%',
-    backgroundColor: '#CBE7E6',
+    backgroundColor: '#D5EDEC',
   },
   chatBackgroundImage: {
     opacity: 0.16,

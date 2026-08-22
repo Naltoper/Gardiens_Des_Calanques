@@ -190,7 +190,7 @@ const styles = StyleSheet.create({
   },
   modalView: {
     width: '100%',
-    backgroundColor: '#CBE7E6',
+    backgroundColor: '#D5EDEC',
     borderRadius: 24,
     padding: 24,
     maxHeight: '85%',
@@ -207,7 +207,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     paddingBottom: 15,
     borderBottomWidth: 1,
-    borderBottomColor: '#f1f5f9',
+    borderBottomColor: '#94A3B8',
   },
   modalTitle: {
     fontSize: 20,
@@ -218,7 +218,7 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     paddingBottom: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#f8fafc',
+    borderBottomColor: '#94A3B8',
   },
   detailLabel: {
     fontSize: 12,

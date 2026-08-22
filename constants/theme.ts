@@ -15,7 +15,7 @@ const tintColorDark = "#fff";
 export const Colors = {
   light: {
     text: "#11181C",
-    background: "#CBE7E6",
+    background: "#D5EDEC",
     tint: tintColorLight,
     icon: "#687076",
     tabIconDefault: "#687076",
@@ -24,7 +24,7 @@ export const Colors = {
     //palette "calanques"
     primary: "#023E8A",
     secondary: "#00B4D8",
-    surface: "#CBE7E6",
+    surface: "#D5EDEC",
     border: "#E2E8F0",
     borderSubtle: "#F1F5F9",
     textMuted: "#64748B",
@@ -70,8 +70,8 @@ export const APP_COLORS = {
   blueDark: "#023e8a",
   blue: "#0077b6",
 
-  background: "#CBE7E6",
-  surface: "#CBE7E6",
+  background: "#D5EDEC",
+  surface: "#D5EDEC",
   border: "#e2e8f0",
 
   text: "#0f172a",
@@ -94,18 +94,18 @@ export const APP_COLORS = {
 
 /** Dégradé et couleurs texte partagés par ChatHeader et PageHeader */
 export const HEADER_GRADIENT_COLORS = [
-  "rgba(0, 113, 170, 0.35)",
-  "rgba(66, 191, 110, 0.35)",
+  "rgba(0, 113, 170, 0.22)",
+  "rgba(66, 191, 110, 0.22)",
 ] as const;
 export const HEADER_GRADIENT_START = { x: 0, y: 0 };
 export const HEADER_GRADIENT_END = { x: 1, y: 0 };
 export const HEADER_FG = "#1e293b";
 export const HEADER_FG_MUTED = "#475569";
 /** Fond Gardian clair — cartes, barres, inputs, modales (plus de blanc uni) */
-export const GARDIAN_CLAIR = "#CBE7E6";
+export const GARDIAN_CLAIR = "#D5EDEC";
 export const HEADER_BACKDROP = GARDIAN_CLAIR;
 /** Filet opaque sous les images de fond semi-transparentes (évite le bleed des onglets) */
-export const PAGE_SCENE_BACKDROP = "#dce8ea";
+export const PAGE_SCENE_BACKDROP = "#e4eef0";
 export const Fonts = Platform.select({
   ios: {
     /** iOS `UIFontDescriptorSystemDesignDefault` */

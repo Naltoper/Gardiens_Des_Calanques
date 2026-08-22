@@ -49,7 +49,7 @@ export const ChatHeader = ({ role, onShowDetails }: ChatHeaderProps) => {
           accessibilityRole="button"
           accessibilityLabel="Retour"
         >
-          <ChevronLeft color={HEADER_FG} size={30} strokeWidth={2.5} />
+          <ChevronLeft color={HEADER_FG} size={26} strokeWidth={2.5} />
         </TouchableOpacity>
       }
       right={<View style={styles.sidePlaceholder} />}
@@ -87,29 +87,29 @@ export const ChatHeader = ({ role, onShowDetails }: ChatHeaderProps) => {
 
 const styles = StyleSheet.create({
   backButton: {
-    padding: 5,
-    width: 40,
-    height: 40,
+    padding: 4,
+    width: 36,
+    height: 36,
     alignItems: 'center',
     justifyContent: 'center',
   },
   sidePlaceholder: {
-    width: 40,
-    height: 40,
+    width: 36,
+    height: 36,
   },
   documentIconButton: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: GARDIAN_CLAIR,
-    paddingVertical: 8,
-    paddingHorizontal: 20,
-    borderRadius: 20,
-    elevation: 3,
+    paddingVertical: 5,
+    paddingHorizontal: 16,
+    borderRadius: 16,
+    elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.12,
-    shadowRadius: 3,
-    minHeight: 40,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    minHeight: 32,
     borderWidth: 1,
     borderColor: '#e2e8f0',
   },

@@ -34,7 +34,7 @@ export function PageHeader({
             accessibilityRole="button"
             accessibilityLabel="Retour"
           >
-            <ChevronLeft color={HEADER_FG} size={30} strokeWidth={2.5} />
+            <ChevronLeft color={HEADER_FG} size={26} strokeWidth={2.5} />
           </TouchableOpacity>
         ) : (
           <View style={styles.sidePlaceholder} />
@@ -47,14 +47,14 @@ export function PageHeader({
 
 const styles = StyleSheet.create({
   backButton: {
-    padding: 5,
-    width: 40,
-    height: 40,
+    padding: 4,
+    width: 36,
+    height: 36,
     alignItems: 'center',
     justifyContent: 'center',
   },
   sidePlaceholder: {
-    width: 40,
-    height: 40,
+    width: 36,
+    height: 36,
   },
 });

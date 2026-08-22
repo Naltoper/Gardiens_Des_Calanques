@@ -3,7 +3,7 @@ import { Home, MessageSquare, Shield, Users } from 'lucide-react-native';
 import { Platform, StyleSheet, Text } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Colors, GARDIAN_CLAIR, PAGE_SCENE_BACKDROP } from '../../constants/theme';
+import { Colors, GARDIAN_CLAIR } from '../../constants/theme';
 
 const TAB_ICON_SIZE = 22;
 const TAB_LABEL_FONT = 11;
@@ -56,7 +56,7 @@ export default function TabLayout() {
         ),
         // Empêche le fond de scène de passer au-dessus des labels
         sceneStyle: {
-          backgroundColor: 'transparent',
+          backgroundColor: GARDIAN_CLAIR,
           overflow: 'visible',
         },
       }}
@@ -78,7 +78,7 @@ export default function TabLayout() {
             <Shield color={color} size={TAB_ICON_SIZE} strokeWidth={2.2} />
           ),
           sceneStyle: {
-            backgroundColor: PAGE_SCENE_BACKDROP,
+            backgroundColor: GARDIAN_CLAIR,
             overflow: 'visible',
           },
         }}
@@ -100,7 +100,7 @@ export default function TabLayout() {
             <Users color={color} size={TAB_ICON_SIZE} strokeWidth={2.2} />
           ),
           sceneStyle: {
-            backgroundColor: PAGE_SCENE_BACKDROP,
+            backgroundColor: GARDIAN_CLAIR,
             overflow: 'visible',
           },
         }}
