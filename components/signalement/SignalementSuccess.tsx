@@ -32,7 +32,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 35,
-    backgroundColor: '#fff',
+    backgroundColor: '#CBE7E6',
   },
   successIcon: {
     marginBottom: 20,

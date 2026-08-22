@@ -15,7 +15,7 @@ import {
   View
 } from 'react-native';
 import { GradientButton } from '../../components/buttons/GradientButton';
-import { PAGE_SCENE_BACKDROP } from '../../constants/theme';
+import { GARDIAN_CLAIR, PAGE_SCENE_BACKDROP } from '../../constants/theme';
 import { useUserToken } from '../../hooks/useUserToken';
 import { supabase } from '../../lib/supabase';
 import type {
@@ -349,7 +349,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'flex-start',
-    backgroundColor: 'rgba(255,255,255,0.9)',
+    backgroundColor: GARDIAN_CLAIR,
     borderRadius: 18,
     paddingHorizontal: 14,
     paddingVertical: 10,
@@ -397,7 +397,7 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   postCard: {
-    backgroundColor: 'rgba(255,255,255,0.94)',
+    backgroundColor: GARDIAN_CLAIR,
     borderRadius: 24,
     padding: 18,
     marginBottom: 22,
@@ -439,7 +439,7 @@ const styles = StyleSheet.create({
     lineHeight: 24,
   },
   createCard: {
-    backgroundColor: 'rgba(255,255,255,0.92)',
+    backgroundColor: GARDIAN_CLAIR,
     borderRadius: 24,
     padding: 18,
     marginBottom: 24,
@@ -459,7 +459,7 @@ const styles = StyleSheet.create({
   },
   textArea: {
     minHeight: 110,
-    backgroundColor: '#f8fafc',
+    backgroundColor: GARDIAN_CLAIR,
     borderRadius: 18,
     padding: 16,
     fontSize: 16,
@@ -470,7 +470,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   input: {
-    backgroundColor: '#f8fafc',
+    backgroundColor: GARDIAN_CLAIR,
     borderRadius: 16,
     padding: 14,
     fontSize: 16,
@@ -503,7 +503,7 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   emptyCard: {
-    backgroundColor: 'rgba(255,255,255,0.9)',
+    backgroundColor: GARDIAN_CLAIR,
     borderRadius: 20,
     padding: 22,
     borderWidth: 1,
@@ -515,7 +515,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
   commentCard: {
-    backgroundColor: 'rgba(255,255,255,0.94)',
+    backgroundColor: GARDIAN_CLAIR,
     borderRadius: 22,
     padding: 16,
     marginBottom: 14,

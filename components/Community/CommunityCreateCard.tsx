@@ -1,17 +1,18 @@
 import React from 'react';
-import { 
-  StyleSheet, 
-  Text, 
-  TextInput, 
-  TouchableOpacity, 
-  View, 
-  Image, 
-  Switch 
+import {
+  Image,
+  StyleSheet,
+  Switch,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { ImagePlus, Send, X } from 'lucide-react-native';
+
+import { GARDIAN_CLAIR } from '../../constants/theme';
 import { GradientButton } from '../buttons/GradientButton';
 
-// Définition stricte des Props attendues par la carte
 type CommunityCreateCardProps = {
   content: string;
   setContent: (text: string) => void;
@@ -40,12 +41,12 @@ export function CommunityCreateCard({
   handleCreatePost,
 }: CommunityCreateCardProps) {
   return (
-    <View style={styles.createCard}>
-      <Text style={styles.sectionTitle}>Nouveau post</Text>
+    <View style={styles.composer}>
+      <Text style={styles.sectionTitle}>Nouveau sujet</Text>
 
       <TextInput
         style={styles.textArea}
-        placeholder="Écris ton message..."
+        placeholder="Titre ou message du sujet..."
         placeholderTextColor="#94a3b8"
         multiline
         value={content}
@@ -53,9 +54,9 @@ export function CommunityCreateCard({
       />
 
       <TouchableOpacity style={styles.imagePickerButton} onPress={pickImage}>
-        <ImagePlus color="#023e8a" size={22} />
+        <ImagePlus color="#023e8a" size={18} />
         <Text style={styles.imagePickerText}>
-          {selectedImage ? 'Changer la photo' : 'Ajouter une photo'}
+          {selectedImage ? 'Changer la photo' : 'Joindre une photo'}
         </Text>
       </TouchableOpacity>
 
@@ -100,71 +101,60 @@ export function CommunityCreateCard({
         colors={['#48a4f4', '#10ac56']}
         onPress={handleCreatePost}
         disabled={loading}
-        height={64}
+        height={52}
       />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  createCard: {
-    backgroundColor: 'rgba(255,255,255,0.92)',
-    borderRadius: 24,
-    padding: 18,
-    marginBottom: 24,
-    borderWidth: 1,
-    borderColor: '#caf0f8',
-    shadowColor: '#0077b6',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 4,
+  composer: {
+    backgroundColor: GARDIAN_CLAIR,
+    paddingVertical: 14,
+    paddingHorizontal: 14,
+    marginBottom: 4,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: 'rgba(2, 62, 138, 0.12)',
   },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: 15,
     fontWeight: '800',
     color: '#023e8a',
-    marginBottom: 14,
+    marginBottom: 10,
   },
   textArea: {
-    minHeight: 120,
-    backgroundColor: '#f8fafc',
-    borderRadius: 18,
-    padding: 16,
-    fontSize: 16,
+    minHeight: 88,
+    backgroundColor: GARDIAN_CLAIR,
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 15,
     color: '#0f172a',
     textAlignVertical: 'top',
     borderWidth: 1,
-    borderColor: '#dbeafe',
-    marginBottom: 16,
+    borderColor: 'rgba(2, 62, 138, 0.16)',
+    marginBottom: 12,
   },
   imagePickerButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
     gap: 8,
-    backgroundColor: '#e0f2fe',
-    borderRadius: 16,
-    paddingVertical: 13,
-    paddingHorizontal: 14,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#caf0f8',
+    paddingVertical: 8,
+    marginBottom: 12,
   },
   imagePickerText: {
     color: '#023e8a',
-    fontSize: 15,
-    fontWeight: '800',
+    fontSize: 14,
+    fontWeight: '700',
   },
   imagePreviewContainer: {
     position: 'relative',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   imagePreview: {
     width: '100%',
-    height: 190,
-    borderRadius: 18,
-    backgroundColor: '#e2e8f0',
+    height: 160,
+    borderRadius: 8,
+    backgroundColor: '#d1e4e3',
   },
   removeImageButton: {
     position: 'absolute',
@@ -181,27 +171,27 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 12,
     gap: 12,
   },
   switchTitle: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '700',
     color: '#023e8a',
   },
   switchSubtitle: {
-    fontSize: 13,
+    fontSize: 12,
     color: '#64748b',
-    marginTop: 3,
+    marginTop: 2,
   },
   input: {
-    backgroundColor: '#f8fafc',
-    borderRadius: 16,
-    padding: 14,
-    fontSize: 16,
+    backgroundColor: GARDIAN_CLAIR,
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 15,
     color: '#0f172a',
     borderWidth: 1,
-    borderColor: '#dbeafe',
-    marginBottom: 16,
+    borderColor: 'rgba(2, 62, 138, 0.16)',
+    marginBottom: 12,
   },
 });

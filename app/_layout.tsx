@@ -9,7 +9,7 @@ export const unstable_settings = {
 };
 
 export default function RootLayout() {
-  const bgColor = "#cbe7e6c3";
+  const bgColor = "#CBE7E6";
   // Sur web, overflow:hidden + 100dvh coupait horizontalement les labels de la tab bar.
   const webStyle: ViewStyle =
     Platform.OS === "web"

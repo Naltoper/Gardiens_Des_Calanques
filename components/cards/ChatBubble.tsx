@@ -96,7 +96,7 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 4,
   },
   theirBubble: {
-    backgroundColor: '#fff',
+    backgroundColor: '#CBE7E6',
     borderBottomLeftRadius: 4,
   },
   msgText: {

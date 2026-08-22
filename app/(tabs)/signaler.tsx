@@ -20,7 +20,7 @@ import { LegalWarningModal } from '../../components/modals/LegalWarningModal';
 import CustomSelect from '../../components/signalement/CustomSelect';
 import SignalementSuccess from '../../components/signalement/SignalementSuccess';
 import { SELECT_FIELDS } from '../../constants/signalementFields';
-import { Colors, PAGE_SCENE_BACKDROP } from '../../constants/theme';
+import { Colors, GARDIAN_CLAIR, PAGE_SCENE_BACKDROP } from '../../constants/theme';
 import { useSignalementForm } from '../../hooks/useSignalementForm';
 
 const C = {
@@ -29,7 +29,7 @@ const C = {
   border: Colors.light.border,
   text: Colors.light.text,
   textMuted: Colors.light.textMuted,
-  cardBg: 'rgba(255, 255, 255, 0.95)',
+  cardBg: GARDIAN_CLAIR,
   error: Colors.light.status.error,
 };
 
@@ -443,7 +443,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 16,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: GARDIAN_CLAIR,
     borderRadius: 14,
     marginBottom: 18,
     borderWidth: 1,
@@ -474,7 +474,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 13,
     fontSize: 14,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: GARDIAN_CLAIR,
     color: C.text,
   },
   inputFocused: {
@@ -521,7 +521,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     padding: 20,
     alignItems: 'center',
-    backgroundColor: '#F8FAFC',
+    backgroundColor: GARDIAN_CLAIR,
   },
   uploadButtonText: {
     color: C.primary,
@@ -530,7 +530,7 @@ const styles = StyleSheet.create({
   },
   imagePreviewContainer: {
     alignItems: 'center',
-    backgroundColor: '#F8FAFC',
+    backgroundColor: GARDIAN_CLAIR,
     borderRadius: 14,
     padding: 15,
     borderWidth: 1,

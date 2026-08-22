@@ -18,11 +18,12 @@ import {
 import { AnonymityBadge } from "../../components/banners/AnonymityBadge";
 import { InstallBanner } from "../../components/banners/InstallBanner";
 import { LyceeBackground } from "../../components/backgrounds/LyceeBackground";
-import { Colors } from "../../constants/theme";
+import { PageHeader } from "../../components/headers/PageHeader";
+import { Colors, GARDIAN_CLAIR } from "../../constants/theme";
 
 const C = {
   primary: Colors.light.primary,
-  surface: "#FFFFFF",
+  surface: GARDIAN_CLAIR,
   border: "#E2E8F0",
   text: "#0F172A",
   textMuted: "#64748B",
@@ -104,6 +105,10 @@ export default function HomeScreen() {
 
   return (
     <LyceeBackground>
+      <PageHeader
+        title="Accueil"
+        subtitle="Les Gardiens des Calanques"
+      />
       <ScrollView
         contentContainerStyle={styles.container}
         showsVerticalScrollIndicator={false}
@@ -213,7 +218,7 @@ const styles = StyleSheet.create({
   },
   engagementCard: {
     flexDirection: "row",
-    backgroundColor: "rgba(255, 255, 255, 0.95)",
+    backgroundColor: GARDIAN_CLAIR,
     borderRadius: 16,
     padding: 16,
     marginBottom: 20,
@@ -247,7 +252,7 @@ const styles = StyleSheet.create({
     lineHeight: 19,
   },
   actionsCard: {
-    backgroundColor: "rgba(255, 255, 255, 0.95)",
+    backgroundColor: GARDIAN_CLAIR,
     borderRadius: 20,
     padding: 18,
     borderWidth: 1,

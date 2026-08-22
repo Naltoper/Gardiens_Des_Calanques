@@ -3,7 +3,7 @@ import { Home, MessageSquare, Shield, Users } from 'lucide-react-native';
 import { Platform, StyleSheet, Text } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Colors, PAGE_SCENE_BACKDROP } from '../../constants/theme';
+import { Colors, GARDIAN_CLAIR, PAGE_SCENE_BACKDROP } from '../../constants/theme';
 
 const TAB_ICON_SIZE = 22;
 const TAB_LABEL_FONT = 11;
@@ -34,7 +34,7 @@ export default function TabLayout() {
         tabBarActiveTintColor: Colors.light.primary,
         tabBarInactiveTintColor: Colors.light.tabIconDefault,
         tabBarStyle: {
-          backgroundColor: '#FFFFFF',
+          backgroundColor: GARDIAN_CLAIR,
           borderTopColor: Colors.light.border,
           borderTopWidth: 1,
           height: tabBarHeight,

@@ -27,6 +27,22 @@ export const getCommunityDisplayName = (
   return isAnonyme ? 'Anonyme' : authorName || 'Utilisateur';
 };
 
+export const getCommunityAuthorRole = (isAnonyme: boolean) => {
+  return isAnonyme ? 'Anonyme' : 'Élève';
+};
+
+export const getForumTopicTitle = (content: string, maxLength = 72) => {
+  const firstLine = content.trim().split(/\n/)[0] || 'Sujet';
+  if (firstLine.length <= maxLength) return firstLine;
+  return `${firstLine.slice(0, maxLength).trimEnd()}…`;
+};
+
+export const getForumPreview = (content: string, maxLength = 140) => {
+  const text = content.trim().replace(/\s+/g, ' ');
+  if (text.length <= maxLength) return text;
+  return `${text.slice(0, maxLength).trimEnd()}…`;
+};
+
 export const getStartOfTodayIso = () => {
   const startOfToday = new Date();
   startOfToday.setHours(0, 0, 0, 0);

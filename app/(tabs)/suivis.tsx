@@ -16,6 +16,7 @@ import {
 
 import { ReportCard } from '../../components/cards/ReportCard';
 import { PageHeader } from '../../components/headers/PageHeader';
+import { GARDIAN_CLAIR } from '../../constants/theme';
 import { DeleteConfirmModal } from '../../components/modals/DeleteConfirmModal';
 import { ReportDetailModal } from '../../components/modals/ReportDetailModal';
 import { useReports } from '../../hooks/useReports';
@@ -164,7 +165,7 @@ export default function SuivisScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: GARDIAN_CLAIR,
   },
   loaderContainer: {
     flex: 1,
@@ -175,7 +176,7 @@ const styles = StyleSheet.create({
     flex: 1,
     width: '100%',
     height: '100%',
-    backgroundColor: '#f8fafc',
+    backgroundColor: GARDIAN_CLAIR,
   },
   screenBackgroundImage: {
     opacity: 0.5,
@@ -199,7 +200,7 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 400,
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.96)',
+    backgroundColor: GARDIAN_CLAIR,
     borderRadius: 20,
     paddingHorizontal: 28,
     paddingVertical: 32,

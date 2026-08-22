@@ -209,7 +209,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: 'center',
     marginTop: 10,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: Colors.light.surface,
     borderWidth: 1,
     borderColor: Colors.light.border,
   },

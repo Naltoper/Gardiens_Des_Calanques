@@ -204,7 +204,7 @@ const styles = StyleSheet.create({
     zIndex: 2,
   },
   trigger: {
-    backgroundColor: '#F8FAFC',
+    backgroundColor: Colors.light.surface,
     borderWidth: 1,
     borderColor: Colors.light.border,
     borderRadius: 14,

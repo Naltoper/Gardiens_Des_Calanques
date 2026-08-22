@@ -5,7 +5,7 @@ import EngagementItem from '../../components/cards/EngagementItem';
 import { EmergencyCard } from '../../components/EmergencyCard';
 import { PageHeader } from '../../components/headers/PageHeader';
 import { NUMEROS_UTILES } from '../../constants/emergencyNumbers';
-import { Colors } from '../../constants/theme';
+import { Colors, GARDIAN_CLAIR } from '../../constants/theme';
 
 export default function NumerosScreen() {
   const router = useRouter();
@@ -86,6 +86,7 @@ const styles = StyleSheet.create({
     flex: 1,
     width: '100%',
     height: '100%',
+    backgroundColor: GARDIAN_CLAIR,
   },
   screenBackgroundImage: {
     opacity: 0.7,

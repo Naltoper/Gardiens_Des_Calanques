@@ -12,13 +12,16 @@ import {
 import { CommunityCreateCard } from '../../components/Community/CommunityCreateCard';
 import { CommunityIntroCard } from '../../components/Community/CommunityIntroCard';
 import { PageHeader } from '../../components/headers/PageHeader';
-import { PAGE_SCENE_BACKDROP } from '../../constants/theme';
+import { GARDIAN_CLAIR, PAGE_SCENE_BACKDROP } from '../../constants/theme';
 import { useCommunityPosts } from '../../hooks/community/useCommunityPosts';
 import { useCreatePost } from '../../hooks/community/useCreatePost';
 import { useUserToken } from '../../hooks/useUserToken';
 import {
   formatCommunityDateTime,
+  getCommunityAuthorRole,
   getCommunityDisplayName,
+  getForumPreview,
+  getForumTopicTitle,
 } from '../../utils/community';
 
 export default function CommunauteScreen() {
@@ -52,94 +55,115 @@ export default function CommunauteScreen() {
         />
 
         <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-          <CommunityIntroCard />
-          <CommunityCreateCard {...createPostProps} />
+          <View style={styles.forumPanel}>
+            <CommunityIntroCard />
+            <CommunityCreateCard {...createPostProps} />
 
-          <Text style={styles.postsTitle}>Publications récentes</Text>
-
-          {posts.length === 0 ? (
-            <View style={styles.emptyCard}>
-              <Text style={styles.emptyText}>Aucun post pour le moment.</Text>
+            <View style={styles.listHeader}>
+              <Text style={styles.listHeaderTitle}>Sujets récents</Text>
+              <Text style={styles.listHeaderMeta}>
+                {posts.length} {posts.length > 1 ? 'sujets' : 'sujet'}
+              </Text>
             </View>
-          ) : (
-            sortedPosts.map((post) => {
-              const score = votes[post.id] || 0;
-              const commentCount = commentCounts[post.id] || 0;
-              const isMine = userToken === post.user_token;
-              const displayName = getCommunityDisplayName(post.is_anonyme, post.author_name);
 
-              return (
-                <View key={post.id} style={styles.postCard}>
-                  <View style={styles.postHeader}>
-                    <View>
-                      <Text style={styles.author}>{displayName}</Text>
-                      <Text style={styles.date}>{formatCommunityDateTime(post.created_at)}</Text>
-                    </View>
+            {posts.length === 0 ? (
+              <View style={styles.emptyRow}>
+                <Text style={styles.emptyText}>Aucun sujet pour le moment.</Text>
+              </View>
+            ) : (
+              sortedPosts.map((post, index) => {
+                const score = votes[post.id] || 0;
+                const commentCount = commentCounts[post.id] || 0;
+                const isMine = userToken === post.user_token;
+                const displayName = getCommunityDisplayName(post.is_anonyme, post.author_name);
+                const role = getCommunityAuthorRole(post.is_anonyme);
 
-                    {isMine && (
+                return (
+                  <View
+                    key={post.id}
+                    style={[
+                      styles.threadRow,
+                      index === sortedPosts.length - 1 && styles.threadRowLast,
+                    ]}
+                  >
+                    <View style={styles.voteColumn}>
                       <TouchableOpacity
-                        style={styles.deleteButton}
-                        onPress={() => confirmDeletePost(post.id)}
-                      >
-                        <Trash2 color="#ef4444" size={20} />
-                      </TouchableOpacity>
-                    )}
-                  </View>
-
-                  <Text style={styles.postContent}>{post.content}</Text>
-                  {post.image_url && (
-                    <Image
-                      source={{ uri: post.image_url }}
-                      style={styles.postImage}
-                      resizeMode="cover"
-                    />
-                  )}
-
-                  <View style={styles.actionsRow}>
-                    <View style={styles.voteBox}>
-                      <TouchableOpacity
-                        style={[
-                          styles.voteButton,
-                          myVotes[post.id] === 1 && styles.activeVoteButton,
-                        ]}
+                        style={styles.voteButton}
                         onPress={() => handleVote(post.id, 1)}
+                        accessibilityRole="button"
+                        accessibilityLabel="Voter pour"
                       >
                         <ChevronUp
                           color={myVotes[post.id] === 1 ? '#10ac56' : '#64748b'}
-                          size={22}
+                          size={20}
                         />
                       </TouchableOpacity>
-
                       <Text style={styles.score}>{score}</Text>
-
                       <TouchableOpacity
-                        style={[
-                          styles.voteButton,
-                          myVotes[post.id] === -1 && styles.activeVoteButton,
-                        ]}
+                        style={styles.voteButton}
                         onPress={() => handleVote(post.id, -1)}
+                        accessibilityRole="button"
+                        accessibilityLabel="Voter contre"
                       >
                         <ChevronDown
                           color={myVotes[post.id] === -1 ? '#10ac56' : '#64748b'}
-                          size={22}
+                          size={20}
                         />
                       </TouchableOpacity>
                     </View>
 
-                    <TouchableOpacity
-                      style={styles.commentButton}
-                      onPress={() => router.push(`/community/${post.id}` as any)}
-                    >
-                      <MessageCircle color="#023e8a" size={20} />
-                      <Text style={styles.commentText}>
-                        {commentCount} {commentCount > 1 ? 'commentaires' : 'commentaire'}
+                    <View style={styles.threadBody}>
+                      <View style={styles.threadTitleRow}>
+                        <Text style={styles.threadTitle} numberOfLines={2}>
+                          {getForumTopicTitle(post.content)}
+                        </Text>
+                        {isMine && (
+                          <TouchableOpacity
+                            style={styles.deleteButton}
+                            onPress={() => confirmDeletePost(post.id)}
+                            accessibilityRole="button"
+                            accessibilityLabel="Supprimer le sujet"
+                          >
+                            <Trash2 color="#ef4444" size={16} />
+                          </TouchableOpacity>
+                        )}
+                      </View>
+
+                      <Text style={styles.threadMeta} numberOfLines={1}>
+                        {displayName} · {role} · {formatCommunityDateTime(post.created_at)}
                       </Text>
-                    </TouchableOpacity>
+
+                      <Text style={styles.threadPreview} numberOfLines={2}>
+                        {getForumPreview(post.content)}
+                      </Text>
+
+                      <View style={styles.threadFooter}>
+                        <TouchableOpacity
+                          style={styles.repliesButton}
+                          onPress={() => router.push(`/community/${post.id}` as any)}
+                          accessibilityRole="button"
+                          accessibilityLabel="Voir les réponses"
+                        >
+                          <MessageCircle color="#023e8a" size={15} />
+                          <Text style={styles.repliesText}>
+                            {commentCount} {commentCount > 1 ? 'réponses' : 'réponse'}
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+
+                    {post.image_url ? (
+                      <Image
+                        source={{ uri: post.image_url }}
+                        style={styles.threadThumb}
+                        resizeMode="cover"
+                      />
+                    ) : null}
                   </View>
-                </View>
-              );
-            })
-          )}
+                );
+              })
+            )}
+          </View>
         </ScrollView>
       </ImageBackground>
     </View>
@@ -153,110 +177,125 @@ const styles = StyleSheet.create({
   },
   container: {
     flexGrow: 1,
-    padding: 20,
-    paddingTop: 12,
+    paddingHorizontal: 16,
+    paddingTop: 10,
     paddingBottom: 32,
   },
-  postsTitle: {
-    fontSize: 22,
+  forumPanel: {
+    backgroundColor: GARDIAN_CLAIR,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(2, 62, 138, 0.12)',
+    overflow: 'hidden',
+  },
+  listHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: 'rgba(2, 62, 138, 0.12)',
+  },
+  listHeaderTitle: {
+    fontSize: 13,
     fontWeight: '800',
     color: '#023e8a',
-    marginBottom: 14,
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
   },
-  emptyCard: {
-    backgroundColor: 'rgba(255,255,255,0.9)',
-    borderRadius: 20,
-    padding: 22,
-    borderWidth: 1,
-    borderColor: '#caf0f8',
+  listHeaderMeta: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#64748b',
+  },
+  emptyRow: {
+    paddingVertical: 28,
+    paddingHorizontal: 16,
   },
   emptyText: {
     textAlign: 'center',
     color: '#64748b',
-    fontSize: 15,
+    fontSize: 14,
   },
-  postCard: {
-    backgroundColor: 'rgba(255,255,255,0.94)',
-    borderRadius: 24,
-    padding: 18,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#caf0f8',
-    shadowColor: '#0077b6',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  postHeader: {
+  threadRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 12,
-    marginBottom: 12,
+    alignItems: 'flex-start',
+    paddingHorizontal: 10,
+    paddingVertical: 12,
+    gap: 8,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: 'rgba(2, 62, 138, 0.12)',
   },
-  author: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: '#023e8a',
+  threadRowLast: {
+    borderBottomWidth: 0,
   },
-  date: {
-    fontSize: 12,
-    color: '#94a3b8',
-    marginTop: 3,
-  },
-  deleteButton: {
-    padding: 8,
-    borderRadius: 14,
-    backgroundColor: '#fee2e2',
-  },
-  postContent: {
-    fontSize: 16,
-    color: '#334155',
-    lineHeight: 23,
-    marginBottom: 16,
-  },
-  actionsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  voteColumn: {
+    width: 32,
     alignItems: 'center',
-  },
-  voteBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f8fafc',
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: '#dbeafe',
-    paddingHorizontal: 6,
-    paddingVertical: 4,
+    paddingTop: 2,
   },
   voteButton: {
-    padding: 6,
-    borderRadius: 12,
-  },
-  activeVoteButton: {
-    backgroundColor: '#dcfce7',
+    padding: 2,
   },
   score: {
-    minWidth: 28,
+    minWidth: 22,
     textAlign: 'center',
-    fontSize: 16,
+    fontSize: 13,
     fontWeight: '800',
     color: '#023e8a',
   },
-  commentButton: {
+  threadBody: {
+    flex: 1,
+    minWidth: 0,
+  },
+  threadTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+  },
+  threadTitle: {
+    flex: 1,
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#0f172a',
+    lineHeight: 20,
+  },
+  deleteButton: {
+    padding: 4,
+  },
+  threadMeta: {
+    fontSize: 12,
+    color: '#64748b',
+    marginTop: 4,
+    fontWeight: '500',
+  },
+  threadPreview: {
+    fontSize: 13,
+    color: '#334155',
+    lineHeight: 19,
+    marginTop: 6,
+  },
+  threadFooter: {
+    marginTop: 8,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    backgroundColor: '#e0f2fe',
-    paddingHorizontal: 12,
-    paddingVertical: 9,
-    borderRadius: 16,
   },
-  commentText: {
+  repliesButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  repliesText: {
     color: '#023e8a',
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '700',
+  },
+  threadThumb: {
+    width: 56,
+    height: 56,
+    borderRadius: 6,
+    backgroundColor: '#d1e4e3',
+    marginTop: 2,
   },
   screenBackground: {
     flex: 1,
@@ -266,13 +305,5 @@ const styles = StyleSheet.create({
   },
   screenBackgroundImage: {
     opacity: 1,
-  },
-  postImage: {
-    width: '100%',
-    height: 210,
-    borderRadius: 18,
-    backgroundColor: '#e2e8f0',
-    marginBottom: 16,
-    resizeMode: 'cover',
   },
 });
