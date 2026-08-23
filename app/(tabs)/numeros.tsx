@@ -1,5 +1,6 @@
 import { useRouter } from 'expo-router';
-import { ImageBackground, Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { ImageBackground, Linking, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Info, ShieldCheck } from 'lucide-react-native';
 import EngagementItem from '../../components/cards/EngagementItem';
 import { EmergencyCard } from '../../components/EmergencyCard';
@@ -9,7 +10,14 @@ import { Colors, GARDIAN_CLAIR } from '../../constants/theme';
 
 export default function NumerosScreen() {
   const router = useRouter();
+  const [refreshing, setRefreshing] = useState(false);
   const call = (num: string) => Linking.openURL(`tel:${num}`);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    setRefreshing(false);
+  };
 
   return (
     <View style={styles.mainContainer}>
@@ -29,6 +37,13 @@ export default function NumerosScreen() {
           style={styles.container}
           contentContainerStyle={styles.content}
           showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor="#48a4f4"
+            />
+          }
         >
           <EngagementItem
             icon={<Info color="#023e8a" size={26} strokeWidth={2.5} />}

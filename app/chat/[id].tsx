@@ -1,16 +1,20 @@
+import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams } from 'expo-router';
-import { Send, ShieldCheck } from 'lucide-react-native';
+import { ImagePlus, Send, ShieldCheck, X } from 'lucide-react-native';
 import { useEffect, useRef, useState } from 'react';
-import { FlatList, StatusBar, 
+import { FlatList, Image, RefreshControl, StatusBar, 
   StyleSheet, TextInput, TouchableOpacity, View, Text, ImageBackground } from 'react-native';
 import { ChatHeader } from '../../components/headers/ChatHeader';
 import { ChatBubble } from '../../components/cards/ChatBubble';
 import { KeyboardAwareBody } from '../../components/layout/KeyboardAwareBody';
+import { ImageLightboxModal } from '../../components/modals/ImageLightboxModal';
 import { useChatMessages } from '../../hooks/useChatMessages';
 import { ReportDetailModal } from '../../components/modals/ReportDetailModal';
 import { supabase } from '../../lib/supabase';
 import { Report } from '../../types/report';
+import { uploadImageToSupabase } from '../../utils/uploadImage';
+import { notify } from '../../utils/notify';
 
 
 
@@ -20,17 +24,72 @@ export default function ChatScreen() {
   const role = params.role as 'user' | 'admin';
   
   const [newMessage, setNewMessage] = useState('');
+  const [pendingImage, setPendingImage] = useState<{
+    uri: string;
+    mimeType?: string;
+    fileName?: string;
+  } | null>(null);
+  const [lightboxUri, setLightboxUri] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
   const flatListRef = useRef<FlatList>(null);
 
   // --- NOUVEAUX ÉTATS POUR LA MODALE ---
   const [reportData, setReportData] = useState<Report | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
 
-  const { messages, sendMessage, loading } = useChatMessages(reportId);
+  const { messages, sendMessage, loading, fetchMessages } = useChatMessages(reportId);
+
+  const pickChatImage = async () => {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      notify('Permission refusée', 'Autorise l’accès aux photos pour envoyer une image.');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      quality: 0.8,
+    });
+
+    if (result.canceled) return;
+    const asset = result.assets[0];
+    setPendingImage({
+      uri: asset.uri,
+      mimeType: asset.mimeType ?? undefined,
+      fileName: asset.fileName ?? undefined,
+    });
+  };
 
   const handleSend = async () => {
-    const success = await sendMessage(newMessage, role);
-    if (success) setNewMessage('');
+    if (!newMessage.trim() && !pendingImage) return;
+
+    let imageUrl: string | null = null;
+    if (pendingImage) {
+      imageUrl = await uploadImageToSupabase(pendingImage.uri, 'report-photos', {
+        mimeType: pendingImage.mimeType,
+        fileName: pendingImage.fileName,
+      });
+      if (!imageUrl) {
+        notify('Erreur', "Impossible d'envoyer l'image.");
+        return;
+      }
+    }
+
+    const success = await sendMessage(newMessage, role, imageUrl);
+    if (success) {
+      setNewMessage('');
+      setPendingImage(null);
+      return;
+    }
+
+    notify('Erreur', "Impossible d'envoyer le message.");
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchMessages();
+    setRefreshing(false);
   };
 
   // Charger les détails du signalement pour la modale
@@ -85,12 +144,20 @@ export default function ChatScreen() {
               contentContainerStyle={styles.listContent}
               keyboardShouldPersistTaps="handled"
               keyboardDismissMode="interactive"
+              refreshControl={
+                <RefreshControl
+                  refreshing={refreshing}
+                  onRefresh={onRefresh}
+                  tintColor="#48a4f4"
+                />
+              }
               onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
               renderItem={({ item, index }) => (
                 <ChatBubble 
                   item={item} 
                   isMyMessage={item.sender_role === role}
                   index={index}
+                  onImagePress={setLightboxUri}
                 />
               )}
               // AJOUT DE L'ÉTAT VIDE STYLISÉ (Avec étirement forcé pour occuper le fond)
@@ -114,7 +181,28 @@ export default function ChatScreen() {
           </ImageBackground>
 
         <View style={styles.inputWrapper}>
+          {pendingImage ? (
+            <View style={styles.previewRow}>
+              <Image source={{ uri: pendingImage.uri }} style={styles.previewImage} />
+              <TouchableOpacity
+                onPress={() => setPendingImage(null)}
+                style={styles.previewRemove}
+                accessibilityRole="button"
+                accessibilityLabel="Retirer l'image"
+              >
+                <X size={14} color="#ffffff" />
+              </TouchableOpacity>
+            </View>
+          ) : null}
           <View style={styles.inputContainer}>
+            <TouchableOpacity
+              onPress={pickChatImage}
+              style={styles.attachBtn}
+              accessibilityRole="button"
+              accessibilityLabel="Ajouter une image"
+            >
+              <ImagePlus size={20} color="#023e8a" />
+            </TouchableOpacity>
             <TextInput 
               style={[styles.input, { outlineStyle: 'none' } as any]}
               value={newMessage} 
@@ -124,9 +212,16 @@ export default function ChatScreen() {
               multiline
             />
 
-            <TouchableOpacity onPress={handleSend} disabled={!newMessage.trim() || loading}>
+            <TouchableOpacity
+              onPress={handleSend}
+              disabled={(!newMessage.trim() && !pendingImage) || loading}
+            >
               <LinearGradient
-                colors={newMessage.trim() ? ['#48a4f4', '#10ac56'] : ['#e2e8f0', '#cbd5e1']}
+                colors={
+                  newMessage.trim() || pendingImage
+                    ? ['#48a4f4', '#10ac56']
+                    : ['#e2e8f0', '#cbd5e1']
+                }
                 style={styles.sendBtn}
               >
                 <Send size={18} color="white" />
@@ -140,6 +235,11 @@ export default function ChatScreen() {
         visible={modalVisible} 
         onClose={() => setModalVisible(false)} 
         report={reportData} 
+      />
+      <ImageLightboxModal
+        visible={!!lightboxUri}
+        uri={lightboxUri}
+        onClose={() => setLightboxUri(null)}
       />
     </View>
   );
@@ -163,6 +263,35 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 6,
   },  
+  attachBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  previewRow: {
+    position: 'relative',
+    alignSelf: 'flex-start',
+    marginBottom: 10,
+  },
+  previewImage: {
+    width: 72,
+    height: 72,
+    borderRadius: 12,
+    backgroundColor: '#cbd5e1',
+  },
+  previewRemove: {
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: '#0f172a',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   inputContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#f1f5f9', borderRadius: 25, padding: 5 },
   input: { 
     flex: 1, 

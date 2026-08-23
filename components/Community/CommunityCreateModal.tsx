@@ -75,8 +75,8 @@ export function CommunityCreateModal({
     if (visible) {
       setMounted(true);
       backdropOpacity.setValue(0);
-      sheetTranslateY.setValue(SCREEN_HEIGHT);
-      Animated.sequence([
+      sheetTranslateY.setValue(-SCREEN_HEIGHT * 0.35);
+      Animated.parallel([
         Animated.timing(backdropOpacity, {
           toValue: 1,
           duration: BACKDROP_MS,
@@ -95,9 +95,9 @@ export function CommunityCreateModal({
 
     if (!mounted) return;
 
-    Animated.sequence([
+    Animated.parallel([
       Animated.timing(sheetTranslateY, {
-        toValue: SCREEN_HEIGHT,
+        toValue: -SCREEN_HEIGHT * 0.35,
         duration: 180,
         easing: Easing.in(Easing.cubic),
         useNativeDriver: true,
@@ -147,7 +147,7 @@ export function CommunityCreateModal({
 
           <KeyboardAvoidingView
             style={styles.sheetWrap}
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            behavior={undefined}
             pointerEvents="box-none"
           >
             <Animated.View
@@ -265,7 +265,7 @@ export function CommunityCreateModal({
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    justifyContent: 'flex-end',
+    justifyContent: 'flex-start',
   },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
@@ -273,14 +273,15 @@ const styles = StyleSheet.create({
   },
   sheetWrap: {
     width: '100%',
-    justifyContent: 'flex-end',
+    justifyContent: 'flex-start',
+    paddingTop: 8,
   },
   sheet: {
     backgroundColor: GARDIAN_CLAIR,
-    borderTopLeftRadius: 22,
-    borderTopRightRadius: 22,
-    maxHeight: SCREEN_HEIGHT * 0.92,
-    paddingBottom: Platform.OS === 'ios' ? 24 : 16,
+    borderBottomLeftRadius: 22,
+    borderBottomRightRadius: 22,
+    maxHeight: SCREEN_HEIGHT * 0.72,
+    paddingBottom: 12,
     borderWidth: 1,
     borderColor: 'rgba(2, 62, 138, 0.12)',
   },
@@ -300,7 +301,7 @@ const styles = StyleSheet.create({
     color: '#023e8a',
   },
   scroll: {
-    maxHeight: 560,
+    maxHeight: SCREEN_HEIGHT * 0.58,
   },
   scrollContent: {
     paddingHorizontal: 18,
@@ -326,7 +327,7 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   textArea: {
-    minHeight: 110,
+    minHeight: 72,
     backgroundColor: '#F4FBFA',
     borderRadius: 10,
     padding: 12,

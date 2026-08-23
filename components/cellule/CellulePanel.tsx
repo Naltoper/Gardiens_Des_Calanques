@@ -7,11 +7,12 @@ import {
   ShieldCheck,
   Zap,
 } from 'lucide-react-native';
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Dimensions,
   Image,
   Linking,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -25,6 +26,14 @@ import { ENGAGEMENTS, GENIALLY_URL } from '../../constants/cellule';
 const { width } = Dimensions.get('window');
 
 export function CellulePanel() {
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    setRefreshing(false);
+  };
+
   const openWebLink = async () => {
     try {
       const supported = await Linking.canOpenURL(GENIALLY_URL);
@@ -41,6 +50,13 @@ export function CellulePanel() {
       style={styles.scroll}
       contentContainerStyle={styles.container}
       showsVerticalScrollIndicator={false}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          tintColor="#48a4f4"
+        />
+      }
     >
       <View style={styles.header}>
         <View style={styles.iconCircle}>

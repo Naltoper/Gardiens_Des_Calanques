@@ -24,7 +24,9 @@ type ReplyComposerBarProps = {
   setAuthorName: (text: string) => void;
   loading: boolean;
   onSend: () => void;
-  onClose: () => void;
+  onClose?: () => void;
+  showClose?: boolean;
+  autoFocus?: boolean;
 };
 
 export function ReplyComposerBar({
@@ -37,14 +39,17 @@ export function ReplyComposerBar({
   loading,
   onSend,
   onClose,
+  showClose = true,
+  autoFocus = true,
 }: ReplyComposerBarProps) {
   const inputRef = useRef<TextInput>(null);
   const reveal = useRevealIdentity(isAnonyme, setIsAnonyme);
 
   useEffect(() => {
+    if (!autoFocus) return;
     const timer = setTimeout(() => inputRef.current?.focus(), 80);
     return () => clearTimeout(timer);
-  }, []);
+  }, [autoFocus]);
 
   return (
     <View style={styles.bar}>
@@ -58,14 +63,16 @@ export function ReplyComposerBar({
             trackColor={{ false: '#cbd5e1', true: '#76c893' }}
             thumbColor={isAnonyme ? '#10ac56' : '#f4f4f5'}
           />
-          <TouchableOpacity
-            onPress={onClose}
-            hitSlop={8}
-            accessibilityRole="button"
-            accessibilityLabel="Fermer la saisie"
-          >
-            <X color="#64748b" size={18} />
-          </TouchableOpacity>
+          {showClose && onClose ? (
+            <TouchableOpacity
+              onPress={onClose}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="Fermer la saisie"
+            >
+              <X color="#64748b" size={18} />
+            </TouchableOpacity>
+          ) : null}
         </View>
       </View>
 
@@ -89,7 +96,7 @@ export function ReplyComposerBar({
           value={content}
           onChangeText={setContent}
           multiline
-          autoFocus
+          autoFocus={autoFocus}
           returnKeyType="send"
           onSubmitEditing={onSend}
           {...autofillOffProps}

@@ -6,9 +6,10 @@ import {
   Shield,
   ShieldAlert,
 } from "lucide-react-native";
-import React from "react";
+import React, { useState } from "react";
 import {
   Image,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -78,6 +79,13 @@ function ShortcutTile({
 
 export default function HomeScreen() {
   const router = useRouter();
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    setRefreshing(false);
+  };
 
   const shortcuts: ShortcutItem[] = [
     {
@@ -113,6 +121,13 @@ export default function HomeScreen() {
       <ScrollView
         contentContainerStyle={styles.container}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#48a4f4"
+          />
+        }
       >
         <InstallBanner
           title="Application élève"

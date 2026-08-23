@@ -1,5 +1,7 @@
 import React, { useEffect, useRef } from 'react';
-import { Animated, StyleSheet, Text, View } from 'react-native';
+import { Animated, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+
+import { decodeChatContent } from '../../utils/chatMessage';
 
 interface ChatBubbleProps {
   item: {
@@ -10,10 +12,17 @@ interface ChatBubbleProps {
   isMyMessage: boolean;
   /** Index pour un léger décalage à l'ouverture de la page */
   index?: number;
+  onImagePress?: (uri: string) => void;
 }
 
-export const ChatBubble = ({ item, isMyMessage, index = 0 }: ChatBubbleProps) => {
+export const ChatBubble = ({
+  item,
+  isMyMessage,
+  index = 0,
+  onImagePress,
+}: ChatBubbleProps) => {
   const appearAnim = useRef(new Animated.Value(0)).current;
+  const { text, imageUrl } = decodeChatContent(item.content);
 
   useEffect(() => {
     const delay = Math.min(index, 12) * 45;
@@ -50,13 +59,30 @@ export const ChatBubble = ({ item, isMyMessage, index = 0 }: ChatBubbleProps) =>
         style={[
           styles.msgBubble,
           isMyMessage ? styles.myBubble : styles.theirBubble,
+          imageUrl ? styles.imageBubble : null,
         ]}
       >
-        <Text
-          style={[styles.msgText, isMyMessage ? styles.myText : styles.theirText]}
-        >
-          {item.content}
-        </Text>
+        {imageUrl ? (
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={() => onImagePress?.(imageUrl)}
+            accessibilityRole="button"
+            accessibilityLabel="Voir l'image en grand"
+          >
+            <Image source={{ uri: imageUrl }} style={styles.image} resizeMode="cover" />
+          </TouchableOpacity>
+        ) : null}
+        {text ? (
+          <Text
+            style={[
+              styles.msgText,
+              isMyMessage ? styles.myText : styles.theirText,
+              imageUrl ? styles.imageCaption : null,
+            ]}
+          >
+            {text}
+          </Text>
+        ) : null}
       </View>
       <Text style={styles.timeText}>
         {new Date(item.created_at).toLocaleTimeString([], {
@@ -91,6 +117,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.16,
     shadowRadius: 3,
   },
+  imageBubble: {
+    paddingHorizontal: 6,
+    paddingTop: 6,
+  },
   myBubble: {
     backgroundColor: '#023e8a',
     borderBottomRightRadius: 4,
@@ -99,9 +129,20 @@ const styles = StyleSheet.create({
     backgroundColor: '#E2F4F3',
     borderBottomLeftRadius: 4,
   },
+  image: {
+    width: 210,
+    height: 160,
+    borderRadius: 14,
+    backgroundColor: '#cbd5e1',
+  },
   msgText: {
     fontSize: 15,
     lineHeight: 20,
+  },
+  imageCaption: {
+    paddingHorizontal: 10,
+    paddingTop: 8,
+    paddingBottom: 4,
   },
   myText: {
     color: '#fff',

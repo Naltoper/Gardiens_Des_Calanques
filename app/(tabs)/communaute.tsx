@@ -1,8 +1,10 @@
-import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
+import { useFocusEffect } from '@react-navigation/native';
+import { useRouter } from 'expo-router';
 import { MessageCircle, PenLine, Plus, ThumbsUp, Trash2 } from 'lucide-react-native';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import {
   Image,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -10,20 +12,15 @@ import {
   View,
 } from 'react-native';
 
-import { CommunityCommentsList } from '../../components/Community/CommunityCommentsList';
 import { CommunityCreateModal } from '../../components/Community/CommunityCreateModal';
 import { CommunityIntroCard } from '../../components/Community/CommunityIntroCard';
 import { CommunityPostSuccessModal } from '../../components/Community/CommunityPostSuccessModal';
-import { ReplyComposerBar } from '../../components/Community/ReplyComposerBar';
 import { PageHeader } from '../../components/headers/PageHeader';
-import { KeyboardAwareBody } from '../../components/layout/KeyboardAwareBody';
 import { ImageLightboxModal } from '../../components/modals/ImageLightboxModal';
 import { useTabBarHidden } from '../../components/navigation/TabBarVisibility';
 import { GARDIAN_CLAIR } from '../../constants/theme';
 import { useCommunityPosts } from '../../hooks/community/useCommunityPosts';
 import { useCreatePost } from '../../hooks/community/useCreatePost';
-import { usePostComments } from '../../hooks/community/usePostComments';
-import { useKeyboardVisible } from '../../hooks/useKeyboardVisible';
 import { useUserToken } from '../../hooks/useUserToken';
 import {
   formatCommunityDateTime,
@@ -33,12 +30,12 @@ import {
 } from '../../utils/community';
 
 export default function CommunauteScreen() {
+  const router = useRouter();
   const userToken = useUserToken();
-  const [expandedPostId, setExpandedPostId] = useState<string | null>(null);
-  const [replyingPostId, setReplyingPostId] = useState<string | null>(null);
   const [createVisible, setCreateVisible] = useState(false);
   const [successVisible, setSuccessVisible] = useState(false);
   const [lightboxUri, setLightboxUri] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
   const {
     posts,
@@ -56,28 +53,23 @@ export default function CommunauteScreen() {
     fetchPosts
   );
   void _resetCreateForm;
-  const activeCommentPostId = replyingPostId ?? expandedPostId;
-  const commentsState = usePostComments(activeCommentPostId, userToken);
-  const tabBarHeight = useBottomTabBarHeight();
-  const keyboardVisible = useKeyboardVisible();
-  const hideTabBar = createVisible || !!replyingPostId || keyboardVisible;
 
-  useTabBarHidden(hideTabBar);
+  useTabBarHidden(createVisible);
 
-  const toggleComments = (postId: string) => {
-    setExpandedPostId((current) => (current === postId ? null : postId));
+  useFocusEffect(
+    useCallback(() => {
+      fetchPosts({ resort: true });
+    }, [fetchPosts]),
+  );
+
+  const openPost = (postId: string) => {
+    router.push(`/community/${postId}`);
   };
 
-  const openReply = (postId: string) => {
-    setExpandedPostId(postId);
-    setReplyingPostId(postId);
-  };
-
-  const handleSendReply = async () => {
-    const sent = await commentsState.handleCreateComment();
-    if (sent) {
-      fetchPosts({ resort: false });
-    }
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchPosts({ resort: true });
+    setRefreshing(false);
   };
 
   const handlePublished = () => {
@@ -92,12 +84,18 @@ export default function CommunauteScreen() {
         subtitle="Espace d'échange entre élèves, dans le respect et la bienveillance."
       />
 
-      <KeyboardAwareBody keyboardVerticalOffset={hideTabBar ? 0 : tabBarHeight}>
-        <ScrollView
+      <ScrollView
           style={styles.scroll}
           contentContainerStyle={styles.container}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor="#48a4f4"
+            />
+          }
         >
           <CommunityIntroCard />
 
@@ -135,7 +133,6 @@ export default function CommunauteScreen() {
               const isMine = userToken === post.user_token;
               const displayName = getCommunityDisplayName(post.is_anonyme, post.author_name);
               const role = getCommunityAuthorRole(post.is_anonyme);
-              const isExpanded = expandedPostId === post.id;
               const liked = myVotes[post.id] === 1;
               const { title, body } = getPostTitleAndBody(post.content);
 
@@ -167,9 +164,9 @@ export default function CommunauteScreen() {
                     <TouchableOpacity
                       style={styles.threadBody}
                       activeOpacity={0.85}
-                      onPress={() => toggleComments(post.id)}
+                      onPress={() => openPost(post.id)}
                       accessibilityRole="button"
-                      accessibilityLabel="Voir les commentaires"
+                      accessibilityLabel="Ouvrir le sujet"
                     >
                       <View style={styles.threadTitleRow}>
                         <Text style={styles.threadTitle} numberOfLines={2}>
@@ -217,7 +214,7 @@ export default function CommunauteScreen() {
                   <View style={styles.threadFooter}>
                     <TouchableOpacity
                       style={styles.repliesButton}
-                      onPress={() => toggleComments(post.id)}
+                      onPress={() => openPost(post.id)}
                       accessibilityRole="button"
                       accessibilityLabel="Voir les commentaires"
                     >
@@ -229,46 +226,18 @@ export default function CommunauteScreen() {
 
                     <TouchableOpacity
                       style={styles.replyAction}
-                      onPress={() => openReply(post.id)}
+                      onPress={() => openPost(post.id)}
                       accessibilityRole="button"
                       accessibilityLabel="Répondre"
                     >
                       <Text style={styles.replyActionText}>Répondre</Text>
                     </TouchableOpacity>
                   </View>
-
-                  {isExpanded ? (
-                    <CommunityCommentsList
-                      comments={
-                        activeCommentPostId === post.id ? commentsState.comments : []
-                      }
-                      userToken={userToken}
-                      onDelete={(commentId) => {
-                      commentsState.confirmDeleteComment(commentId);
-                      fetchPosts({ resort: false });
-                      }}
-                    />
-                  ) : null}
                 </View>
               );
             })
           )}
         </ScrollView>
-
-        {replyingPostId ? (
-          <ReplyComposerBar
-            content={commentsState.content}
-            setContent={commentsState.setContent}
-            isAnonyme={commentsState.isAnonyme}
-            setIsAnonyme={commentsState.setIsAnonyme}
-            authorName={commentsState.authorName}
-            setAuthorName={commentsState.setAuthorName}
-            loading={commentsState.loading}
-            onSend={handleSendReply}
-            onClose={() => setReplyingPostId(null)}
-          />
-        ) : null}
-      </KeyboardAwareBody>
 
       <CommunityCreateModal
         visible={createVisible}

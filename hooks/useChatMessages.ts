@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
+import { encodeChatContent } from '../utils/chatMessage';
 
 export const useChatMessages = (reportId: string | undefined) => {
   const [messages, setMessages] = useState<any[]>([]);
@@ -18,15 +19,20 @@ export const useChatMessages = (reportId: string | undefined) => {
   }, [reportId]);
 
   // 2. Envoyer un nouveau message
-  const sendMessage = async (content: string, role: 'user' | 'admin') => {
-    if (!content.trim() || !reportId) return false;
+  const sendMessage = async (
+    content: string,
+    role: 'user' | 'admin',
+    imageUrl?: string | null
+  ) => {
+    const encoded = encodeChatContent(content, imageUrl);
+    if (!encoded || !reportId) return false;
     
     setLoading(true);
     const { error } = await supabase
       .from('messages')
       .insert([{ 
         report_id: reportId, 
-        content: content, 
+        content: encoded, 
         sender_role: role 
       }]);
     
@@ -64,5 +70,5 @@ export const useChatMessages = (reportId: string | undefined) => {
     };
   }, [reportId, fetchMessages]);
 
-  return { messages, sendMessage, loading };
+  return { messages, sendMessage, loading, fetchMessages };
 };
