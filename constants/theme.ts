@@ -15,7 +15,7 @@ const tintColorDark = "#fff";
 export const Colors = {
   light: {
     text: "#11181C",
-    background: "#D5EDEC",
+    background: "#E2F4F3",
     tint: tintColorLight,
     icon: "#687076",
     tabIconDefault: "#687076",
@@ -24,7 +24,7 @@ export const Colors = {
     //palette "calanques"
     primary: "#023E8A",
     secondary: "#00B4D8",
-    surface: "#D5EDEC",
+    surface: "#E2F4F3",
     border: "#E2E8F0",
     borderSubtle: "#F1F5F9",
     textMuted: "#64748B",
@@ -70,8 +70,8 @@ export const APP_COLORS = {
   blueDark: "#023e8a",
   blue: "#0077b6",
 
-  background: "#D5EDEC",
-  surface: "#D5EDEC",
+  background: "#E2F4F3",
+  surface: "#E2F4F3",
   border: "#e2e8f0",
 
   text: "#0f172a",
@@ -102,7 +102,7 @@ export const HEADER_GRADIENT_END = { x: 1, y: 0 };
 export const HEADER_FG = "#1e293b";
 export const HEADER_FG_MUTED = "#475569";
 /** Fond Gardian clair — cartes, barres, inputs, modales (plus de blanc uni) */
-export const GARDIAN_CLAIR = "#D5EDEC";
+export const GARDIAN_CLAIR = "#E2F4F3";
 export const HEADER_BACKDROP = GARDIAN_CLAIR;
 /** Filet opaque sous les images de fond semi-transparentes (évite le bleed des onglets) */
 export const PAGE_SCENE_BACKDROP = "#e4eef0";

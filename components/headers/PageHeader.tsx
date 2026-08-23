@@ -47,14 +47,13 @@ export function PageHeader({
 
 const styles = StyleSheet.create({
   backButton: {
-    padding: 4,
-    width: 36,
-    height: 36,
+    width: 40,
+    height: 40,
     alignItems: 'center',
     justifyContent: 'center',
   },
   sidePlaceholder: {
-    width: 36,
-    height: 36,
+    width: 40,
+    height: 40,
   },
 });

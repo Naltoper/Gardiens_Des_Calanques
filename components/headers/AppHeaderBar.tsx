@@ -11,16 +11,15 @@ import {
   HEADER_GRADIENT_START,
 } from '../../constants/theme';
 
-/** Safe area déjà gérée par le SafeAreaView racine — on ne la re-ajoute pas. */
-export const HEADER_PADDING_VERTICAL = 8;
-export const HEADER_ROW_MIN_HEIGHT = 36;
+/** Hauteur identique sur toutes les pages (hors safe-area déjà gérée à la racine). */
+export const HEADER_PADDING_VERTICAL = 11;
+export const HEADER_ROW_MIN_HEIGHT = 44;
 
 type AppHeaderBarProps = {
   left: React.ReactNode;
   title: string;
   subtitle?: string;
   right?: React.ReactNode;
-  secondary?: React.ReactNode;
   style?: ViewStyle;
 };
 
@@ -29,7 +28,6 @@ export function AppHeaderBar({
   title,
   subtitle,
   right,
-  secondary,
   style,
 }: AppHeaderBarProps) {
   return (
@@ -50,11 +48,12 @@ export function AppHeaderBar({
               <Text style={styles.subtitle} numberOfLines={1}>
                 {subtitle}
               </Text>
-            ) : null}
+            ) : (
+              <View style={styles.subtitleSpacer} />
+            )}
           </View>
           <View style={styles.side}>{right}</View>
         </View>
-        {secondary ? <View style={styles.secondarySlot}>{secondary}</View> : null}
       </LinearGradient>
     </View>
   );
@@ -70,6 +69,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: HEADER_PADDING_VERTICAL,
     width: '100%',
+    minHeight: HEADER_PADDING_VERTICAL * 2 + HEADER_ROW_MIN_HEIGHT,
     elevation: 4,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 2 },
@@ -81,11 +81,12 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     minHeight: HEADER_ROW_MIN_HEIGHT,
   },
   side: {
-    width: 36,
-    height: 36,
+    width: 40,
+    height: 40,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -94,25 +95,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 6,
+    minHeight: HEADER_ROW_MIN_HEIGHT,
   },
   title: {
     color: HEADER_FG,
-    fontSize: 17,
-    lineHeight: 20,
+    fontSize: 19,
+    lineHeight: 23,
     fontWeight: '800',
     textAlign: 'center',
   },
   subtitle: {
     color: HEADER_FG_MUTED,
-    fontSize: 11,
-    lineHeight: 14,
+    fontSize: 12,
+    lineHeight: 16,
     fontWeight: '600',
     textAlign: 'center',
-    marginTop: 1,
+    marginTop: 2,
   },
-  secondarySlot: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 6,
+  subtitleSpacer: {
+    height: 18,
   },
 });

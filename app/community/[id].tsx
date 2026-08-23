@@ -268,12 +268,14 @@ export default function CommunityPostDetailsScreen() {
           )}
 
           <GradientButton
-            title={loading ? 'Publication...' : 'Publier le commentaire'}
-            icon={<Send color="white" size={20} />}
+            title={loading ? 'Publication...' : 'Publier'}
+            icon={<Send color="white" size={16} />}
             colors={COMMUNITY_GRADIENT_COLORS}
             onPress={handleCreateComment}
             disabled={loading}
-            height={64}
+            compact
+            height={42}
+            fontSize={14}
           />
         </View>
 
@@ -328,7 +330,7 @@ export default function CommunityPostDetailsScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: PAGE_SCENE_BACKDROP,
+    backgroundColor: GARDIAN_CLAIR,
   },
   container: {
     flexGrow: 1,
@@ -558,7 +560,7 @@ const styles = StyleSheet.create({
     flex: 1,
     width: '100%',
     height: '100%',
-    backgroundColor: PAGE_SCENE_BACKDROP,
+    backgroundColor: GARDIAN_CLAIR,
   },
   screenBackgroundImage: {
     opacity: 1,

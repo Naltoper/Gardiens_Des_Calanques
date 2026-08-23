@@ -97,11 +97,13 @@ export function CommunityCreateCard({
 
       <GradientButton
         title={loading ? 'Publication...' : 'Publier'}
-        icon={<Send color="white" size={20} />}
+        icon={<Send color="white" size={16} />}
         colors={['#48a4f4', '#10ac56']}
         onPress={handleCreatePost}
         disabled={loading}
-        height={52}
+        compact
+        height={42}
+        fontSize={14}
       />
     </View>
   );

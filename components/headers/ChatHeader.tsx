@@ -1,15 +1,9 @@
-import { ChevronLeft, FileText } from 'lucide-react-native';
-import React, { useEffect, useRef } from 'react';
-import {
-  Animated,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
 import { useRouter } from 'expo-router';
+import { ChevronLeft, FileText } from 'lucide-react-native';
+import React from 'react';
+import { StyleSheet, TouchableOpacity, View } from 'react-native';
 
-import { GARDIAN_CLAIR, HEADER_FG } from '../../constants/theme';
+import { HEADER_FG } from '../../constants/theme';
 import { AppHeaderBar } from './AppHeaderBar';
 
 interface ChatHeaderProps {
@@ -21,17 +15,6 @@ interface ChatHeaderProps {
 export const ChatHeader = ({ role, onShowDetails }: ChatHeaderProps) => {
   const router = useRouter();
   const isUserAuthor = role === 'user';
-  const detailsAnim = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    if (!onShowDetails) return;
-    Animated.spring(detailsAnim, {
-      toValue: 1,
-      friction: 7,
-      tension: 60,
-      useNativeDriver: true,
-    }).start();
-  }, [onShowDetails, detailsAnim]);
 
   const handleBack = () => {
     router.replace('/(tabs)/suivis');
@@ -44,7 +27,7 @@ export const ChatHeader = ({ role, onShowDetails }: ChatHeaderProps) => {
       left={
         <TouchableOpacity
           onPress={handleBack}
-          style={styles.backButton}
+          style={styles.iconButton}
           activeOpacity={0.7}
           accessibilityRole="button"
           accessibilityLabel="Retour"
@@ -52,70 +35,34 @@ export const ChatHeader = ({ role, onShowDetails }: ChatHeaderProps) => {
           <ChevronLeft color={HEADER_FG} size={26} strokeWidth={2.5} />
         </TouchableOpacity>
       }
-      right={<View style={styles.sidePlaceholder} />}
-      secondary={
+      right={
         onShowDetails ? (
-          <Animated.View
-            style={{
-              opacity: detailsAnim,
-              transform: [
-                {
-                  translateY: detailsAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [8, 0],
-                  }),
-                },
-              ],
-            }}
+          <TouchableOpacity
+            onPress={onShowDetails}
+            style={styles.iconButton}
+            activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityLabel="Voir les détails du signalement"
           >
-            <TouchableOpacity
-              onPress={onShowDetails}
-              style={styles.documentIconButton}
-              activeOpacity={0.8}
-              accessibilityRole="button"
-              accessibilityLabel="Voir les détails du signalement"
-            >
-              <FileText size={15} color="#023e8a" style={{ marginRight: 6 }} />
-              <Text style={styles.documentButtonText}>Détails du signalement</Text>
-            </TouchableOpacity>
-          </Animated.View>
-        ) : null
+            <FileText size={18} color="#023e8a" />
+          </TouchableOpacity>
+        ) : (
+          <View style={styles.sidePlaceholder} />
+        )
       }
     />
   );
 };
 
 const styles = StyleSheet.create({
-  backButton: {
-    padding: 4,
-    width: 36,
-    height: 36,
+  iconButton: {
+    width: 40,
+    height: 40,
     alignItems: 'center',
     justifyContent: 'center',
   },
   sidePlaceholder: {
-    width: 36,
-    height: 36,
-  },
-  documentIconButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: GARDIAN_CLAIR,
-    paddingVertical: 5,
-    paddingHorizontal: 16,
-    borderRadius: 16,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    minHeight: 32,
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-  },
-  documentButtonText: {
-    color: '#023e8a',
-    fontSize: 13,
-    fontWeight: '700',
+    width: 40,
+    height: 40,
   },
 });

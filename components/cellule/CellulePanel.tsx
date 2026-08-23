@@ -108,7 +108,7 @@ export function CellulePanel() {
         onPress={openWebLink}
         activeOpacity={0.8}
       >
-        <LinearGradient colors={['#D5EDEC', '#C8E6E4']} style={styles.webLinkGradient}>
+        <LinearGradient colors={['#E2F4F3', '#C8E6E4']} style={styles.webLinkGradient}>
           <View style={styles.webLinkContent}>
             <Text style={styles.webLinkText}>
               Voir le contenu Genially des Gardiens Des Calanques
@@ -151,7 +151,7 @@ const styles = StyleSheet.create({
     width: 72,
     height: 72,
     borderRadius: 36,
-    backgroundColor: '#D5EDEC',
+    backgroundColor: '#E2F4F3',
     justifyContent: 'center',
     alignItems: 'center',
     elevation: 6,
@@ -192,7 +192,7 @@ const styles = StyleSheet.create({
     marginVertical: 12,
   },
   subtitleContainer: {
-    backgroundColor: '#D5EDEC',
+    backgroundColor: '#E2F4F3',
     padding: 12,
     borderRadius: 15,
     borderWidth: 1,
@@ -206,7 +206,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   introCard: {
-    backgroundColor: '#D5EDEC',
+    backgroundColor: '#E2F4F3',
     padding: 18,
     borderRadius: 20,
     borderLeftWidth: 6,
@@ -259,7 +259,7 @@ const styles = StyleSheet.create({
   securityBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#D5EDEC',
+    backgroundColor: '#E2F4F3',
     paddingHorizontal: 15,
     paddingVertical: 8,
     borderRadius: 25,
@@ -291,7 +291,7 @@ const styles = StyleSheet.create({
     height: 16,
   },
   audioCard: {
-    backgroundColor: '#D5EDEC',
+    backgroundColor: '#E2F4F3',
     borderRadius: 16,
     padding: 16,
     marginVertical: 8,

@@ -185,14 +185,6 @@ export default function SignalerScreen() {
     };
   }, []);
 
-  if (isSent) {
-    return (
-      <SignalementSuccess
-        onBackHome={() => router.replace('/(tabs)/suivis')}
-      />
-    );
-  }
-
   return (
     <View style={styles.mainContainer}>
       <ImageBackground
@@ -364,6 +356,18 @@ export default function SignalerScreen() {
           />
         </ScrollView>
       </ImageBackground>
+
+      <SignalementSuccess
+        visible={isSent}
+        onGoSuivis={() => {
+          setIsSent(false);
+          router.replace('/(tabs)/suivis');
+        }}
+        onClose={() => {
+          setIsSent(false);
+          router.replace('/(tabs)');
+        }}
+      />
     </View>
   );
 }

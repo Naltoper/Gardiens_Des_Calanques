@@ -8,7 +8,7 @@ const PALETTE = {
   primaryLight: '#0077B6',
   accentBg: '#E0F2FE',
   accentBorder: '#BAE6FD',
-  surface: '#D5EDEC',
+  surface: '#E2F4F3',
 };
 
 export function AnonymityBadge() {
