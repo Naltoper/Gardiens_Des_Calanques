@@ -2,10 +2,11 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams } from 'expo-router';
 import { Send, ShieldCheck } from 'lucide-react-native';
 import { useEffect, useRef, useState } from 'react';
-import { FlatList, KeyboardAvoidingView, Platform, StatusBar, 
+import { FlatList, StatusBar, 
   StyleSheet, TextInput, TouchableOpacity, View, Text, ImageBackground } from 'react-native';
 import { ChatHeader } from '../../components/headers/ChatHeader';
 import { ChatBubble } from '../../components/cards/ChatBubble';
+import { KeyboardAwareBody } from '../../components/layout/KeyboardAwareBody';
 import { useChatMessages } from '../../hooks/useChatMessages';
 import { ReportDetailModal } from '../../components/modals/ReportDetailModal';
 import { supabase } from '../../lib/supabase';
@@ -69,11 +70,7 @@ export default function ChatScreen() {
         onShowDetails={() => setModalVisible(true)} 
       />
 
-      <KeyboardAvoidingView 
-        style={styles.content} 
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 35}
-      >
+      <KeyboardAwareBody>
         {/* IMAGE BACKGROUND AJOUTÉE ICI */}
         <ImageBackground
           source={require('../../assets/images/lyceeBg.jpg')}
@@ -86,6 +83,8 @@ export default function ChatScreen() {
               data={messages}
               keyExtractor={(item) => item.id.toString()}
               contentContainerStyle={styles.listContent}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="interactive"
               onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
               renderItem={({ item, index }) => (
                 <ChatBubble 
@@ -135,7 +134,7 @@ export default function ChatScreen() {
             </TouchableOpacity>
           </View>
         </View>
-      </KeyboardAvoidingView>
+      </KeyboardAwareBody>
       {/* 2. AJOUT DE LA MODALE EXISTANTE */}
       <ReportDetailModal 
         visible={modalVisible} 
@@ -148,7 +147,6 @@ export default function ChatScreen() {
 
 const styles = StyleSheet.create({
   mainContainer: { flex: 1, backgroundColor: '#E2F4F3' },
-  content: { flex: 1 },
   listContent: { padding: 20 },
   inputWrapper: { 
     paddingHorizontal: 15, 

@@ -1,9 +1,8 @@
-import { ChevronDown, ChevronUp, MessageCircle, Trash2 } from 'lucide-react-native';
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
+import { MessageCircle, ThumbsUp, Trash2 } from 'lucide-react-native';
 import { useState } from 'react';
 import {
   Image,
-  KeyboardAvoidingView,
-  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -16,6 +15,7 @@ import { CommunityCreateCard } from '../../components/Community/CommunityCreateC
 import { CommunityIntroCard } from '../../components/Community/CommunityIntroCard';
 import { ReplyComposerBar } from '../../components/Community/ReplyComposerBar';
 import { PageHeader } from '../../components/headers/PageHeader';
+import { KeyboardAwareBody } from '../../components/layout/KeyboardAwareBody';
 import { GARDIAN_CLAIR } from '../../constants/theme';
 import { useCommunityPosts } from '../../hooks/community/useCommunityPosts';
 import { useCreatePost } from '../../hooks/community/useCreatePost';
@@ -41,13 +41,14 @@ export default function CommunauteScreen() {
     myVotes,
     commentCounts,
     fetchPosts,
-    handleVote,
+    handleLike,
     confirmDeletePost,
   } = useCommunityPosts(userToken);
 
   const createPostProps = useCreatePost(userToken, fetchPosts);
   const activeCommentPostId = replyingPostId ?? expandedPostId;
   const commentsState = usePostComments(activeCommentPostId, userToken);
+  const tabBarHeight = useBottomTabBarHeight();
 
   const toggleComments = (postId: string) => {
     setExpandedPostId((current) => (current === postId ? null : postId));
@@ -66,22 +67,19 @@ export default function CommunauteScreen() {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.safeArea}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 8 : 0}
-    >
+    <View style={styles.safeArea}>
       <PageHeader
         title="Communauté"
         subtitle="Espace d'échange entre élèves, dans le respect et la bienveillance."
       />
 
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.container}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-      >
+      <KeyboardAwareBody keyboardVerticalOffset={tabBarHeight}>
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.container}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
         <CommunityIntroCard />
         <CommunityCreateCard {...createPostProps} />
 
@@ -104,6 +102,7 @@ export default function CommunauteScreen() {
             const displayName = getCommunityDisplayName(post.is_anonyme, post.author_name);
             const role = getCommunityAuthorRole(post.is_anonyme);
             const isExpanded = expandedPostId === post.id;
+            const liked = myVotes[post.id] === 1;
 
             return (
               <View
@@ -117,27 +116,17 @@ export default function CommunauteScreen() {
                   <View style={styles.voteColumn}>
                     <TouchableOpacity
                       style={styles.voteButton}
-                      onPress={() => handleVote(post.id, 1)}
+                      onPress={() => handleLike(post.id)}
                       accessibilityRole="button"
-                      accessibilityLabel="Voter pour"
+                      accessibilityLabel={liked ? 'Retirer le like' : 'Liker'}
                     >
-                      <ChevronUp
-                        color={myVotes[post.id] === 1 ? '#10ac56' : '#64748b'}
-                        size={20}
+                      <ThumbsUp
+                        color={liked ? '#10ac56' : '#64748b'}
+                        fill={liked ? '#10ac56' : 'transparent'}
+                        size={18}
                       />
                     </TouchableOpacity>
                     <Text style={styles.score}>{score}</Text>
-                    <TouchableOpacity
-                      style={styles.voteButton}
-                      onPress={() => handleVote(post.id, -1)}
-                      accessibilityRole="button"
-                      accessibilityLabel="Voter contre"
-                    >
-                      <ChevronDown
-                        color={myVotes[post.id] === -1 ? '#10ac56' : '#64748b'}
-                        size={20}
-                      />
-                    </TouchableOpacity>
                   </View>
 
                   <TouchableOpacity
@@ -227,20 +216,21 @@ export default function CommunauteScreen() {
         )}
       </ScrollView>
 
-      {replyingPostId ? (
-        <ReplyComposerBar
-          content={commentsState.content}
-          setContent={commentsState.setContent}
-          isAnonyme={commentsState.isAnonyme}
-          setIsAnonyme={commentsState.setIsAnonyme}
-          authorName={commentsState.authorName}
-          setAuthorName={commentsState.setAuthorName}
-          loading={commentsState.loading}
-          onSend={handleSendReply}
-          onClose={() => setReplyingPostId(null)}
-        />
-      ) : null}
-    </KeyboardAvoidingView>
+        {replyingPostId ? (
+          <ReplyComposerBar
+            content={commentsState.content}
+            setContent={commentsState.setContent}
+            isAnonyme={commentsState.isAnonyme}
+            setIsAnonyme={commentsState.setIsAnonyme}
+            authorName={commentsState.authorName}
+            setAuthorName={commentsState.setAuthorName}
+            loading={commentsState.loading}
+            onSend={handleSendReply}
+            onClose={() => setReplyingPostId(null)}
+          />
+        ) : null}
+      </KeyboardAwareBody>
+    </View>
   );
 }
 
@@ -303,12 +293,13 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   voteColumn: {
-    width: 32,
+    width: 36,
     alignItems: 'center',
     paddingTop: 2,
+    gap: 2,
   },
   voteButton: {
-    padding: 2,
+    padding: 4,
   },
   score: {
     minWidth: 22,

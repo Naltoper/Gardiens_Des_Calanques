@@ -86,7 +86,7 @@ export const useCommunityPosts = (userToken: string | null) => {
     fetchPosts();
   }, [fetchPosts]);
 
-  const handleVote = async (postId: string, value: 1 | -1) => {
+  const handleLike = async (postId: string) => {
     if (!userToken) {
       Alert.alert('Erreur', 'Token utilisateur introuvable.');
       return;
@@ -94,7 +94,7 @@ export const useCommunityPosts = (userToken: string | null) => {
 
     const currentVote = myVotes[postId];
 
-    if (currentVote === value) {
+    if (currentVote === 1) {
       const { error } = await supabase
         .from('community_votes')
         .delete()
@@ -102,7 +102,7 @@ export const useCommunityPosts = (userToken: string | null) => {
         .eq('user_token', userToken);
 
       if (error) {
-        console.error('Erreur suppression vote:', error.message);
+        console.error('Erreur suppression like:', error.message);
         return;
       }
 
@@ -116,13 +116,13 @@ export const useCommunityPosts = (userToken: string | null) => {
         {
           post_id: postId,
           user_token: userToken,
-          vote_value: value,
+          vote_value: 1,
         },
         { onConflict: 'post_id,user_token' }
       );
 
     if (error) {
-      console.error('Erreur vote:', error.message);
+      console.error('Erreur like:', error.message);
       return;
     }
 
@@ -170,7 +170,7 @@ export const useCommunityPosts = (userToken: string | null) => {
     myVotes,
     commentCounts,
     fetchPosts,
-    handleVote,
+    handleLike,
     confirmDeletePost,
   };
 };

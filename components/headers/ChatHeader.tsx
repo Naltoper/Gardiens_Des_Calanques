@@ -39,12 +39,12 @@ export const ChatHeader = ({ role, onShowDetails }: ChatHeaderProps) => {
         onShowDetails ? (
           <TouchableOpacity
             onPress={onShowDetails}
-            style={styles.iconButton}
-            activeOpacity={0.8}
+            style={styles.detailsButton}
+            activeOpacity={0.85}
             accessibilityRole="button"
             accessibilityLabel="Voir les détails du signalement"
           >
-            <FileText size={18} color="#023e8a" />
+            <FileText size={16} color="#023E8A" />
           </TouchableOpacity>
         ) : (
           <View style={styles.sidePlaceholder} />
@@ -56,13 +56,29 @@ export const ChatHeader = ({ role, onShowDetails }: ChatHeaderProps) => {
 
 const styles = StyleSheet.create({
   iconButton: {
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  detailsButton: {
+    width: 44,
+    height: 44,
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 12,
+    backgroundColor: '#F0F9FF',
+    borderWidth: 1,
+    borderColor: '#BAE6FD',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 3,
+  },
   sidePlaceholder: {
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
   },
 });

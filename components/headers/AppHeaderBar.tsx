@@ -85,10 +85,11 @@ const styles = StyleSheet.create({
     minHeight: HEADER_ROW_MIN_HEIGHT,
   },
   side: {
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'visible',
   },
   titleBlock: {
     flex: 1,

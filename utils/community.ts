@@ -53,7 +53,8 @@ export const buildVoteScores = (votesData: VoteRow[] | null) => {
   const scores: Record<string, number> = {};
 
   votesData?.forEach((vote) => {
-    scores[vote.post_id] = (scores[vote.post_id] || 0) + vote.vote_value;
+    if (vote.vote_value !== 1) return;
+    scores[vote.post_id] = (scores[vote.post_id] || 0) + 1;
   });
 
   return scores;

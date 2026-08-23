@@ -109,7 +109,7 @@ const styles = StyleSheet.create({
     backgroundColor: GARDIAN_CLAIR,
     paddingHorizontal: 12,
     paddingTop: 8,
-    paddingBottom: Platform.OS === 'ios' ? 10 : 8,
+    paddingBottom: Platform.OS === 'ios' ? 12 : 10,
   },
   topRow: {
     flexDirection: 'row',
