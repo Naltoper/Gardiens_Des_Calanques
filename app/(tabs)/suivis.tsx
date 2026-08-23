@@ -16,7 +16,7 @@ import {
 
 import { ReportCard } from '../../components/cards/ReportCard';
 import { PageHeader } from '../../components/headers/PageHeader';
-import { GARDIAN_CLAIR } from '../../constants/theme';
+import { GARDIAN_CLAIR, PAGE_SCENE_BACKDROP } from '../../constants/theme';
 import { DeleteConfirmModal } from '../../components/modals/DeleteConfirmModal';
 import { ReportDetailModal } from '../../components/modals/ReportDetailModal';
 import { useReports } from '../../hooks/useReports';
@@ -100,17 +100,17 @@ export default function SuivisScreen() {
 
   return (
     <View style={styles.container}>
+      <ImageBackground
+        source={require('../../assets/images/lyceeBgBlur.png')}
+        style={styles.screenBackground}
+        imageStyle={styles.screenBackgroundImage}
+        resizeMode="cover"
+      >
       <PageHeader
         title="Mes Suivis"
         subtitle="Signalements et discussions"
       />
 
-      <ImageBackground
-        source={require('../../assets/images/lyceeBg.jpg')}
-        style={styles.screenBackground}
-        imageStyle={styles.screenBackgroundImage}
-        resizeMode="cover"
-      >
         <FlatList
           data={reports}
           keyExtractor={(item) => item.id.toString()}
@@ -165,7 +165,7 @@ export default function SuivisScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: GARDIAN_CLAIR,
+    backgroundColor: PAGE_SCENE_BACKDROP,
   },
   loaderContainer: {
     flex: 1,
@@ -176,10 +176,10 @@ const styles = StyleSheet.create({
     flex: 1,
     width: '100%',
     height: '100%',
-    backgroundColor: GARDIAN_CLAIR,
+    backgroundColor: PAGE_SCENE_BACKDROP,
   },
   screenBackgroundImage: {
-    opacity: 0.5,
+    opacity: 1,
   },
   listContent: {
     paddingHorizontal: 24,

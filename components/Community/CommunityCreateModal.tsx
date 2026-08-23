@@ -1,6 +1,9 @@
 import { ImagePlus, Send, X } from 'lucide-react-native';
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
+  Animated,
+  Dimensions,
+  Easing,
   Image,
   KeyboardAvoidingView,
   Modal,
@@ -16,8 +19,13 @@ import {
 
 import { GARDIAN_CLAIR } from '../../constants/theme';
 import { useRevealIdentity } from '../../hooks/useRevealIdentity';
+import { autofillNameProps, autofillOffProps } from '../../utils/textInputAutofill';
 import { GradientButton } from '../buttons/GradientButton';
 import { RevealIdentityWarningModal } from '../modals/RevealIdentityWarningModal';
+
+const SCREEN_HEIGHT = Dimensions.get('window').height;
+const BACKDROP_MS = 220;
+const SHEET_MS = 240;
 
 type CommunityCreateModalProps = {
   visible: boolean;
@@ -59,6 +67,51 @@ export function CommunityCreateModal({
   handleCreatePost,
 }: CommunityCreateModalProps) {
   const reveal = useRevealIdentity(isAnonyme, setIsAnonyme);
+  const backdropOpacity = useRef(new Animated.Value(0)).current;
+  const sheetTranslateY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
+  const [mounted, setMounted] = useState(visible);
+
+  useEffect(() => {
+    if (visible) {
+      setMounted(true);
+      backdropOpacity.setValue(0);
+      sheetTranslateY.setValue(SCREEN_HEIGHT);
+      Animated.sequence([
+        Animated.timing(backdropOpacity, {
+          toValue: 1,
+          duration: BACKDROP_MS,
+          easing: Easing.out(Easing.quad),
+          useNativeDriver: true,
+        }),
+        Animated.timing(sheetTranslateY, {
+          toValue: 0,
+          duration: SHEET_MS,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+      ]).start();
+      return;
+    }
+
+    if (!mounted) return;
+
+    Animated.sequence([
+      Animated.timing(sheetTranslateY, {
+        toValue: SCREEN_HEIGHT,
+        duration: 180,
+        easing: Easing.in(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(backdropOpacity, {
+        toValue: 0,
+        duration: 160,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+      }),
+    ]).start(({ finished }) => {
+      if (finished) setMounted(false);
+    });
+  }, [visible, mounted, backdropOpacity, sheetTranslateY]);
 
   const onPublish = async () => {
     const published = await handleCreatePost();
@@ -67,20 +120,39 @@ export function CommunityCreateModal({
     }
   };
 
+  if (!mounted) return null;
+
   return (
     <>
       <Modal
-        visible={visible}
+        visible={mounted}
         transparent
-        animationType="slide"
+        animationType="none"
+        statusBarTranslucent
         onRequestClose={onClose}
       >
-        <View style={styles.overlay}>
+        <View style={styles.root}>
+          <Animated.View
+            pointerEvents="auto"
+            style={[styles.backdrop, { opacity: backdropOpacity }]}
+          >
+            <TouchableOpacity
+              style={StyleSheet.absoluteFill}
+              activeOpacity={1}
+              onPress={onClose}
+              accessibilityRole="button"
+              accessibilityLabel="Fermer"
+            />
+          </Animated.View>
+
           <KeyboardAvoidingView
             style={styles.sheetWrap}
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            pointerEvents="box-none"
           >
-            <View style={styles.sheet}>
+            <Animated.View
+              style={[styles.sheet, { transform: [{ translateY: sheetTranslateY }] }]}
+            >
               <View style={styles.header}>
                 <Text style={styles.headerTitle}>Créer un sujet</Text>
                 <TouchableOpacity
@@ -106,6 +178,7 @@ export function CommunityCreateModal({
                   value={title}
                   onChangeText={setTitle}
                   maxLength={80}
+                  {...autofillOffProps}
                 />
 
                 <Text style={styles.fieldLabel}>Contenu</Text>
@@ -116,6 +189,7 @@ export function CommunityCreateModal({
                   multiline
                   value={content}
                   onChangeText={setContent}
+                  {...autofillOffProps}
                 />
 
                 <TouchableOpacity style={styles.imagePickerButton} onPress={pickImage}>
@@ -157,6 +231,7 @@ export function CommunityCreateModal({
                     placeholderTextColor="#94a3b8"
                     value={authorName}
                     onChangeText={setAuthorName}
+                    {...autofillNameProps}
                   />
                 ) : null}
 
@@ -173,7 +248,7 @@ export function CommunityCreateModal({
                   fontSize={15}
                 />
               </ScrollView>
-            </View>
+            </Animated.View>
           </KeyboardAvoidingView>
         </View>
       </Modal>
@@ -188,20 +263,23 @@ export function CommunityCreateModal({
 }
 
 const styles = StyleSheet.create({
-  overlay: {
+  root: {
     flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.45)',
     justifyContent: 'flex-end',
+  },
+  backdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(15, 23, 42, 0.48)',
   },
   sheetWrap: {
     width: '100%',
-    maxHeight: '92%',
+    justifyContent: 'flex-end',
   },
   sheet: {
     backgroundColor: GARDIAN_CLAIR,
     borderTopLeftRadius: 22,
     borderTopRightRadius: 22,
-    maxHeight: '100%',
+    maxHeight: SCREEN_HEIGHT * 0.92,
     paddingBottom: Platform.OS === 'ios' ? 24 : 16,
     borderWidth: 1,
     borderColor: 'rgba(2, 62, 138, 0.12)',

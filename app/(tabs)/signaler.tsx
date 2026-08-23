@@ -24,6 +24,7 @@ import { SELECT_FIELDS } from '../../constants/signalementFields';
 import { Colors, GARDIAN_CLAIR, PAGE_SCENE_BACKDROP } from '../../constants/theme';
 import { useRevealIdentity } from '../../hooks/useRevealIdentity';
 import { useSignalementForm } from '../../hooks/useSignalementForm';
+import { autofillNameProps } from '../../utils/textInputAutofill';
 
 const C = {
   primary: Colors.light.primary,
@@ -240,6 +241,7 @@ export default function SignalerScreen() {
                   onChangeText={setNom}
                   onFocus={() => setFocusedField('nom')}
                   onBlur={() => setFocusedField(null)}
+                  {...autofillNameProps}
                 />
               </View>
             )}

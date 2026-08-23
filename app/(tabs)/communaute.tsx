@@ -17,6 +17,7 @@ import { CommunityPostSuccessModal } from '../../components/Community/CommunityP
 import { ReplyComposerBar } from '../../components/Community/ReplyComposerBar';
 import { PageHeader } from '../../components/headers/PageHeader';
 import { KeyboardAwareBody } from '../../components/layout/KeyboardAwareBody';
+import { ImageLightboxModal } from '../../components/modals/ImageLightboxModal';
 import { useTabBarHidden } from '../../components/navigation/TabBarVisibility';
 import { GARDIAN_CLAIR } from '../../constants/theme';
 import { useCommunityPosts } from '../../hooks/community/useCommunityPosts';
@@ -37,6 +38,7 @@ export default function CommunauteScreen() {
   const [replyingPostId, setReplyingPostId] = useState<string | null>(null);
   const [createVisible, setCreateVisible] = useState(false);
   const [successVisible, setSuccessVisible] = useState(false);
+  const [lightboxUri, setLightboxUri] = useState<string | null>(null);
 
   const {
     posts,
@@ -74,7 +76,7 @@ export default function CommunauteScreen() {
   const handleSendReply = async () => {
     const sent = await commentsState.handleCreateComment();
     if (sent) {
-      fetchPosts();
+      fetchPosts({ resort: false });
     }
   };
 
@@ -199,7 +201,9 @@ export default function CommunauteScreen() {
                     {post.image_url ? (
                       <TouchableOpacity
                         activeOpacity={0.85}
-                        onPress={() => toggleComments(post.id)}
+                        onPress={() => setLightboxUri(post.image_url)}
+                        accessibilityRole="button"
+                        accessibilityLabel="Voir l'image en grand"
                       >
                         <Image
                           source={{ uri: post.image_url }}
@@ -240,8 +244,8 @@ export default function CommunauteScreen() {
                       }
                       userToken={userToken}
                       onDelete={(commentId) => {
-                        commentsState.confirmDeleteComment(commentId);
-                        fetchPosts();
+                      commentsState.confirmDeleteComment(commentId);
+                      fetchPosts({ resort: false });
                       }}
                     />
                   ) : null}
@@ -276,6 +280,12 @@ export default function CommunauteScreen() {
       <CommunityPostSuccessModal
         visible={successVisible}
         onClose={() => setSuccessVisible(false)}
+      />
+
+      <ImageLightboxModal
+        visible={!!lightboxUri}
+        uri={lightboxUri}
+        onClose={() => setLightboxUri(null)}
       />
     </View>
   );

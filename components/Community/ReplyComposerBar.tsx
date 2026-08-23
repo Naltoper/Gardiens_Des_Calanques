@@ -12,6 +12,7 @@ import {
 
 import { GARDIAN_CLAIR } from '../../constants/theme';
 import { useRevealIdentity } from '../../hooks/useRevealIdentity';
+import { autofillNameProps, autofillOffProps } from '../../utils/textInputAutofill';
 import { RevealIdentityWarningModal } from '../modals/RevealIdentityWarningModal';
 
 type ReplyComposerBarProps = {
@@ -75,6 +76,7 @@ export function ReplyComposerBar({
           placeholderTextColor="#94a3b8"
           value={authorName}
           onChangeText={setAuthorName}
+          {...autofillNameProps}
         />
       ) : null}
 
@@ -90,6 +92,7 @@ export function ReplyComposerBar({
           autoFocus
           returnKeyType="send"
           onSubmitEditing={onSend}
+          {...autofillOffProps}
         />
         <TouchableOpacity
           style={[styles.sendBtn, loading && styles.sendBtnDisabled]}

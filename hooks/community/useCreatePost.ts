@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
 import { supabase } from '../../lib/supabase';
-import { encodeForumPost, getStartOfTodayIso } from '../../utils/community';
+import { encodeForumPost } from '../../utils/community';
 import { notify } from '../../utils/notify';
 import { useCommunityImage } from './useCommunityImage';
 
@@ -60,27 +60,7 @@ export const useCreatePost = (userToken: string | null, onPostCreated: () => voi
       return false;
     }
 
-    const { count: todayPostsCount, error: countError } = await supabase
-      .from('community_posts')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_token', userToken)
-      .gte('created_at', getStartOfTodayIso());
-
-    if (countError) {
-      console.error('Erreur vérification limite posts:', countError.message);
-      const message = 'Impossible de vérifier la limite de publication.';
-      setFormError(message);
-      notify('Erreur', message);
-      return false;
-    }
-
-    if ((todayPostsCount || 0) >= 1) {
-      const message = 'Tu peux publier seulement 1 post par jour dans la communauté.';
-      setFormError(message);
-      notify('Limite atteinte', message);
-      return false;
-    }
-
+    // Limite 1 post/jour temporairement désactivée pour les tests.
     setLoading(true);
 
     const imageUrl = await uploadPostImage();
