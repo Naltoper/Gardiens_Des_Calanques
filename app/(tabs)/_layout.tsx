@@ -1,8 +1,12 @@
 import { Tabs } from 'expo-router';
 import { Home, MessageSquare, Shield, Users } from 'lucide-react-native';
-import { Platform, StyleSheet, Text } from 'react-native';
+import { Platform, StyleSheet, Text, ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import {
+  TabBarVisibilityProvider,
+  useTabBarVisibility,
+} from '../../components/navigation/TabBarVisibility';
 import { Colors, GARDIAN_CLAIR } from '../../constants/theme';
 
 const TAB_ICON_SIZE = 22;
@@ -22,32 +26,43 @@ function TabLabel({ color, children }: { color: string; children: string }) {
   );
 }
 
-export default function TabLayout() {
+function TabNavigator() {
   const insets = useSafeAreaInsets();
+  const { hidden } = useTabBarVisibility();
   const bottomInset = isWeb ? 0 : insets.bottom;
   const tabBarHeight = isWeb ? 68 : TAB_BAR_CONTENT_HEIGHT + bottomInset;
+
+  const visibleTabBarStyle: ViewStyle = {
+    backgroundColor: GARDIAN_CLAIR,
+    borderTopColor: Colors.light.border,
+    borderTopWidth: 1,
+    height: tabBarHeight,
+    paddingTop: isWeb ? 6 : 4,
+    paddingBottom: isWeb ? 10 : bottomInset,
+    elevation: 24,
+    zIndex: 100,
+    overflow: 'visible',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+  };
+
+  const hiddenTabBarStyle: ViewStyle = {
+    display: 'none',
+    height: 0,
+    overflow: 'hidden',
+    position: 'absolute',
+  };
 
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
+        tabBarHideOnKeyboard: true,
         tabBarActiveTintColor: Colors.light.primary,
         tabBarInactiveTintColor: Colors.light.tabIconDefault,
-        tabBarStyle: {
-          backgroundColor: GARDIAN_CLAIR,
-          borderTopColor: Colors.light.border,
-          borderTopWidth: 1,
-          height: tabBarHeight,
-          paddingTop: isWeb ? 6 : 4,
-          paddingBottom: isWeb ? 10 : bottomInset,
-          elevation: 24,
-          zIndex: 100,
-          overflow: 'visible',
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: -1 },
-          shadowOpacity: 0.06,
-          shadowRadius: 4,
-        },
+        tabBarStyle: hidden ? hiddenTabBarStyle : visibleTabBarStyle,
         tabBarItemStyle: styles.tabBarItem,
         tabBarIconStyle: styles.tabBarIcon,
         tabBarAllowFontScaling: false,
@@ -108,6 +123,14 @@ export default function TabLayout() {
       <Tabs.Screen name="cellule" options={{ href: null, headerShown: false }} />
       <Tabs.Screen name="numeros" options={{ href: null, headerShown: false }} />
     </Tabs>
+  );
+}
+
+export default function TabLayout() {
+  return (
+    <TabBarVisibilityProvider>
+      <TabNavigator />
+    </TabBarVisibilityProvider>
   );
 }
 

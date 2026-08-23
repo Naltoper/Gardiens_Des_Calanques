@@ -31,14 +31,39 @@ export const getCommunityAuthorRole = (isAnonyme: boolean) => {
   return isAnonyme ? 'Anonyme' : 'Élève';
 };
 
+const TITLE_PREFIX = '[[';
+const TITLE_SUFFIX = ']]';
+
+export const encodeForumPost = (title: string, body: string) => {
+  const safeTitle = title.replace(/[\[\]]/g, '').trim();
+  return `${TITLE_PREFIX}${safeTitle}${TITLE_SUFFIX}\n${body.trim()}`;
+};
+
+export const getPostTitleAndBody = (content: string, titleColumn?: string | null) => {
+  if (titleColumn?.trim()) {
+    return { title: titleColumn.trim(), body: content.trim() };
+  }
+
+  const encoded = content.match(/^\[\[([^\]]+)\]\]\n?([\s\S]*)$/);
+  if (encoded) {
+    return { title: encoded[1].trim(), body: encoded[2].trim() };
+  }
+
+  const lines = content.trim().split(/\n/);
+  const first = lines[0] || 'Sujet';
+  const rest = lines.slice(1).join('\n').trim();
+  return { title: first, body: rest };
+};
+
 export const getForumTopicTitle = (content: string, maxLength = 72) => {
-  const firstLine = content.trim().split(/\n/)[0] || 'Sujet';
-  if (firstLine.length <= maxLength) return firstLine;
-  return `${firstLine.slice(0, maxLength).trimEnd()}…`;
+  const { title } = getPostTitleAndBody(content);
+  if (title.length <= maxLength) return title;
+  return `${title.slice(0, maxLength).trimEnd()}…`;
 };
 
 export const getForumPreview = (content: string, maxLength = 140) => {
-  const text = content.trim().replace(/\s+/g, ' ');
+  const { body, title } = getPostTitleAndBody(content);
+  const text = (body || title).replace(/\s+/g, ' ').trim();
   if (text.length <= maxLength) return text;
   return `${text.slice(0, maxLength).trimEnd()}…`;
 };

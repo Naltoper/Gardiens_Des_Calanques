@@ -1,5 +1,5 @@
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
-import { MessageCircle, ThumbsUp, Trash2 } from 'lucide-react-native';
+import { MessageCircle, PenLine, Plus, ThumbsUp, Trash2 } from 'lucide-react-native';
 import { useState } from 'react';
 import {
   Image,
@@ -11,28 +11,32 @@ import {
 } from 'react-native';
 
 import { CommunityCommentsList } from '../../components/Community/CommunityCommentsList';
-import { CommunityCreateCard } from '../../components/Community/CommunityCreateCard';
+import { CommunityCreateModal } from '../../components/Community/CommunityCreateModal';
 import { CommunityIntroCard } from '../../components/Community/CommunityIntroCard';
+import { CommunityPostSuccessModal } from '../../components/Community/CommunityPostSuccessModal';
 import { ReplyComposerBar } from '../../components/Community/ReplyComposerBar';
 import { PageHeader } from '../../components/headers/PageHeader';
 import { KeyboardAwareBody } from '../../components/layout/KeyboardAwareBody';
+import { useTabBarHidden } from '../../components/navigation/TabBarVisibility';
 import { GARDIAN_CLAIR } from '../../constants/theme';
 import { useCommunityPosts } from '../../hooks/community/useCommunityPosts';
 import { useCreatePost } from '../../hooks/community/useCreatePost';
 import { usePostComments } from '../../hooks/community/usePostComments';
+import { useKeyboardVisible } from '../../hooks/useKeyboardVisible';
 import { useUserToken } from '../../hooks/useUserToken';
 import {
   formatCommunityDateTime,
   getCommunityAuthorRole,
   getCommunityDisplayName,
-  getForumPreview,
-  getForumTopicTitle,
+  getPostTitleAndBody,
 } from '../../utils/community';
 
 export default function CommunauteScreen() {
   const userToken = useUserToken();
   const [expandedPostId, setExpandedPostId] = useState<string | null>(null);
   const [replyingPostId, setReplyingPostId] = useState<string | null>(null);
+  const [createVisible, setCreateVisible] = useState(false);
+  const [successVisible, setSuccessVisible] = useState(false);
 
   const {
     posts,
@@ -45,10 +49,18 @@ export default function CommunauteScreen() {
     confirmDeletePost,
   } = useCommunityPosts(userToken);
 
-  const createPostProps = useCreatePost(userToken, fetchPosts);
+  const { resetForm: _resetCreateForm, ...createPostProps } = useCreatePost(
+    userToken,
+    fetchPosts
+  );
+  void _resetCreateForm;
   const activeCommentPostId = replyingPostId ?? expandedPostId;
   const commentsState = usePostComments(activeCommentPostId, userToken);
   const tabBarHeight = useBottomTabBarHeight();
+  const keyboardVisible = useKeyboardVisible();
+  const hideTabBar = createVisible || !!replyingPostId || keyboardVisible;
+
+  useTabBarHidden(hideTabBar);
 
   const toggleComments = (postId: string) => {
     setExpandedPostId((current) => (current === postId ? null : postId));
@@ -66,6 +78,11 @@ export default function CommunauteScreen() {
     }
   };
 
+  const handlePublished = () => {
+    setCreateVisible(false);
+    setSuccessVisible(true);
+  };
+
   return (
     <View style={styles.safeArea}>
       <PageHeader
@@ -73,148 +90,166 @@ export default function CommunauteScreen() {
         subtitle="Espace d'échange entre élèves, dans le respect et la bienveillance."
       />
 
-      <KeyboardAwareBody keyboardVerticalOffset={tabBarHeight}>
+      <KeyboardAwareBody keyboardVerticalOffset={hideTabBar ? 0 : tabBarHeight}>
         <ScrollView
           style={styles.scroll}
           contentContainerStyle={styles.container}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-        <CommunityIntroCard />
-        <CommunityCreateCard {...createPostProps} />
+          <CommunityIntroCard />
 
-        <View style={styles.listHeader}>
-          <Text style={styles.listHeaderTitle}>Sujets récents</Text>
-          <Text style={styles.listHeaderMeta}>
-            {posts.length} {posts.length > 1 ? 'sujets' : 'sujet'}
-          </Text>
-        </View>
-
-        {posts.length === 0 ? (
-          <View style={styles.emptyRow}>
-            <Text style={styles.emptyText}>Aucun sujet pour le moment.</Text>
+          <View style={styles.createWrap}>
+            <TouchableOpacity
+              style={styles.createButton}
+              onPress={() => setCreateVisible(true)}
+              activeOpacity={0.85}
+              accessibilityRole="button"
+              accessibilityLabel="Créer un sujet"
+            >
+              <View style={styles.createIcon}>
+                <Plus color="#ffffff" size={18} strokeWidth={2.6} />
+              </View>
+              <Text style={styles.createButtonText}>Créer un sujet</Text>
+              <PenLine color="#023e8a" size={18} />
+            </TouchableOpacity>
           </View>
-        ) : (
-          sortedPosts.map((post, index) => {
-            const score = votes[post.id] || 0;
-            const commentCount = commentCounts[post.id] || 0;
-            const isMine = userToken === post.user_token;
-            const displayName = getCommunityDisplayName(post.is_anonyme, post.author_name);
-            const role = getCommunityAuthorRole(post.is_anonyme);
-            const isExpanded = expandedPostId === post.id;
-            const liked = myVotes[post.id] === 1;
 
-            return (
-              <View
-                key={post.id}
-                style={[
-                  styles.threadRow,
-                  index === sortedPosts.length - 1 && styles.threadRowLast,
-                ]}
-              >
-                <View style={styles.threadMain}>
-                  <View style={styles.voteColumn}>
-                    <TouchableOpacity
-                      style={styles.voteButton}
-                      onPress={() => handleLike(post.id)}
-                      accessibilityRole="button"
-                      accessibilityLabel={liked ? 'Retirer le like' : 'Liker'}
-                    >
-                      <ThumbsUp
-                        color={liked ? '#10ac56' : '#64748b'}
-                        fill={liked ? '#10ac56' : 'transparent'}
-                        size={18}
-                      />
-                    </TouchableOpacity>
-                    <Text style={styles.score}>{score}</Text>
-                  </View>
+          <View style={styles.listHeader}>
+            <Text style={styles.listHeaderTitle}>Sujets récents</Text>
+            <Text style={styles.listHeaderMeta}>
+              {posts.length} {posts.length > 1 ? 'sujets' : 'sujet'}
+            </Text>
+          </View>
 
-                  <TouchableOpacity
-                    style={styles.threadBody}
-                    activeOpacity={0.85}
-                    onPress={() => toggleComments(post.id)}
-                    accessibilityRole="button"
-                    accessibilityLabel="Voir les commentaires"
-                  >
-                    <View style={styles.threadTitleRow}>
-                      <Text style={styles.threadTitle} numberOfLines={2}>
-                        {getForumTopicTitle(post.content)}
-                      </Text>
-                      {isMine && (
-                        <TouchableOpacity
-                          style={styles.deleteButton}
-                          onPress={() => confirmDeletePost(post.id)}
-                          accessibilityRole="button"
-                          accessibilityLabel="Supprimer le sujet"
-                        >
-                          <Trash2 color="#ef4444" size={16} />
-                        </TouchableOpacity>
-                      )}
+          {posts.length === 0 ? (
+            <View style={styles.emptyRow}>
+              <Text style={styles.emptyText}>Aucun sujet pour le moment.</Text>
+            </View>
+          ) : (
+            sortedPosts.map((post, index) => {
+              const score = votes[post.id] || 0;
+              const commentCount = commentCounts[post.id] || 0;
+              const isMine = userToken === post.user_token;
+              const displayName = getCommunityDisplayName(post.is_anonyme, post.author_name);
+              const role = getCommunityAuthorRole(post.is_anonyme);
+              const isExpanded = expandedPostId === post.id;
+              const liked = myVotes[post.id] === 1;
+              const { title, body } = getPostTitleAndBody(post.content);
+
+              return (
+                <View
+                  key={post.id}
+                  style={[
+                    styles.threadRow,
+                    index === sortedPosts.length - 1 && styles.threadRowLast,
+                  ]}
+                >
+                  <View style={styles.threadMain}>
+                    <View style={styles.voteColumn}>
+                      <TouchableOpacity
+                        style={styles.voteButton}
+                        onPress={() => handleLike(post.id)}
+                        accessibilityRole="button"
+                        accessibilityLabel={liked ? 'Retirer le like' : 'Liker'}
+                      >
+                        <ThumbsUp
+                          color={liked ? '#10ac56' : '#64748b'}
+                          fill={liked ? '#10ac56' : 'transparent'}
+                          size={18}
+                        />
+                      </TouchableOpacity>
+                      <Text style={styles.score}>{score}</Text>
                     </View>
 
-                    <Text style={styles.threadMeta} numberOfLines={1}>
-                      {displayName} · {role} · {formatCommunityDateTime(post.created_at)}
-                    </Text>
-
-                    <Text style={styles.threadPreview} numberOfLines={2}>
-                      {getForumPreview(post.content)}
-                    </Text>
-                  </TouchableOpacity>
-
-                  {post.image_url ? (
                     <TouchableOpacity
+                      style={styles.threadBody}
                       activeOpacity={0.85}
                       onPress={() => toggleComments(post.id)}
+                      accessibilityRole="button"
+                      accessibilityLabel="Voir les commentaires"
                     >
-                      <Image
-                        source={{ uri: post.image_url }}
-                        style={styles.threadThumb}
-                        resizeMode="cover"
-                      />
+                      <View style={styles.threadTitleRow}>
+                        <Text style={styles.threadTitle} numberOfLines={2}>
+                          {title}
+                        </Text>
+                        {isMine && (
+                          <TouchableOpacity
+                            style={styles.deleteButton}
+                            onPress={() => confirmDeletePost(post.id)}
+                            accessibilityRole="button"
+                            accessibilityLabel="Supprimer le sujet"
+                          >
+                            <Trash2 color="#ef4444" size={16} />
+                          </TouchableOpacity>
+                        )}
+                      </View>
+
+                      <Text style={styles.threadMeta} numberOfLines={1}>
+                        {displayName} · {role} · {formatCommunityDateTime(post.created_at)}
+                      </Text>
+
+                      {body ? (
+                        <Text style={styles.threadPreview} numberOfLines={3}>
+                          {body}
+                        </Text>
+                      ) : null}
                     </TouchableOpacity>
+
+                    {post.image_url ? (
+                      <TouchableOpacity
+                        activeOpacity={0.85}
+                        onPress={() => toggleComments(post.id)}
+                      >
+                        <Image
+                          source={{ uri: post.image_url }}
+                          style={styles.threadThumb}
+                          resizeMode="cover"
+                        />
+                      </TouchableOpacity>
+                    ) : null}
+                  </View>
+
+                  <View style={styles.threadFooter}>
+                    <TouchableOpacity
+                      style={styles.repliesButton}
+                      onPress={() => toggleComments(post.id)}
+                      accessibilityRole="button"
+                      accessibilityLabel="Voir les commentaires"
+                    >
+                      <MessageCircle color="#023e8a" size={15} />
+                      <Text style={styles.repliesText}>
+                        {commentCount} {commentCount > 1 ? 'commentaires' : 'commentaire'}
+                      </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={styles.replyAction}
+                      onPress={() => openReply(post.id)}
+                      accessibilityRole="button"
+                      accessibilityLabel="Répondre"
+                    >
+                      <Text style={styles.replyActionText}>Répondre</Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  {isExpanded ? (
+                    <CommunityCommentsList
+                      comments={
+                        activeCommentPostId === post.id ? commentsState.comments : []
+                      }
+                      userToken={userToken}
+                      onDelete={(commentId) => {
+                        commentsState.confirmDeleteComment(commentId);
+                        fetchPosts();
+                      }}
+                    />
                   ) : null}
                 </View>
-
-                <View style={styles.threadFooter}>
-                  <TouchableOpacity
-                    style={styles.repliesButton}
-                    onPress={() => toggleComments(post.id)}
-                    accessibilityRole="button"
-                    accessibilityLabel="Voir les commentaires"
-                  >
-                    <MessageCircle color="#023e8a" size={15} />
-                    <Text style={styles.repliesText}>
-                      {commentCount} {commentCount > 1 ? 'commentaires' : 'commentaire'}
-                    </Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={styles.replyAction}
-                    onPress={() => openReply(post.id)}
-                    accessibilityRole="button"
-                    accessibilityLabel="Répondre"
-                  >
-                    <Text style={styles.replyActionText}>Répondre</Text>
-                  </TouchableOpacity>
-                </View>
-
-                {isExpanded ? (
-                  <CommunityCommentsList
-                    comments={
-                      activeCommentPostId === post.id ? commentsState.comments : []
-                    }
-                    userToken={userToken}
-                    onDelete={(commentId) => {
-                      commentsState.confirmDeleteComment(commentId);
-                      fetchPosts();
-                    }}
-                  />
-                ) : null}
-              </View>
-            );
-          })
-        )}
-      </ScrollView>
+              );
+            })
+          )}
+        </ScrollView>
 
         {replyingPostId ? (
           <ReplyComposerBar
@@ -230,6 +265,18 @@ export default function CommunauteScreen() {
           />
         ) : null}
       </KeyboardAwareBody>
+
+      <CommunityCreateModal
+        visible={createVisible}
+        onClose={() => setCreateVisible(false)}
+        onPublished={handlePublished}
+        {...createPostProps}
+      />
+
+      <CommunityPostSuccessModal
+        visible={successVisible}
+        onClose={() => setSuccessVisible(false)}
+      />
     </View>
   );
 }
@@ -246,6 +293,40 @@ const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
     paddingBottom: 24,
+  },
+  createWrap: {
+    paddingHorizontal: 14,
+    paddingBottom: 12,
+  },
+  createButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: '#F0F9FF',
+    borderWidth: 1.5,
+    borderColor: '#7DD3FC',
+    borderRadius: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    shadowColor: '#023e8a',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  createIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: '#023e8a',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  createButtonText: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#023e8a',
   },
   listHeader: {
     flexDirection: 'row',
@@ -319,10 +400,10 @@ const styles = StyleSheet.create({
   },
   threadTitle: {
     flex: 1,
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '800',
     color: '#0f172a',
-    lineHeight: 20,
+    lineHeight: 21,
   },
   deleteButton: {
     padding: 4,
@@ -334,10 +415,11 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   threadPreview: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#334155',
-    lineHeight: 19,
+    lineHeight: 20,
     marginTop: 6,
+    fontWeight: '500',
   },
   threadFooter: {
     marginTop: 10,

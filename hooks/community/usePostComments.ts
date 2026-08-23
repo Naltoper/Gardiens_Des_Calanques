@@ -4,6 +4,7 @@ import { Alert, Platform } from 'react-native';
 import { supabase } from '../../lib/supabase';
 import type { CommunityComment } from '../../types/community';
 import { getStartOfTodayIso } from '../../utils/community';
+import { notify } from '../../utils/notify';
 
 export function usePostComments(postId: string | null, userToken: string | null) {
   const [comments, setComments] = useState<CommunityComment[]>([]);
@@ -40,17 +41,17 @@ export function usePostComments(postId: string | null, userToken: string | null)
     if (!postId) return false;
 
     if (!userToken) {
-      Alert.alert('Erreur', 'Token utilisateur introuvable. Réessayez dans quelques secondes.');
+      notify('Erreur', 'Token utilisateur introuvable. Réessayez dans quelques secondes.');
       return false;
     }
 
     if (!content.trim()) {
-      Alert.alert('Champ obligatoire', 'Écris un commentaire avant de publier.');
+      notify('Champ obligatoire', 'Écris un commentaire avant de publier.');
       return false;
     }
 
     if (!isAnonyme && !authorName.trim()) {
-      Alert.alert('Nom obligatoire', 'Entre un nom public ou active le mode anonyme.');
+      notify('Nom obligatoire', 'Entre un nom public ou active le mode anonyme.');
       return false;
     }
 
@@ -62,12 +63,12 @@ export function usePostComments(postId: string | null, userToken: string | null)
 
     if (countError) {
       console.error('Erreur vérification limite commentaires:', countError.message);
-      Alert.alert('Erreur', 'Impossible de vérifier la limite de commentaires.');
+      notify('Erreur', 'Impossible de vérifier la limite de commentaires.');
       return false;
     }
 
     if ((todayCommentsCount || 0) >= 4) {
-      Alert.alert(
+      notify(
         'Limite atteinte',
         'Tu peux publier seulement 4 commentaires par jour dans la communauté.',
       );
@@ -88,7 +89,7 @@ export function usePostComments(postId: string | null, userToken: string | null)
 
     if (error) {
       console.error('Erreur création commentaire:', error.message);
-      Alert.alert('Erreur', 'Impossible de publier le commentaire.');
+      notify('Erreur', 'Impossible de publier le commentaire.');
       return false;
     }
 

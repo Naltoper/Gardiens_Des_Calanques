@@ -17,10 +17,12 @@ import { AnonymityBadge } from '../../components/banners/AnonymityBadge';
 import { GradientButton } from '../../components/buttons/GradientButton';
 import { PageHeader } from '../../components/headers/PageHeader';
 import { LegalWarningModal } from '../../components/modals/LegalWarningModal';
+import { RevealIdentityWarningModal } from '../../components/modals/RevealIdentityWarningModal';
 import CustomSelect from '../../components/signalement/CustomSelect';
 import SignalementSuccess from '../../components/signalement/SignalementSuccess';
 import { SELECT_FIELDS } from '../../constants/signalementFields';
 import { Colors, GARDIAN_CLAIR, PAGE_SCENE_BACKDROP } from '../../constants/theme';
+import { useRevealIdentity } from '../../hooks/useRevealIdentity';
 import { useSignalementForm } from '../../hooks/useSignalementForm';
 
 const C = {
@@ -107,6 +109,8 @@ export default function SignalerScreen() {
     setIsSent,
     handleSend,
   } = useSignalementForm();
+
+  const revealIdentity = useRevealIdentity(isAnonyme, setIsAnonyme);
 
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const [showWarningModal, setShowWarningModal] = useState(false);
@@ -216,7 +220,7 @@ export default function SignalerScreen() {
               </View>
               <Switch
                 value={isAnonyme}
-                onValueChange={setIsAnonyme}
+                onValueChange={revealIdentity.onAnonymityChange}
                 trackColor={{ false: '#CBD5E1', true: '#76C893' }}
                 thumbColor={isAnonyme ? '#FFFFFF' : '#F4F3F4'}
               />
@@ -353,6 +357,12 @@ export default function SignalerScreen() {
               setShowWarningModal(false);
               handleSend();
             }}
+          />
+
+          <RevealIdentityWarningModal
+            visible={revealIdentity.warningVisible}
+            onCancel={revealIdentity.cancelReveal}
+            onConfirm={revealIdentity.confirmReveal}
           />
         </ScrollView>
       </ImageBackground>

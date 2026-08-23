@@ -11,6 +11,8 @@ import {
 } from 'react-native';
 
 import { GARDIAN_CLAIR } from '../../constants/theme';
+import { useRevealIdentity } from '../../hooks/useRevealIdentity';
+import { RevealIdentityWarningModal } from '../modals/RevealIdentityWarningModal';
 
 type ReplyComposerBarProps = {
   content: string;
@@ -36,6 +38,7 @@ export function ReplyComposerBar({
   onClose,
 }: ReplyComposerBarProps) {
   const inputRef = useRef<TextInput>(null);
+  const reveal = useRevealIdentity(isAnonyme, setIsAnonyme);
 
   useEffect(() => {
     const timer = setTimeout(() => inputRef.current?.focus(), 80);
@@ -50,7 +53,7 @@ export function ReplyComposerBar({
           <Text style={styles.anonLabel}>Anonyme</Text>
           <Switch
             value={isAnonyme}
-            onValueChange={setIsAnonyme}
+            onValueChange={reveal.onAnonymityChange}
             trackColor={{ false: '#cbd5e1', true: '#76c893' }}
             thumbColor={isAnonyme ? '#10ac56' : '#f4f4f5'}
           />
@@ -98,6 +101,12 @@ export function ReplyComposerBar({
           <Send color="#ffffff" size={16} />
         </TouchableOpacity>
       </View>
+
+      <RevealIdentityWarningModal
+        visible={reveal.warningVisible}
+        onCancel={reveal.cancelReveal}
+        onConfirm={reveal.confirmReveal}
+      />
     </View>
   );
 }
