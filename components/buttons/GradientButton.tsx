@@ -21,6 +21,7 @@ interface GradientButtonProps {
   fontSize?: number;
   compact?: boolean;
   style?: StyleProp<ViewStyle>;
+  accessibilityLabel?: string;
 }
 
 export const GradientButton = ({
@@ -34,6 +35,7 @@ export const GradientButton = ({
   compact = false,
   style,
   disabled = false,
+  accessibilityLabel,
 }: GradientButtonProps) => {
   const resolvedHeight = compact ? height ?? 42 : height;
   const resolvedFontSize = compact ? 14 : fontSize;
@@ -45,6 +47,8 @@ export const GradientButton = ({
       disabled={disabled}
       activeOpacity={0.82}
       style={[{ width, height: resolvedHeight, opacity: disabled ? 0.55 : 1 }, style]}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel || title || undefined}
     >
       <LinearGradient
         colors={colors}

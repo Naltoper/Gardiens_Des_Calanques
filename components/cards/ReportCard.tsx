@@ -180,6 +180,7 @@ export const ReportCard = ({
               height={isCompact ? 56 : 60}
               style={styles.chatButton}
               title=""
+              accessibilityLabel="Ouvrir le chat"
             />
             {hasUnreadChat ? (
               <View
