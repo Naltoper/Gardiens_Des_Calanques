@@ -5,11 +5,13 @@ import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native
 import { useWebPush } from '../../hooks/useWebPush';
 
 export function PushPermissionBanner() {
-  const { supported, permission, busy, enable } = useWebPush();
+  const { supported, permission, busy, syncError, enable } = useWebPush();
   const [dismissed, setDismissed] = useState(false);
 
   if (Platform.OS !== 'web' || !supported || dismissed) return null;
-  if (permission !== 'default') return null;
+  const needsPermission = permission === 'default';
+  const needsRetry = permission === 'granted' && Boolean(syncError);
+  if (!needsPermission && !needsRetry) return null;
 
   return (
     <View style={styles.banner}>
@@ -17,9 +19,13 @@ export function PushPermissionBanner() {
         <Bell color="#FFFFFF" size={18} strokeWidth={2.4} />
       </View>
       <View style={styles.textWrap}>
-        <Text style={styles.title}>Notifications de chat</Text>
+        <Text style={styles.title}>
+          {needsRetry ? 'Notifications non enregistrées' : 'Notifications de chat'}
+        </Text>
         <Text style={styles.subtitle}>
-          Reçois une alerte même si l'application est fermée, dès qu'un intervenant te répond.
+          {needsRetry
+            ? syncError
+            : "Reçois une alerte même si l'application est fermée, dès qu'un intervenant te répond."}
         </Text>
       </View>
       <TouchableOpacity
@@ -32,7 +38,7 @@ export function PushPermissionBanner() {
         accessibilityRole="button"
         accessibilityLabel="Activer les notifications"
       >
-        <Text style={styles.enableText}>{busy ? '…' : 'Activer'}</Text>
+        <Text style={styles.enableText}>{busy ? '…' : needsRetry ? 'Réessayer' : 'Activer'}</Text>
       </TouchableOpacity>
       <TouchableOpacity
         onPress={() => setDismissed(true)}

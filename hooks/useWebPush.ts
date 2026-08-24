@@ -28,7 +28,7 @@ async function persistSubscription(
   subscription: PushSubscription,
   action: 'subscribe' | 'unsubscribe' = 'subscribe',
 ) {
-  await fetch(PUSH_SUBSCRIBE_PATH, {
+  const response = await fetch(PUSH_SUBSCRIBE_PATH, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -37,17 +37,26 @@ async function persistSubscription(
       subscription: subscription.toJSON(),
     }),
   });
+  if (!response.ok) {
+    const detail = await response.text();
+    throw new Error(`push-subscribe ${response.status}: ${detail}`);
+  }
+  return response.json().catch(() => ({ ok: true }));
 }
 
 export function useWebPush() {
   const [permission, setPermission] = useState<PushPermission>('pending');
   const [busy, setBusy] = useState(false);
+  const [syncError, setSyncError] = useState<string | null>(null);
   const supported = isWebPushSupported();
 
   const syncGrantedSubscription = useCallback(async () => {
     if (!supported || Notification.permission !== 'granted') return;
     const userToken = await getUserToken();
-    if (!userToken) return;
+    if (!userToken) {
+      setSyncError("Identifiant élève manquant — reconnecte-toi.");
+      return;
+    }
     const registration = await getRegistration();
     await navigator.serviceWorker.ready;
     let subscription = await registration.pushManager.getSubscription();
@@ -58,6 +67,7 @@ export function useWebPush() {
       });
     }
     await persistSubscription(userToken, subscription);
+    setSyncError(null);
   }, [supported]);
 
   useEffect(() => {
@@ -67,13 +77,17 @@ export function useWebPush() {
     }
     setPermission(Notification.permission);
     if (Notification.permission === 'granted') {
-      void syncGrantedSubscription();
+      void syncGrantedSubscription().catch((error) => {
+        console.warn('[web-push]', error);
+        setSyncError("L'abonnement push n'a pas pu être enregistré.");
+      });
     }
   }, [supported, syncGrantedSubscription]);
 
   const enable = useCallback(async () => {
     if (!supported || busy) return Notification.permission === 'granted';
     setBusy(true);
+    setSyncError(null);
     try {
       const result = await Notification.requestPermission();
       setPermission(result);
@@ -82,6 +96,7 @@ export function useWebPush() {
       return true;
     } catch (error) {
       console.warn('[web-push]', error);
+      setSyncError("Impossible d'activer les notifications.");
       return false;
     } finally {
       setBusy(false);
@@ -92,6 +107,7 @@ export function useWebPush() {
     supported,
     permission,
     busy,
+    syncError,
     enable,
   };
 }

@@ -1,6 +1,7 @@
--- Superseded by 20260824223000_push_subscriptions.sql
--- (table name is now public.push_subscriptions).
--- This file is kept so older checkouts still apply a compatible store.
+-- Web Push subscriptions for GDC élèves (PWA / Android TWA).
+-- Apply in the Supabase SQL Editor if the table is missing.
+-- Then create a Database Webhook: public.messages INSERT
+--   → POST https://gdc-eleves.vercel.app/api/notify-chat
 
 create table if not exists public.push_subscriptions (
   id uuid primary key default gen_random_uuid(),
@@ -16,6 +17,9 @@ create table if not exists public.push_subscriptions (
 create index if not exists push_subscriptions_user_token_idx
   on public.push_subscriptions (user_token);
 
+create index if not exists push_subscriptions_report_id_idx
+  on public.push_subscriptions (report_id);
+
 alter table public.push_subscriptions enable row level security;
 
 drop policy if exists "push_subscriptions_anon_all" on public.push_subscriptions;
@@ -25,3 +29,6 @@ create policy "push_subscriptions_anon_all"
   to anon, authenticated
   using (true)
   with check (true);
+
+grant select, insert, update, delete on table public.push_subscriptions
+  to anon, authenticated, service_role;

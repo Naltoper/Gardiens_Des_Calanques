@@ -62,8 +62,8 @@ export const useChatMessages = (reportId: string | undefined) => {
         .select()
         .maybeSingle();
 
-      if (!insertError && data) {
-        triggerChatPush(data);
+      if (!insertError) {
+        triggerChatPush(data || { report_id: reportId, sender_role: role });
       }
       return !insertError;
     } catch (caught) {

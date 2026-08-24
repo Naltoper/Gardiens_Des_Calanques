@@ -1,4 +1,6 @@
 /* GDC élèves — push-only service worker. Do not intercept fetch (SPA). */
+const SW_VERSION = 'gdc-push-2';
+
 self.addEventListener('install', (event) => {
   self.skipWaiting();
 });
@@ -6,6 +8,14 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
   event.waitUntil(self.clients.claim());
 });
+
+function absoluteUrl(path) {
+  try {
+    return new URL(path, self.location.origin).href;
+  } catch {
+    return path;
+  }
+}
 
 self.addEventListener('push', (event) => {
   let payload = {};
@@ -16,14 +26,17 @@ self.addEventListener('push', (event) => {
   }
 
   const title = payload.title || 'Gardiens des Calanques';
+  const icon = absoluteUrl('/icons/icon-192.png');
   const options = {
     body: payload.body || 'Tu as reçu un nouveau message.',
-    icon: '/icons/icon-192.png',
-    badge: '/icons/icon-192.png',
+    icon,
+    badge: icon,
     tag: payload.tag || 'gdc-chat',
     renotify: true,
+    vibrate: [120, 80, 120],
     data: {
-      url: payload.url || '/suivis',
+      url: payload.url || payload.data?.url || '/suivis',
+      version: SW_VERSION,
     },
   };
 
@@ -33,7 +46,7 @@ self.addEventListener('push', (event) => {
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   const target = event.notification.data?.url || '/suivis';
-  const dest = new URL(target, self.location.origin).href;
+  const dest = absoluteUrl(target);
 
   event.waitUntil(
     (async () => {
@@ -45,7 +58,11 @@ self.addEventListener('notificationclick', (event) => {
         if ('focus' in client) {
           await client.focus();
           if ('navigate' in client) {
-            await client.navigate(dest);
+            try {
+              await client.navigate(dest);
+            } catch {
+              /* TWA / older WebViews may reject navigate() */
+            }
           }
           return;
         }

@@ -14,6 +14,7 @@ module.exports = async function handler(req, res) {
   try {
     const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body || {};
     const userToken = String(body.user_token || '').trim();
+    const reportId = String(body.report_id || '').trim();
     const subscription = body.subscription;
     const action = body.action === 'unsubscribe' ? 'unsubscribe' : 'subscribe';
 
@@ -25,11 +26,14 @@ module.exports = async function handler(req, res) {
     const count =
       action === 'unsubscribe'
         ? await removeSubscription(userToken, subscription)
-        : await upsertSubscription(userToken, subscription);
+        : await upsertSubscription(userToken, subscription, reportId);
 
     res.status(200).json({ ok: true, count });
   } catch (error) {
     console.error('[push-subscribe]', error);
-    res.status(500).json({ error: 'subscribe_failed' });
+    res.status(500).json({
+      error: 'subscribe_failed',
+      message: String(error?.message || error),
+    });
   }
 };
