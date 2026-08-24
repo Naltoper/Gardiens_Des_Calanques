@@ -1,12 +1,10 @@
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { Platform, StyleSheet, ViewStyle } from "react-native";
+import { ActivityIndicator, Platform, StyleSheet, View, ViewStyle } from "react-native";
 import "react-native-reanimated";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 
-export const unstable_settings = {
-  anchor: "(tabs)",
-};
+import { AuthProvider, useAuth } from "../contexts/AuthContext";
 
 export default function RootLayout() {
   const bgColor = "#E2F4F3";
@@ -34,26 +32,55 @@ export default function RootLayout() {
         ]}
         edges={["top"]}
       >
-        <Stack
-          screenOptions={{
-            headerStyle: { backgroundColor: "#000dbfff" },
-            headerTintColor: "#fff",
-            headerTitleStyle: { fontWeight: "800", fontSize: 18 },
-            headerShadowVisible: false,
-            contentStyle: { backgroundColor: bgColor, flex: 1 },
-          }}
-        >
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="community/[id]" options={{ headerShown: false }} />
-          <Stack.Screen name="chat/[id]" options={{ headerShown: false }} />
-        </Stack>
+        <AuthProvider>
+          <RootNavigator bgColor={bgColor} />
+        </AuthProvider>
       </SafeAreaView>
     </SafeAreaProvider>
+  );
+}
+
+function RootNavigator({ bgColor }: { bgColor: string }) {
+  const { isAuthenticated, isReady } = useAuth();
+
+  if (!isReady) {
+    return (
+      <View style={styles.splash}>
+        <ActivityIndicator size="large" color="#023E8A" />
+      </View>
+    );
+  }
+
+  return (
+    <Stack
+      screenOptions={{
+        headerStyle: { backgroundColor: "#000dbfff" },
+        headerTintColor: "#fff",
+        headerTitleStyle: { fontWeight: "800", fontSize: 18 },
+        headerShadowVisible: false,
+        contentStyle: { backgroundColor: bgColor, flex: 1 },
+      }}
+    >
+      <Stack.Protected guard={isAuthenticated}>
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="community/[id]" options={{ headerShown: false }} />
+        <Stack.Screen name="chat/[id]" options={{ headerShown: false }} />
+      </Stack.Protected>
+      <Stack.Protected guard={!isAuthenticated}>
+        <Stack.Screen name="login" options={{ headerShown: false }} />
+      </Stack.Protected>
+    </Stack>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  splash: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#E2F4F3",
   },
 });

@@ -2,6 +2,7 @@ import { useRouter } from "expo-router";
 import {
   ChevronRight,
   Info,
+  LogOut,
   Phone,
   Shield,
   ShieldAlert,
@@ -21,6 +22,7 @@ import { InstallBanner } from "../../components/banners/InstallBanner";
 import { LyceeBackground } from "../../components/backgrounds/LyceeBackground";
 import { PageHeader } from "../../components/headers/PageHeader";
 import { Colors, GARDIAN_CLAIR } from "../../constants/theme";
+import { useAuth } from "../../contexts/AuthContext";
 
 const C = {
   primary: Colors.light.primary,
@@ -79,7 +81,9 @@ function ShortcutTile({
 
 export default function HomeScreen() {
   const router = useRouter();
+  const { logout, user } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -184,6 +188,30 @@ export default function HomeScreen() {
           <AnonymityBadge />
         </View>
         <Text style={styles.footerSubtitle}>Lycée des Calanques • Marseille</Text>
+
+        <TouchableOpacity
+          style={styles.logoutButton}
+          onPress={async () => {
+            if (loggingOut) return;
+            setLoggingOut(true);
+            try {
+              await logout();
+            } finally {
+              setLoggingOut(false);
+            }
+          }}
+          activeOpacity={0.85}
+          accessibilityRole="button"
+          accessibilityLabel="Se déconnecter"
+        >
+          <LogOut color="#FFFFFF" size={20} strokeWidth={2.5} />
+          <Text style={styles.logoutButtonText}>
+            {loggingOut ? "Déconnexion…" : "Se déconnecter"}
+          </Text>
+        </TouchableOpacity>
+        {user ? (
+          <Text style={styles.loggedInAs}>Connecté en tant que {user.displayName}</Text>
+        ) : null}
       </ScrollView>
     </LyceeBackground>
     </View>
@@ -201,7 +229,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     padding: 20,
     paddingTop: 16,
-    paddingBottom: 32,
+    paddingBottom: 48,
   },
   header: {
     alignItems: "center",
@@ -385,5 +413,37 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
     fontWeight: "600",
     textAlign: "center",
+  },
+  logoutButton: {
+    marginTop: 28,
+    alignSelf: "stretch",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    backgroundColor: "#B91C1C",
+    borderRadius: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    borderWidth: 1,
+    borderColor: "#991B1B",
+    shadowColor: "#7F1D1D",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.22,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  logoutButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "800",
+    letterSpacing: 0.2,
+  },
+  loggedInAs: {
+    marginTop: 10,
+    fontSize: 12,
+    color: C.textMuted,
+    textAlign: "center",
+    fontWeight: "600",
   },
 });
