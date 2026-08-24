@@ -1,6 +1,6 @@
 import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
-import { FolderOpen, ListFilter } from 'lucide-react-native';
+import { Filter, FolderOpen } from 'lucide-react-native';
 import { useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
@@ -16,7 +16,7 @@ import {
 
 import { ReportCard } from '../../components/cards/ReportCard';
 import { PageHeader } from '../../components/headers/PageHeader';
-import { Colors, GARDIAN_CLAIR, PAGE_SCENE_BACKDROP } from '../../constants/theme';
+import { Colors, GARDIAN_CLAIR, HEADER_FG, PAGE_SCENE_BACKDROP } from '../../constants/theme';
 import { DeleteConfirmModal } from '../../components/modals/DeleteConfirmModal';
 import { ReportDetailModal } from '../../components/modals/ReportDetailModal';
 import {
@@ -162,10 +162,11 @@ export default function SuivisScreen() {
             accessibilityRole="button"
             accessibilityLabel={filtersOpen ? 'Masquer les filtres' : 'Afficher les filtres'}
             testID="suivis-filter-toggle"
+            nativeID="suivis-filter-toggle"
           >
-            <ListFilter
-              color={filtersOpen || filtersActive ? Colors.light.primary : '#334155'}
-              size={18}
+            <Filter
+              color={filtersOpen || filtersActive ? Colors.light.primary : HEADER_FG}
+              size={20}
               strokeWidth={2.3}
             />
             {filtersActive ? <View style={styles.filterDot} /> : null}
@@ -314,9 +315,10 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.42)',
   },
   filterButtonActive: {
-    backgroundColor: 'rgba(2, 62, 138, 0.08)',
+    backgroundColor: 'rgba(2, 62, 138, 0.12)',
   },
   filterDot: {
     position: 'absolute',

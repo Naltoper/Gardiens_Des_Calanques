@@ -37,9 +37,9 @@ export function KeyboardAwareBody({
         style,
         Platform.OS === 'web' ? { paddingBottom: webInset } : null,
       ]}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? keyboardVerticalOffset : 0}
-      enabled={Platform.OS === 'ios'}
+      behavior={Platform.OS === 'ios' ? 'padding' : Platform.OS === 'android' ? 'padding' : undefined}
+      keyboardVerticalOffset={Platform.OS === 'web' ? 0 : keyboardVerticalOffset}
+      enabled={Platform.OS !== 'web'}
     >
       {children}
     </KeyboardAvoidingView>

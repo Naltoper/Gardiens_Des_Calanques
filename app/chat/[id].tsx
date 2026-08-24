@@ -4,7 +4,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useLocalSearchParams } from 'expo-router';
 import { ImagePlus, Send, ShieldCheck, X } from 'lucide-react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { FlatList, Image, RefreshControl, StatusBar, 
+import { FlatList, Image, Keyboard, Platform, RefreshControl, StatusBar, 
   StyleSheet, TextInput, TouchableOpacity, View, Text, ImageBackground } from 'react-native';
 import { ChatHeader } from '../../components/headers/ChatHeader';
 import { ChatBubble } from '../../components/cards/ChatBubble';
@@ -44,10 +44,20 @@ export default function ChatScreen() {
   const keyboardVisible = useKeyboardVisible();
 
   const scrollToLatest = useCallback((animated = true) => {
-    const run = () => flatListRef.current?.scrollToEnd({ animated });
+    const run = () => {
+      const list = flatListRef.current;
+      if (!list) return;
+      try {
+        list.scrollToEnd({ animated });
+      } catch {
+        // Layout can still be settling while the keyboard opens.
+      }
+    };
     requestAnimationFrame(() => {
-      setTimeout(run, 60);
-      setTimeout(run, 320);
+      run();
+      setTimeout(run, 80);
+      setTimeout(run, 280);
+      setTimeout(run, 520);
     });
   }, []);
 
@@ -68,6 +78,18 @@ export default function ChatScreen() {
       scrollToLatest(true);
     }
   }, [keyboardVisible, messages.length, scrollToLatest]);
+
+  useEffect(() => {
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const show = Keyboard.addListener(showEvent, (event) => {
+      const duration = event?.duration ?? 250;
+      scrollToLatest(true);
+      setTimeout(() => scrollToLatest(true), duration + 80);
+    });
+    return () => {
+      show.remove();
+    };
+  }, [scrollToLatest]);
 
   const pickChatImage = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -181,7 +203,10 @@ export default function ChatScreen() {
                   tintColor="#48a4f4"
                 />
               }
-              onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
+              onContentSizeChange={() => scrollToLatest(true)}
+              onLayout={() => {
+                if (keyboardVisible) scrollToLatest(false);
+              }}
               renderItem={({ item, index }) => (
                 <ChatBubble 
                   item={item} 

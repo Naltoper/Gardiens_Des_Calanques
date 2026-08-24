@@ -39,7 +39,7 @@ export function AppHeaderBar({
         style={styles.gradient}
       >
         <View style={styles.row}>
-          <View style={styles.side}>{left}</View>
+          <View style={[styles.side, styles.sideLeft]}>{left}</View>
           <View style={styles.titleBlock}>
             <Text style={styles.title} numberOfLines={1}>
               {title}
@@ -52,7 +52,7 @@ export function AppHeaderBar({
               <View style={styles.subtitleSpacer} />
             )}
           </View>
-          <View style={styles.side}>{right}</View>
+          <View style={[styles.side, styles.sideRight]}>{right}</View>
         </View>
       </LinearGradient>
     </View>
@@ -90,6 +90,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'visible',
+    zIndex: 2,
+  },
+  sideLeft: {
+    alignItems: 'flex-start',
+  },
+  sideRight: {
+    alignItems: 'flex-end',
   },
   titleBlock: {
     flex: 1,
@@ -97,6 +104,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 6,
     minHeight: HEADER_ROW_MIN_HEIGHT,
+    overflow: 'hidden',
+    zIndex: 0,
   },
   title: {
     color: HEADER_FG,
