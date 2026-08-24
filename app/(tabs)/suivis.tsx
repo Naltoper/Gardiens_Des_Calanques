@@ -161,6 +161,7 @@ export default function SuivisScreen() {
             activeOpacity={0.75}
             accessibilityRole="button"
             accessibilityLabel={filtersOpen ? 'Masquer les filtres' : 'Afficher les filtres'}
+            testID="suivis-filter-toggle"
           >
             <ListFilter
               color={filtersOpen || filtersActive ? Colors.light.primary : '#334155'}
