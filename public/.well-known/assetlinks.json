@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.roblof.gdc",
+      "sha256_cert_fingerprints": [
+        "13:1E:0E:B4:7A:65:F2:D9:DB:A6:14:BC:7E:C4:8E:39:E4:65:B8:A0:6E:46:C1:84:38:E5:A7:A9:F8:76:7A:97"
+      ]
+    }
+  }
+]

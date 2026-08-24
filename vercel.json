@@ -13,11 +13,20 @@
           "value": "application/manifest+json; charset=utf-8"
         }
       ]
+    },
+    {
+      "source": "/.well-known/assetlinks.json",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/json; charset=utf-8"
+        }
+      ]
     }
   ],
   "rewrites": [
     {
-      "source": "/((?!manifest\\.json|icons/|favicon.ico|_expo/).*)",
+      "source": "/((?!manifest\\.json|icons/|favicon.ico|_expo/|\\.well-known/).*)",
       "destination": "/"
     }
   ]

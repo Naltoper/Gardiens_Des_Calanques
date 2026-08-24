@@ -1,0 +1,48 @@
+{
+  "packageId": "com.roblof.gdc",
+  "host": "gdc-eleves.vercel.app",
+  "name": "Gardiens Des Calanques",
+  "launcherName": "GDC",
+  "display": "fullscreen",
+  "themeColor": "#023E8A",
+  "themeColorDark": "#023E8A",
+  "navigationColor": "#000000",
+  "navigationColorDark": "#000000",
+  "navigationDividerColor": "#000000",
+  "navigationDividerColorDark": "#000000",
+  "backgroundColor": "#ffffff",
+  "enableNotifications": true,
+  "startUrl": "/",
+  "iconUrl": "https://gdc-eleves.vercel.app/icons/icon-512.png",
+  "maskableIconUrl": "https://gdc-eleves.vercel.app/icons/icon-512-maskable.png",
+  "splashScreenFadeOutDuration": 300,
+  "signingKey": {
+    "path": "../android-packages/gdc-release.keystore",
+    "alias": "android"
+  },
+  "appVersionName": "1.0.0",
+  "appVersionCode": 1,
+  "appVersion": "1.0.0",
+  "shortcuts": [],
+  "generatorApp": "bubblewrap-cli",
+  "webManifestUrl": "https://gdc-eleves.vercel.app/manifest.json",
+  "fallbackType": "customtabs",
+  "features": {},
+  "alphaDependencies": {
+    "enabled": false
+  },
+  "enableSiteSettingsShortcut": true,
+  "isChromeOSOnly": false,
+  "isMetaQuest": false,
+  "fullScopeUrl": "https://gdc-eleves.vercel.app/",
+  "minSdkVersion": 21,
+  "orientation": "portrait",
+  "fingerprints": [
+    {
+      "name": "upload",
+      "value": "13:1E:0E:B4:7A:65:F2:D9:DB:A6:14:BC:7E:C4:8E:39:E4:65:B8:A0:6E:46:C1:84:38:E5:A7:A9:F8:76:7A:97"
+    }
+  ],
+  "additionalTrustedOrigins": [],
+  "retainedBundles": []
+}
