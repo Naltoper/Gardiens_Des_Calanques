@@ -98,7 +98,7 @@ export function useChatActivity(reportIds: string[]) {
 
     const idSet = new Set(ids);
     const channel = supabase
-      .channel(`suivis-chat-activity-${idsKey.slice(0, 24)}`)
+      .channel(`suivis-chat-activity-${Math.random().toString(36).slice(2, 10)}`)
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'messages' },

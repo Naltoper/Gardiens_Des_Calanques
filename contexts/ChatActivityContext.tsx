@@ -41,7 +41,7 @@ export function ChatActivityProvider({ children }: { children: React.ReactNode }
 
   useEffect(() => {
     const channel = supabase
-      .channel('user-report-ids')
+      .channel(`user-report-ids-${Math.random().toString(36).slice(2, 10)}`)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'reports' },
@@ -52,7 +52,7 @@ export function ChatActivityProvider({ children }: { children: React.ReactNode }
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      void supabase.removeChannel(channel);
     };
   }, [reloadIds]);
 
