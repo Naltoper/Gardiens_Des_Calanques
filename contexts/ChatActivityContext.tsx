@@ -2,6 +2,7 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useS
 
 import { useChatActivity, type ChatActivity } from '../hooks/useChatActivity';
 import { supabase } from '../lib/supabase';
+import { uniqueRealtimeTopic } from '../utils/realtimeChannel';
 import { getUserToken } from '../utils/storage';
 
 type ChatActivityContextValue = {
@@ -41,7 +42,7 @@ export function ChatActivityProvider({ children }: { children: React.ReactNode }
 
   useEffect(() => {
     const channel = supabase
-      .channel(`user-report-ids-${Math.random().toString(36).slice(2, 10)}`)
+      .channel(uniqueRealtimeTopic('user-report-ids'))
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'reports' },

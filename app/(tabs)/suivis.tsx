@@ -123,12 +123,14 @@ export default function SuivisScreen() {
         setModalVisible(true);
       }}
       onDelete={() => confirmDeleteReport(item.id)}
-      onChat={() =>
+      onChat={() => {
+        const id = String(item.id ?? '').trim();
+        if (!id) return;
         router.push({
           pathname: '/chat/[id]',
-          params: { id: item.id, role: 'user' },
-        })
-      }
+          params: { id, role: 'user' },
+        });
+      }}
     />
   );
 

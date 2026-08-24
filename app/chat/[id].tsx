@@ -4,11 +4,26 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useLocalSearchParams } from 'expo-router';
 import { ImagePlus, Send, ShieldCheck, X } from 'lucide-react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { FlatList, Image, Keyboard, Platform, RefreshControl, StatusBar, 
-  StyleSheet, TextInput, TouchableOpacity, View, Text, ImageBackground } from 'react-native';
+import {
+  ActivityIndicator,
+  FlatList,
+  Image,
+  Keyboard,
+  Platform,
+  RefreshControl,
+  StatusBar,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  View,
+  Text,
+  ImageBackground,
+} from 'react-native';
+
 import { ChatHeader } from '../../components/headers/ChatHeader';
 import { ChatBubble } from '../../components/cards/ChatBubble';
 import { KeyboardAwareBody } from '../../components/layout/KeyboardAwareBody';
+import { ScreenErrorBoundary } from '../../components/layout/ScreenErrorBoundary';
 import { ImageLightboxModal } from '../../components/modals/ImageLightboxModal';
 import { useChatMessages } from '../../hooks/useChatMessages';
 import { useKeyboardVisible } from '../../hooks/useKeyboardVisible';
@@ -18,14 +33,93 @@ import { Report } from '../../types/report';
 import { uploadImageToSupabase } from '../../utils/uploadImage';
 import { notify } from '../../utils/notify';
 import { markChatRead } from '../../utils/chatReadState';
-
-
+import { parseRouteParam } from '../../utils/routeParam';
 
 export default function ChatScreen() {
-  const params = useLocalSearchParams();
-  const reportId = Array.isArray(params.id) ? params.id[0] : params.id;
-  const role = params.role as 'user' | 'admin';
-  
+  const params = useLocalSearchParams<{
+    id?: string | string[];
+    role?: string | string[];
+  }>();
+  const reportId = parseRouteParam(params.id);
+  const role = parseRouteParam(params.role) === 'admin' ? 'admin' : 'user';
+  const [modalVisible, setModalVisible] = useState(false);
+
+  return (
+    <View style={styles.mainContainer}>
+      <StatusBar barStyle="dark-content" />
+      <View style={styles.headerWrap} pointerEvents="box-none">
+        <ChatHeader
+          reportId={reportId}
+          role={role}
+          onShowDetails={reportId ? () => setModalVisible(true) : undefined}
+        />
+      </View>
+
+      {!reportId ? (
+        <ChatUnavailable
+          title="Discussion introuvable"
+          subtitle="L'identifiant du signalement est manquant. Reviens à Mes Suivis pour ouvrir le chat depuis une carte."
+        />
+      ) : (
+        <ScreenErrorBoundary
+          fallback={(retry) => (
+            <ChatUnavailable
+              title="Impossible d'ouvrir le chat"
+              subtitle="Le chargement a échoué. Tu peux réessayer ou revenir en arrière."
+              onRetry={retry}
+            />
+          )}
+        >
+          <ChatConversation
+            reportId={reportId}
+            role={role}
+            modalVisible={modalVisible}
+            onCloseModal={() => setModalVisible(false)}
+          />
+        </ScreenErrorBoundary>
+      )}
+    </View>
+  );
+}
+
+function ChatUnavailable({
+  title,
+  subtitle,
+  onRetry,
+}: {
+  title: string;
+  subtitle: string;
+  onRetry?: () => void;
+}) {
+  return (
+    <View style={styles.fallback}>
+      <Text style={styles.fallbackTitle}>{title}</Text>
+      <Text style={styles.fallbackSubtitle}>{subtitle}</Text>
+      {onRetry ? (
+        <TouchableOpacity
+          onPress={onRetry}
+          style={styles.retryBtn}
+          accessibilityRole="button"
+          accessibilityLabel="Réessayer"
+        >
+          <Text style={styles.retryText}>Réessayer</Text>
+        </TouchableOpacity>
+      ) : null}
+    </View>
+  );
+}
+
+function ChatConversation({
+  reportId,
+  role,
+  modalVisible,
+  onCloseModal,
+}: {
+  reportId: string;
+  role: 'user' | 'admin';
+  modalVisible: boolean;
+  onCloseModal: () => void;
+}) {
   const [newMessage, setNewMessage] = useState('');
   const [pendingImage, setPendingImage] = useState<{
     uri: string;
@@ -34,62 +128,67 @@ export default function ChatScreen() {
   } | null>(null);
   const [lightboxUri, setLightboxUri] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
-  const flatListRef = useRef<FlatList>(null);
-
-  // --- NOUVEAUX ÉTATS POUR LA MODALE ---
   const [reportData, setReportData] = useState<Report | null>(null);
-  const [modalVisible, setModalVisible] = useState(false);
+  const flatListRef = useRef<FlatList>(null);
+  const stickToEndRef = useRef(true);
 
-  const { messages, sendMessage, loading, fetchMessages } = useChatMessages(reportId);
+  const { messages, sendMessage, loading, fetchMessages, error } = useChatMessages(reportId);
   const keyboardVisible = useKeyboardVisible();
 
   const scrollToLatest = useCallback((animated = true) => {
-    const run = () => {
-      const list = flatListRef.current;
-      if (!list) return;
-      try {
-        list.scrollToEnd({ animated });
-      } catch {
-        // Layout can still be settling while the keyboard opens.
-      }
-    };
+    if (!stickToEndRef.current) return;
     requestAnimationFrame(() => {
-      run();
-      setTimeout(run, 80);
-      setTimeout(run, 280);
-      setTimeout(run, 520);
+      flatListRef.current?.scrollToEnd({ animated });
     });
   }, []);
 
   useFocusEffect(
     useCallback(() => {
-      if (!reportId) return;
-      void markChatRead(String(reportId));
+      void markChatRead(reportId);
     }, [reportId]),
   );
 
   useEffect(() => {
-    if (!reportId || messages.length === 0) return;
-    void markChatRead(String(reportId));
+    if (messages.length === 0) return;
+    void markChatRead(reportId);
   }, [reportId, messages.length]);
 
   useEffect(() => {
-    if (keyboardVisible && messages.length > 0) {
-      scrollToLatest(true);
-    }
-  }, [keyboardVisible, messages.length, scrollToLatest]);
+    if (messages.length === 0) return;
+    const frame = requestAnimationFrame(() => {
+      flatListRef.current?.scrollToEnd({ animated: false });
+    });
+    const timeout = setTimeout(() => {
+      flatListRef.current?.scrollToEnd({ animated: true });
+    }, 120);
+    return () => {
+      cancelAnimationFrame(frame);
+      clearTimeout(timeout);
+    };
+  }, [messages.length]);
+
+  useEffect(() => {
+    if (!keyboardVisible || messages.length === 0) return;
+    const timeout = setTimeout(() => {
+      flatListRef.current?.scrollToEnd({ animated: true });
+    }, 80);
+    return () => clearTimeout(timeout);
+  }, [keyboardVisible, messages.length]);
 
   useEffect(() => {
     const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    let timeout: ReturnType<typeof setTimeout> | undefined;
     const show = Keyboard.addListener(showEvent, (event) => {
-      const duration = event?.duration ?? 250;
-      scrollToLatest(true);
-      setTimeout(() => scrollToLatest(true), duration + 80);
+      const delay = Math.min((event?.duration ?? 250) + 40, 400);
+      timeout = setTimeout(() => {
+        flatListRef.current?.scrollToEnd({ animated: true });
+      }, delay);
     });
     return () => {
       show.remove();
+      if (timeout) clearTimeout(timeout);
     };
-  }, [scrollToLatest]);
+  }, []);
 
   const pickChatImage = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -132,6 +231,7 @@ export default function ChatScreen() {
     if (success) {
       setNewMessage('');
       setPendingImage(null);
+      stickToEndRef.current = true;
       return;
     }
 
@@ -144,96 +244,100 @@ export default function ChatScreen() {
     setRefreshing(false);
   };
 
-  // Charger les détails du signalement pour la modale
   useEffect(() => {
-    if (!reportId) return;
+    let cancelled = false;
 
     const fetchReportDetails = async () => {
-      const { data, error } = await supabase
-        .from('reports')
-        .select('*')
-        .eq('id', reportId)
-        .single();
+      try {
+        const { data, error: queryError } = await supabase
+          .from('reports')
+          .select('*')
+          .eq('id', reportId)
+          .maybeSingle();
 
-      if (!error && data) {
-        setReportData(data as Report);
+        if (cancelled) return;
+        if (queryError) {
+          console.warn('[chat] report', queryError.message);
+          return;
+        }
+        if (data) setReportData(data as Report);
+      } catch (caught) {
+        console.warn('[chat] report', caught);
       }
     };
 
-    fetchReportDetails();
+    void fetchReportDetails();
+    return () => {
+      cancelled = true;
+    };
   }, [reportId]);
 
-  // Auto-scroll à chaque nouveau message
-  useEffect(() => {
-    if (messages.length > 0) {
-      scrollToLatest(true);
-    }
-  }, [messages, scrollToLatest]);
-
   return (
-    <View style={styles.mainContainer}>
-      <StatusBar barStyle="dark-content" />
-      
-      {/* 1. PASSAGE DE LAFONCTION AU HEADER */}
-      <ChatHeader 
-        reportId={reportId} 
-        role={role} 
-        onShowDetails={() => setModalVisible(true)} 
-      />
-
+    <>
       <KeyboardAwareBody>
-        {/* IMAGE BACKGROUND AJOUTÉE ICI */}
         <ImageBackground
           source={require('../../assets/images/lyceeBg.jpg')}
           style={styles.chatBackground}
           imageStyle={styles.chatBackgroundImage}
-          resizeMode="cover" // Remplit l'écran sans déformer le ratio de l'image
+          resizeMode="cover"
         >
-            <FlatList
-              ref={flatListRef}
-              data={messages}
-              keyExtractor={(item) => item.id.toString()}
-              contentContainerStyle={styles.listContent}
-              keyboardShouldPersistTaps="handled"
-              keyboardDismissMode="interactive"
-              refreshControl={
-                <RefreshControl
-                  refreshing={refreshing}
-                  onRefresh={onRefresh}
-                  tintColor="#48a4f4"
-                />
-              }
-              onContentSizeChange={() => scrollToLatest(true)}
-              onLayout={() => {
-                if (keyboardVisible) scrollToLatest(false);
-              }}
-              renderItem={({ item, index }) => (
-                <ChatBubble 
-                  item={item} 
-                  isMyMessage={item.sender_role === role}
-                  index={index}
-                  onImagePress={setLightboxUri}
-                />
-              )}
-              // AJOUT DE L'ÉTAT VIDE STYLISÉ (Avec étirement forcé pour occuper le fond)
-              ListEmptyComponent={
+          <FlatList
+            ref={flatListRef}
+            data={messages}
+            keyExtractor={(item, index) => String(item?.id ?? index)}
+            contentContainerStyle={styles.listContent}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="interactive"
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                tintColor="#48a4f4"
+              />
+            }
+            onScroll={(event) => {
+              const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
+              const distanceFromEnd =
+                contentSize.height - (contentOffset.y + layoutMeasurement.height);
+              stickToEndRef.current = distanceFromEnd < 80;
+            }}
+            scrollEventThrottle={16}
+            renderItem={({ item, index }) => (
+              <ChatBubble
+                item={item}
+                isMyMessage={item.sender_role === role}
+                index={index}
+                onImagePress={setLightboxUri}
+              />
+            )}
+            ListEmptyComponent={
+              loading ? (
+                <View style={styles.emptyChatWrapper}>
+                  <ActivityIndicator size="large" color="#48a4f4" />
+                  <Text style={styles.loadingText}>Chargement de la discussion…</Text>
+                </View>
+              ) : (
                 <View style={styles.emptyChatWrapper}>
                   <View style={styles.emptyChatContainer}>
-                  <View style={styles.emptyIconWrapper}>
-                    <ShieldCheck color="#76c893" size={36} strokeWidth={2} />
+                    <View style={styles.emptyIconWrapper}>
+                      <ShieldCheck color="#76c893" size={36} strokeWidth={2} />
+                    </View>
+                    <Text style={styles.emptyChatText}>
+                      {error ?? 'Aucun message pour le moment.'}
+                    </Text>
+                    <Text style={styles.emptyChatSubText}>
+                      {error
+                        ? 'Le bouton retour reste disponible en haut à gauche.'
+                        : role === 'user'
+                          ? "Pose tes questions ou apporte des précisions. Ton échange avec la cellule est strictement confidentiel et sécurisé."
+                          : "Initiez la discussion avec l'élève de manière bienveillante. Cet espace d'échange est entièrement sécurisé."}
+                    </Text>
                   </View>
-                  <Text style={styles.emptyChatText}>Aucun message pour le moment.</Text>
-                  <Text style={styles.emptyChatSubText}>
-                    {role === 'user' 
-                      ? "Pose tes questions ou apporte des précisions. Ton échange avec la cellule est strictement confidentiel et sécurisé."
-                      : "Initiez la discussion avec l'élève de manière bienveillante. Cet espace d'échange est entièrement sécurisé."
-                    }
-                  </Text>
                 </View>
-                </View>
-              }
-            />
-          </ImageBackground>
+              )
+            }
+          />
+        </ImageBackground>
 
         <View style={styles.inputWrapper}>
           {pendingImage ? (
@@ -258,14 +362,17 @@ export default function ChatScreen() {
             >
               <ImagePlus size={20} color="#023e8a" />
             </TouchableOpacity>
-            <TextInput 
+            <TextInput
               style={[styles.input, { outlineStyle: 'none' } as any]}
-              value={newMessage} 
-              onChangeText={setNewMessage} 
+              value={newMessage}
+              onChangeText={setNewMessage}
               placeholder="Ton message..."
               placeholderTextColor="#94a3b8"
               multiline
-              onFocus={() => scrollToLatest(true)}
+              onFocus={() => {
+                stickToEndRef.current = true;
+                scrollToLatest(true);
+              }}
             />
 
             <TouchableOpacity
@@ -286,39 +393,40 @@ export default function ChatScreen() {
           </View>
         </View>
       </KeyboardAwareBody>
-      {/* 2. AJOUT DE LA MODALE EXISTANTE */}
-      <ReportDetailModal 
-        visible={modalVisible} 
-        onClose={() => setModalVisible(false)} 
-        report={reportData} 
+      <ReportDetailModal
+        visible={modalVisible}
+        onClose={onCloseModal}
+        report={reportData}
       />
       <ImageLightboxModal
         visible={!!lightboxUri}
         uri={lightboxUri}
         onClose={() => setLightboxUri(null)}
       />
-    </View>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
   mainContainer: { flex: 1, backgroundColor: '#E2F4F3' },
-  listContent: { padding: 20 },
-  inputWrapper: { 
-    paddingHorizontal: 15, 
-    paddingVertical: 15, 
-    backgroundColor: '#E2F4F3', 
-    borderTopWidth: 1, 
+  headerWrap: {
+    zIndex: 40,
+    elevation: 40,
+  },
+  listContent: { padding: 20, flexGrow: 1 },
+  inputWrapper: {
+    paddingHorizontal: 15,
+    paddingVertical: 15,
+    backgroundColor: '#E2F4F3',
+    borderTopWidth: 1,
     borderTopColor: '#e2e8f0',
-
-    // --- EFFET DE SUPERPOSITION / OMBRE VERS LE HAUT ---
     zIndex: 10,
     elevation: 8,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: -2 },
     shadowOpacity: 0.08,
     shadowRadius: 6,
-  },  
+  },
   attachBtn: {
     width: 40,
     height: 40,
@@ -348,15 +456,27 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  inputContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#f1f5f9', borderRadius: 25, padding: 5 },
-  input: { 
-    flex: 1, 
-    paddingHorizontal: 15, 
-    fontSize: 15, 
-    color: '#1e293b', 
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f1f5f9',
+    borderRadius: 25,
+    padding: 5,
+  },
+  input: {
+    flex: 1,
+    paddingHorizontal: 15,
+    fontSize: 15,
+    color: '#1e293b',
     maxHeight: 100,
   },
-  sendBtn: { width: 42, height: 42, borderRadius: 21, justifyContent: 'center', alignItems: 'center' },
+  sendBtn: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   emptyChatContainer: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -396,9 +516,45 @@ const styles = StyleSheet.create({
   },
   emptyChatWrapper: {
     flex: 1,
-    minHeight: 400,
+    minHeight: 280,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  
+  loadingText: {
+    marginTop: 12,
+    color: '#64748b',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  fallback: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 32,
+  },
+  fallbackTitle: {
+    fontSize: 17,
+    fontWeight: '800',
+    color: '#1e293b',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  fallbackSubtitle: {
+    fontSize: 14,
+    color: '#64748b',
+    textAlign: 'center',
+    lineHeight: 22,
+  },
+  retryBtn: {
+    marginTop: 16,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 12,
+    backgroundColor: '#023E8A',
+  },
+  retryText: {
+    color: '#ffffff',
+    fontWeight: '700',
+    fontSize: 14,
+  },
 });

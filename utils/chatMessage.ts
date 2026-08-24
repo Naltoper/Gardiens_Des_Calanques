@@ -11,7 +11,14 @@ export function encodeChatContent(text: string, imageUrl?: string | null) {
   return trimmed;
 }
 
-export function decodeChatContent(content: string) {
+export function decodeChatContent(content: string | null | undefined) {
+  if (typeof content !== 'string' || !content) {
+    return {
+      imageUrl: null as string | null,
+      text: '',
+    };
+  }
+
   const match = content.match(/^\[\[image\]\](\S+)(?:\n([\s\S]*))?$/);
   if (match) {
     return {

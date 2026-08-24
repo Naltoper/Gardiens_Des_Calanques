@@ -6,6 +6,7 @@ import {
   isIncomingUnread,
   subscribeChatRead,
 } from '../utils/chatReadState';
+import { uniqueRealtimeTopic } from '../utils/realtimeChannel';
 
 export type ChatActivity = {
   hasMessages: boolean;
@@ -98,7 +99,7 @@ export function useChatActivity(reportIds: string[]) {
 
     const idSet = new Set(ids);
     const channel = supabase
-      .channel(`suivis-chat-activity-${Math.random().toString(36).slice(2, 10)}`)
+      .channel(uniqueRealtimeTopic('suivis-chat-activity'))
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'messages' },

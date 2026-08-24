@@ -17,7 +17,17 @@ export const ChatHeader = ({ role, onShowDetails }: ChatHeaderProps) => {
   const isUserAuthor = role === 'user';
 
   const handleBack = () => {
-    router.navigate('/(tabs)/suivis');
+    try {
+      router.replace('/(tabs)/suivis');
+    } catch {
+      try {
+        router.navigate('/(tabs)/suivis');
+      } catch {
+        if (typeof window !== 'undefined') {
+          window.location.assign('/suivis');
+        }
+      }
+    }
   };
 
   return (
