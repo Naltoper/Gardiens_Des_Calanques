@@ -16,9 +16,12 @@ function restHeaders(extra = {}) {
   };
 }
 
-function subscriptionObjectPath(userToken) {
-  const hash = crypto.createHash('sha256').update(`gdc-push:v1:${userToken}`).digest('hex');
-  return `gdc-push/${hash}.json`;
+function userHash(userToken) {
+  return crypto.createHash('sha256').update(`gdc-push:v1:${userToken}`).digest('hex');
+}
+
+function slotPath(userToken, index) {
+  return `gdc-push/${userHash(userToken)}/s${index}.bin`;
 }
 
 async function readJson(path) {
@@ -39,71 +42,88 @@ async function readJson(path) {
   }
 }
 
-async function writeJson(path, value) {
+async function insertJson(path, value) {
   const url = `${SUPABASE_URL}/storage/v1/object/${BUCKET}/${path}`;
   const body = Buffer.from(JSON.stringify(value), 'utf8');
   const response = await fetch(url, {
     method: 'POST',
     headers: restHeaders({
       'Content-Type': 'application/octet-stream',
-      'x-upsert': 'true',
     }),
     body,
   });
+  if (response.status === 409 || response.status === 400) {
+    return false;
+  }
   if (!response.ok) {
     const text = await response.text();
     throw new Error(`storage write ${response.status}: ${text}`);
   }
+  return true;
+}
+
+function normalizeSubscription(value) {
+  if (!value?.endpoint || !value?.keys?.p256dh || !value?.keys?.auth) return null;
+  return {
+    endpoint: value.endpoint,
+    keys: {
+      p256dh: value.keys.p256dh,
+      auth: value.keys.auth,
+    },
+  };
+}
+
+async function loadSlots(userToken) {
+  const slots = await Promise.all(
+    Array.from({ length: MAX_SUBSCRIPTIONS }, async (_, index) => ({
+      index,
+      data: normalizeSubscription(await readJson(slotPath(userToken, index))),
+    })),
+  );
+  return slots;
 }
 
 async function loadSubscriptions(userToken) {
   try {
-    const data = await readJson(subscriptionObjectPath(userToken));
-    if (!data) return [];
-    if (Array.isArray(data)) return data;
-    if (Array.isArray(data.subscriptions)) return data.subscriptions;
-    return [];
+    return (await loadSlots(userToken))
+      .map((slot) => slot.data)
+      .filter(Boolean);
   } catch (error) {
     console.warn('[pushStore] load', error);
     return [];
   }
 }
 
-async function saveSubscriptions(userToken, subscriptions) {
-  await writeJson(subscriptionObjectPath(userToken), {
-    user_token: userToken,
-    updated_at: new Date().toISOString(),
-    subscriptions: subscriptions.slice(-MAX_SUBSCRIPTIONS),
-  });
-}
-
-function sameSubscription(a, b) {
-  return a?.endpoint && a.endpoint === b?.endpoint;
-}
-
 async function upsertSubscription(userToken, subscription) {
-  if (!userToken || !subscription?.endpoint || !subscription?.keys?.p256dh || !subscription?.keys?.auth) {
+  const normalized = normalizeSubscription(subscription);
+  if (!userToken || !normalized) {
     throw new Error('invalid subscription');
   }
-  const current = await loadSubscriptions(userToken);
-  const next = current.filter((item) => !sameSubscription(item, subscription));
-  next.push({
-    endpoint: subscription.endpoint,
-    keys: {
-      p256dh: subscription.keys.p256dh,
-      auth: subscription.keys.auth,
-    },
+
+  const slots = await loadSlots(userToken);
+  if (slots.some((slot) => slot.data?.endpoint === normalized.endpoint)) {
+    return slots.filter((slot) => slot.data).length;
+  }
+
+  const empty = slots.find((slot) => !slot.data);
+  if (!empty) {
+    throw new Error('subscription_slots_full');
+  }
+
+  const wrote = await insertJson(slotPath(userToken, empty.index), {
+    ...normalized,
     created_at: new Date().toISOString(),
   });
-  await saveSubscriptions(userToken, next);
-  return next.length;
+  if (!wrote) {
+    throw new Error('subscription_slot_busy');
+  }
+  return slots.filter((slot) => slot.data).length + 1;
 }
 
 async function removeSubscription(userToken, subscription) {
+  // Storage RLS blocks updates/deletes; stale endpoints are ignored at send time.
   const current = await loadSubscriptions(userToken);
-  const next = current.filter((item) => !sameSubscription(item, subscription));
-  await saveSubscriptions(userToken, next);
-  return next.length;
+  return current.filter((item) => item.endpoint !== subscription?.endpoint).length;
 }
 
 async function fetchReportUserToken(reportId) {
