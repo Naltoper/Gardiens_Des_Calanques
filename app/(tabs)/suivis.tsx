@@ -1,7 +1,7 @@
 import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import { FolderOpen } from 'lucide-react-native';
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -19,6 +19,12 @@ import { PageHeader } from '../../components/headers/PageHeader';
 import { GARDIAN_CLAIR, PAGE_SCENE_BACKDROP } from '../../constants/theme';
 import { DeleteConfirmModal } from '../../components/modals/DeleteConfirmModal';
 import { ReportDetailModal } from '../../components/modals/ReportDetailModal';
+import {
+  matchesStatusFilter,
+  SuivisFilterBar,
+  type SuivisStatusFilter,
+} from '../../components/suivis/SuivisFilterBar';
+import { useChatActivity } from '../../hooks/useChatActivity';
 import { useReports } from '../../hooks/useReports';
 import { supabase } from '../../lib/supabase';
 import { Report } from '../../types/report';
@@ -31,11 +37,27 @@ export default function SuivisScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [reportToDelete, setReportToDelete] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<SuivisStatusFilter>('Tous');
+  const [onlyWithChat, setOnlyWithChat] = useState(false);
+
+  const reportIds = useMemo(() => reports.map((report) => report.id), [reports]);
+  const { activity, refresh: refreshChatActivity, loaded: chatActivityLoaded } = useChatActivity(reportIds);
+
+  const filteredReports = useMemo(() => {
+    return reports.filter((report) => {
+      if (!matchesStatusFilter(report.status, statusFilter)) return false;
+      if (onlyWithChat && chatActivityLoaded && !activity[report.id]?.hasMessages) {
+        return false;
+      }
+      return true;
+    });
+  }, [reports, statusFilter, onlyWithChat, activity, chatActivityLoaded]);
 
   useFocusEffect(
     useCallback(() => {
       fetchReports();
-    }, [fetchReports]),
+      void refreshChatActivity();
+    }, [fetchReports, refreshChatActivity]),
   );
 
   const deleteReport = async (reportId: string) => {
@@ -76,6 +98,7 @@ export default function SuivisScreen() {
       item={item}
       index={index}
       formatDateTime={formatDateTime}
+      hasUnreadChat={activity[item.id]?.unread === true}
       onDetails={() => {
         setSelectedReport(item);
         setModalVisible(true);
@@ -98,6 +121,9 @@ export default function SuivisScreen() {
     );
   }
 
+  const emptyBecauseFilter =
+    reports.length > 0 && filteredReports.length === 0;
+
   return (
     <View style={styles.container}>
       <ImageBackground
@@ -111,18 +137,28 @@ export default function SuivisScreen() {
         subtitle="Signalements et discussions"
       />
 
+        <SuivisFilterBar
+          status={statusFilter}
+          onStatusChange={setStatusFilter}
+          onlyWithChat={onlyWithChat}
+          onOnlyWithChatChange={setOnlyWithChat}
+        />
+
         <FlatList
-          data={reports}
+          data={filteredReports}
           keyExtractor={(item) => item.id.toString()}
           renderItem={renderItem}
           contentContainerStyle={[
             styles.listContent,
-            reports.length === 0 && styles.listContentEmpty,
+            filteredReports.length === 0 && styles.listContentEmpty,
           ]}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
-              onRefresh={onRefresh}
+              onRefresh={async () => {
+                await onRefresh();
+                await refreshChatActivity();
+              }}
               tintColor="#48a4f4"
             />
           }
@@ -132,10 +168,15 @@ export default function SuivisScreen() {
                 <View style={styles.emptyIconContainer}>
                   <FolderOpen color="#64748b" size={38} strokeWidth={1.5} />
                 </View>
-                <Text style={styles.emptyText}>Aucun signalement envoyé</Text>
+                <Text style={styles.emptyText}>
+                  {emptyBecauseFilter
+                    ? 'Aucun signalement pour ce filtre'
+                    : 'Aucun signalement envoyé'}
+                </Text>
                 <Text style={styles.emptySubText}>
-                  Tu n&apos;as pas encore transmis de fiche. Tes futurs signalements et
-                  tes espaces de discussion sécurisés s&apos;afficheront ici.
+                  {emptyBecauseFilter
+                    ? 'Essaie un autre statut ou désactive le filtre « Chat actif ».'
+                    : "Tu n'as pas encore transmis de fiche. Tes futurs signalements et tes espaces de discussion sécurisés s'afficheront ici."}
                 </Text>
               </View>
             </View>
@@ -183,7 +224,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingHorizontal: 24,
-    paddingTop: 20,
+    paddingTop: 12,
     paddingBottom: 40,
   },
   listContentEmpty: {

@@ -26,7 +26,7 @@ type AuthContextValue = {
   user: AuthUser | null;
   isAuthenticated: boolean;
   isReady: boolean;
-  login: () => Promise<void>;
+  login: (credentials?: { identifier?: string; password?: string }) => Promise<void>;
   logout: () => Promise<void>;
 };
 
@@ -60,12 +60,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  const login = useCallback(async () => {
-    await AsyncStorage.setItem(
-      AUTH_STORAGE_KEY,
-      JSON.stringify(DEFAULT_TEST_PROFILE),
-    );
-    setUser(DEFAULT_TEST_PROFILE);
+  const login = useCallback(async (credentials?: {
+    identifier?: string;
+    password?: string;
+  }) => {
+    const identifier = credentials?.identifier?.trim();
+    const profile: AuthUser = identifier
+      ? {
+          id: identifier,
+          displayName: identifier,
+          role: 'eleve',
+        }
+      : DEFAULT_TEST_PROFILE;
+    await AsyncStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(profile));
+    setUser(profile);
   }, []);
 
   const logout = useCallback(async () => {

@@ -46,6 +46,7 @@ interface ReportCardProps {
   onDetails: () => void;
   onDelete: () => void;
   formatDateTime: (date: string) => string;
+  hasUnreadChat?: boolean;
 }
 
 export const ReportCard = ({
@@ -55,6 +56,7 @@ export const ReportCard = ({
   onDetails,
   onDelete,
   formatDateTime,
+  hasUnreadChat = false,
 }: ReportCardProps) => {
   const colors = STATUS_COLORS[item.status || ''] || STATUS_COLORS['Non traité'];
   const statusColor = colors.dot;
@@ -179,6 +181,12 @@ export const ReportCard = ({
               style={styles.chatButton}
               title=""
             />
+            {hasUnreadChat ? (
+              <View
+                style={styles.unreadBadge}
+                accessibilityLabel="Nouveau message non lu"
+              />
+            ) : null}
           </View>
         </View>
       </View>
@@ -351,9 +359,22 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 5,
     elevation: 6,
+    overflow: 'visible',
   },
   chatButton: {
     borderRadius: 30,
     overflow: 'hidden',
+  },
+  unreadBadge: {
+    position: 'absolute',
+    top: -3,
+    right: -3,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: Colors.light.status.error,
+    borderWidth: 2,
+    borderColor: Colors.light.surface,
+    zIndex: 20,
   },
 });

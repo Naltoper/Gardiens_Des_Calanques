@@ -1,8 +1,9 @@
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useFocusEffect } from '@react-navigation/native';
 import { useLocalSearchParams } from 'expo-router';
 import { ImagePlus, Send, ShieldCheck, X } from 'lucide-react-native';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { FlatList, Image, RefreshControl, StatusBar, 
   StyleSheet, TextInput, TouchableOpacity, View, Text, ImageBackground } from 'react-native';
 import { ChatHeader } from '../../components/headers/ChatHeader';
@@ -15,6 +16,7 @@ import { supabase } from '../../lib/supabase';
 import { Report } from '../../types/report';
 import { uploadImageToSupabase } from '../../utils/uploadImage';
 import { notify } from '../../utils/notify';
+import { markChatRead } from '../../utils/chatReadState';
 
 
 
@@ -38,6 +40,18 @@ export default function ChatScreen() {
   const [modalVisible, setModalVisible] = useState(false);
 
   const { messages, sendMessage, loading, fetchMessages } = useChatMessages(reportId);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!reportId) return;
+      void markChatRead(String(reportId));
+    }, [reportId]),
+  );
+
+  useEffect(() => {
+    if (!reportId || messages.length === 0) return;
+    void markChatRead(String(reportId));
+  }, [reportId, messages.length]);
 
   const pickChatImage = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();

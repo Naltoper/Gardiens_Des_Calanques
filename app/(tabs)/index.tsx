@@ -204,7 +204,7 @@ export default function HomeScreen() {
           accessibilityRole="button"
           accessibilityLabel="Se déconnecter"
         >
-          <LogOut color="#FFFFFF" size={20} strokeWidth={2.5} />
+          <LogOut color={Colors.light.status.error} size={18} strokeWidth={2.4} />
           <Text style={styles.logoutButtonText}>
             {loggingOut ? "Déconnexion…" : "Se déconnecter"}
           </Text>
@@ -415,29 +415,23 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   logoutButton: {
-    marginTop: 28,
-    alignSelf: "stretch",
+    marginTop: 20,
+    alignSelf: "center",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 10,
-    backgroundColor: "#B91C1C",
-    borderRadius: 16,
-    paddingVertical: 16,
-    paddingHorizontal: 20,
+    gap: 6,
+    height: 44,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    backgroundColor: Colors.light.status.errorBg,
     borderWidth: 1,
-    borderColor: "#991B1B",
-    shadowColor: "#7F1D1D",
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.22,
-    shadowRadius: 8,
-    elevation: 4,
+    borderColor: "#FECACA",
   },
   logoutButtonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "800",
-    letterSpacing: 0.2,
+    color: Colors.light.status.error,
+    fontSize: 13,
+    fontWeight: "700",
   },
   loggedInAs: {
     marginTop: 10,

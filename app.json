@@ -36,6 +36,13 @@
     "plugins": [
       "expo-router",
       [
+        "expo-camera",
+        {
+          "cameraPermission": "L'application utilise la caméra pour scanner un QR code d'identifiant.",
+          "recordAudioAndroid": false
+        }
+      ],
+      [
         "expo-image-picker",
         {
           "photosPermission": "L'application accède à tes photos pour les joindre au chat ou à un sujet."
