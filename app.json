@@ -31,7 +31,12 @@
     },
     "web": {
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/favicon.png",
+      "name": "Gardiens Des Calanques",
+      "shortName": "GDC",
+      "description": "Application de signalement et d'aide du Lycée des Calanques",
+      "themeColor": "#023E8A",
+      "backgroundColor": "#ffffff"
     },
     "plugins": [
       "expo-router",

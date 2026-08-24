@@ -4,9 +4,20 @@
   "devCommand": "expo",
   "cleanUrls": true,
   "framework": null,
+  "headers": [
+    {
+      "source": "/manifest.json",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/manifest+json; charset=utf-8"
+        }
+      ]
+    }
+  ],
   "rewrites": [
     {
-      "source": "/:path*",
+      "source": "/((?!manifest\\.json|icons/|favicon.ico|_expo/).*)",
       "destination": "/"
     }
   ]
