@@ -13,3 +13,4 @@ dist
 /twa/**
 !/twa/twa-manifest.json
 /android-packages/
+supabase/.temp/
