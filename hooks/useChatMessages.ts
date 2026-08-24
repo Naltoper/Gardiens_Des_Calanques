@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { encodeChatContent } from '../utils/chatMessage';
 import { uniqueRealtimeTopic } from '../utils/realtimeChannel';
+import { triggerChatPush } from '../utils/triggerChatPush';
 
 export const useChatMessages = (reportId: string | undefined) => {
   const [messages, setMessages] = useState<any[]>([]);
@@ -51,14 +52,19 @@ export const useChatMessages = (reportId: string | undefined) => {
 
     setLoading(true);
     try {
-      const { error: insertError } = await supabase
+      const { data, error: insertError } = await supabase
         .from('messages')
         .insert([{
           report_id: reportId,
           content: encoded,
           sender_role: role,
-        }]);
+        }])
+        .select()
+        .maybeSingle();
 
+      if (!insertError && data) {
+        triggerChatPush(data);
+      }
       return !insertError;
     } catch (caught) {
       console.warn('[chat] send', caught);
@@ -86,8 +92,14 @@ export const useChatMessages = (reportId: string | undefined) => {
             filter: `report_id=eq.${reportId}`,
           },
           (payload) => {
-            const incoming = payload.new as { id?: string } | undefined;
+            const incoming = payload.new as {
+              id?: string;
+              report_id?: string;
+              sender_role?: string | null;
+              content?: string | null;
+            } | undefined;
             if (!incoming?.id) return;
+            triggerChatPush(incoming);
             setMessages((prev) => {
               if (prev.find((message) => message.id === incoming.id)) return prev;
               return [...prev, incoming];

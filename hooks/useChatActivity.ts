@@ -8,6 +8,7 @@ import {
 } from '../utils/chatReadState';
 import { uniqueRealtimeTopic } from '../utils/realtimeChannel';
 import { notifyIncomingChat } from '../utils/notifyIncomingChat';
+import { triggerChatPush } from '../utils/triggerChatPush';
 
 export type ChatActivity = {
   hasMessages: boolean;
@@ -109,6 +110,7 @@ export function useChatActivity(reportIds: string[]) {
           if (!idSet.has(row.report_id)) return;
           if (row.sender_role !== 'user') {
             notifyIncomingChat(row.report_id);
+            triggerChatPush(row);
           }
           void refresh();
         },
