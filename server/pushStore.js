@@ -24,11 +24,19 @@ function subscriptionObjectPath(userToken) {
 async function readJson(path) {
   const url = `${SUPABASE_URL}/storage/v1/object/${BUCKET}/${path}`;
   const response = await fetch(url, { headers: restHeaders() });
-  if (response.status === 404) return null;
+  if (response.status === 404 || response.status === 400 || response.status === 403) {
+    return null;
+  }
   if (!response.ok) {
     throw new Error(`storage read ${response.status}`);
   }
-  return response.json();
+  const text = await response.text();
+  if (!text) return null;
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
 }
 
 async function writeJson(path, value) {
@@ -49,11 +57,16 @@ async function writeJson(path, value) {
 }
 
 async function loadSubscriptions(userToken) {
-  const data = await readJson(subscriptionObjectPath(userToken));
-  if (!data) return [];
-  if (Array.isArray(data)) return data;
-  if (Array.isArray(data.subscriptions)) return data.subscriptions;
-  return [];
+  try {
+    const data = await readJson(subscriptionObjectPath(userToken));
+    if (!data) return [];
+    if (Array.isArray(data)) return data;
+    if (Array.isArray(data.subscriptions)) return data.subscriptions;
+    return [];
+  } catch (error) {
+    console.warn('[pushStore] load', error);
+    return [];
+  }
 }
 
 async function saveSubscriptions(userToken, subscriptions) {
