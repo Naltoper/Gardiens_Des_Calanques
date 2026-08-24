@@ -22,6 +22,7 @@ import { ReportDetailModal } from '../../components/modals/ReportDetailModal';
 import {
   matchesStatusFilter,
   SuivisFilterBar,
+  type SuivisDateSort,
   type SuivisStatusFilter,
 } from '../../components/suivis/SuivisFilterBar';
 import { useChatActivityContext } from '../../contexts/ChatActivityContext';
@@ -40,6 +41,7 @@ export default function SuivisScreen() {
   const [reportToDelete, setReportToDelete] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<SuivisStatusFilter>('Tous');
   const [onlyWithChat, setOnlyWithChat] = useState(false);
+  const [dateSort, setDateSort] = useState<SuivisDateSort>('recent');
   const [filtersOpen, setFiltersOpen] = useState(false);
 
   const {
@@ -48,17 +50,41 @@ export default function SuivisScreen() {
     loaded: chatActivityLoaded,
     reloadIds,
   } = useChatActivityContext();
-  const filtersActive = statusFilter !== 'Tous' || onlyWithChat;
+  const filtersActive =
+    statusFilter !== 'Tous' || onlyWithChat || dateSort !== 'recent';
 
   const filteredReports = useMemo(() => {
-    return reports.filter((report) => {
+    const compareDate = (a: Report, b: Report) => {
+      const timeA = new Date(a.created_at).getTime();
+      const timeB = new Date(b.created_at).getTime();
+      return dateSort === 'oldest' ? timeA - timeB : timeB - timeA;
+    };
+
+    const visible = reports.filter((report) => {
       if (!matchesStatusFilter(report.status, statusFilter)) return false;
       if (onlyWithChat && chatActivityLoaded && !activity[report.id]?.hasMessages) {
         return false;
       }
       return true;
     });
-  }, [reports, statusFilter, onlyWithChat, activity, chatActivityLoaded]);
+
+    const unread = visible
+      .filter((report) => activity[report.id]?.unread)
+      .sort(compareDate);
+    const activeChat = visible
+      .filter((report) => !activity[report.id]?.unread && activity[report.id]?.hasMessages)
+      .sort(compareDate);
+    const others = visible
+      .filter((report) => !activity[report.id]?.unread && !activity[report.id]?.hasMessages)
+      .sort(compareDate);
+
+    return [...unread, ...activeChat, ...others];
+  }, [reports, statusFilter, onlyWithChat, dateSort, activity, chatActivityLoaded]);
+
+  const unreadCount = useMemo(
+    () => filteredReports.filter((report) => activity[report.id]?.unread).length,
+    [filteredReports, activity],
+  );
 
   useFocusEffect(
     useCallback(() => {
@@ -113,25 +139,32 @@ export default function SuivisScreen() {
   };
 
   const renderItem = ({ item, index }: { item: Report; index: number }) => (
-    <ReportCard
-      item={item}
-      index={index}
-      formatDateTime={formatDateTime}
-      hasUnreadChat={activity[item.id]?.unread === true}
-      onDetails={() => {
-        setSelectedReport(item);
-        setModalVisible(true);
-      }}
-      onDelete={() => confirmDeleteReport(item.id)}
-      onChat={() => {
-        const id = String(item.id ?? '').trim();
-        if (!id) return;
-        router.push({
-          pathname: '/chat/[id]',
-          params: { id, role: 'user' },
-        });
-      }}
-    />
+    <View>
+      {unreadCount > 0 && index === unreadCount ? (
+        <View style={styles.otherSection}>
+          <Text style={styles.otherSectionTitle}>Autres signalements</Text>
+        </View>
+      ) : null}
+      <ReportCard
+        item={item}
+        index={index}
+        formatDateTime={formatDateTime}
+        hasUnreadChat={activity[item.id]?.unread === true}
+        onDetails={() => {
+          setSelectedReport(item);
+          setModalVisible(true);
+        }}
+        onDelete={() => confirmDeleteReport(item.id)}
+        onChat={() => {
+          const id = String(item.id ?? '').trim();
+          if (!id) return;
+          router.push({
+            pathname: '/chat/[id]',
+            params: { id, role: 'user' },
+          });
+        }}
+      />
+    </View>
   );
 
   if (loading && !refreshing && reports.length === 0) {
@@ -182,6 +215,8 @@ export default function SuivisScreen() {
             onStatusChange={setStatusFilter}
             onlyWithChat={onlyWithChat}
             onOnlyWithChatChange={setOnlyWithChat}
+            dateSort={dateSort}
+            onDateSortChange={setDateSort}
           />
         ) : null}
 
@@ -194,6 +229,18 @@ export default function SuivisScreen() {
             filteredReports.length === 0 && styles.listContentEmpty,
           ]}
           {...pullRefresh}
+          ListHeaderComponent={
+            unreadCount > 0 ? (
+              <View style={styles.unreadSection}>
+                <Text style={styles.unreadSectionTitle}>Messages non lus</Text>
+                <Text style={styles.unreadSectionSubtitle}>
+                  {unreadCount === 1
+                    ? '1 discussion t’attend en haut de la liste.'
+                    : `${unreadCount} discussions t’attendent en haut de la liste.`}
+                </Text>
+              </View>
+            ) : null
+          }
           ListEmptyComponent={
             <View style={styles.emptyWrapper}>
               <View style={styles.emptyCard}>
@@ -207,7 +254,7 @@ export default function SuivisScreen() {
                 </Text>
                 <Text style={styles.emptySubText}>
                   {emptyBecauseFilter
-                    ? 'Essaie un autre statut ou désactive le filtre « Chat actif ».'
+                    ? 'Essaie un autre statut, une autre date, ou désactive le filtre « Chat actif ».'
                     : "Tu n'as pas encore transmis de fiche. Tes futurs signalements et tes espaces de discussion sécurisés s'afficheront ici."}
                 </Text>
               </View>
@@ -330,5 +377,33 @@ const styles = StyleSheet.create({
     height: 7,
     borderRadius: 4,
     backgroundColor: Colors.light.primary,
+  },
+  unreadSection: {
+    marginBottom: 10,
+    paddingHorizontal: 2,
+  },
+  unreadSectionTitle: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: Colors.light.primary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  unreadSectionSubtitle: {
+    marginTop: 2,
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#64748b',
+  },
+  otherSection: {
+    marginTop: 4,
+    marginBottom: 10,
+  },
+  otherSectionTitle: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#64748b',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
 });

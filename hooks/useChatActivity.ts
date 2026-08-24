@@ -7,6 +7,7 @@ import {
   subscribeChatRead,
 } from '../utils/chatReadState';
 import { uniqueRealtimeTopic } from '../utils/realtimeChannel';
+import { notifyIncomingChat } from '../utils/notifyIncomingChat';
 
 export type ChatActivity = {
   hasMessages: boolean;
@@ -106,6 +107,9 @@ export function useChatActivity(reportIds: string[]) {
         (payload) => {
           const row = payload.new as MessageRow;
           if (!idSet.has(row.report_id)) return;
+          if (row.sender_role !== 'user') {
+            notifyIncomingChat(row.report_id);
+          }
           void refresh();
         },
       )

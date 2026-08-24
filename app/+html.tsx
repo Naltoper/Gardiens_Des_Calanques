@@ -28,6 +28,12 @@ export default function Root({ children }: { children: React.ReactNode }) {
         <link rel="manifest" href="/manifest.json" />
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
         <ScrollViewStyleReset />
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js',{scope:'/'}).catch(function(){});});}",
+          }}
+        />
       </head>
       <body>{children}</body>
     </html>

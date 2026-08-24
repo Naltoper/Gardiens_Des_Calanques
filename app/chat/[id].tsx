@@ -8,7 +8,6 @@ import {
   ActivityIndicator,
   FlatList,
   Image,
-  Keyboard,
   Platform,
   RefreshControl,
   StatusBar,
@@ -25,6 +24,7 @@ import { ChatBubble } from '../../components/cards/ChatBubble';
 import { KeyboardAwareBody } from '../../components/layout/KeyboardAwareBody';
 import { ScreenErrorBoundary } from '../../components/layout/ScreenErrorBoundary';
 import { ImageLightboxModal } from '../../components/modals/ImageLightboxModal';
+import { useChatListScroll } from '../../hooks/useChatListScroll';
 import { useChatMessages } from '../../hooks/useChatMessages';
 import { useKeyboardVisible } from '../../hooks/useKeyboardVisible';
 import { ReportDetailModal } from '../../components/modals/ReportDetailModal';
@@ -130,17 +130,14 @@ function ChatConversation({
   const [refreshing, setRefreshing] = useState(false);
   const [reportData, setReportData] = useState<Report | null>(null);
   const flatListRef = useRef<FlatList>(null);
-  const stickToEndRef = useRef(true);
 
   const { messages, sendMessage, loading, fetchMessages, error } = useChatMessages(reportId);
   const keyboardVisible = useKeyboardVisible();
-
-  const scrollToLatest = useCallback((animated = true) => {
-    if (!stickToEndRef.current) return;
-    requestAnimationFrame(() => {
-      flatListRef.current?.scrollToEnd({ animated });
-    });
-  }, []);
+  const { onScroll, onComposerFocus, onMessageSent } = useChatListScroll(flatListRef, {
+    messageCount: messages.length,
+    keyboardVisible,
+    reportId,
+  });
 
   useFocusEffect(
     useCallback(() => {
@@ -152,43 +149,6 @@ function ChatConversation({
     if (messages.length === 0) return;
     void markChatRead(reportId);
   }, [reportId, messages.length]);
-
-  useEffect(() => {
-    if (messages.length === 0) return;
-    const frame = requestAnimationFrame(() => {
-      flatListRef.current?.scrollToEnd({ animated: false });
-    });
-    const timeout = setTimeout(() => {
-      flatListRef.current?.scrollToEnd({ animated: true });
-    }, 120);
-    return () => {
-      cancelAnimationFrame(frame);
-      clearTimeout(timeout);
-    };
-  }, [messages.length]);
-
-  useEffect(() => {
-    if (!keyboardVisible || messages.length === 0) return;
-    const timeout = setTimeout(() => {
-      flatListRef.current?.scrollToEnd({ animated: true });
-    }, 80);
-    return () => clearTimeout(timeout);
-  }, [keyboardVisible, messages.length]);
-
-  useEffect(() => {
-    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
-    let timeout: ReturnType<typeof setTimeout> | undefined;
-    const show = Keyboard.addListener(showEvent, (event) => {
-      const delay = Math.min((event?.duration ?? 250) + 40, 400);
-      timeout = setTimeout(() => {
-        flatListRef.current?.scrollToEnd({ animated: true });
-      }, delay);
-    });
-    return () => {
-      show.remove();
-      if (timeout) clearTimeout(timeout);
-    };
-  }, []);
 
   const pickChatImage = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -231,7 +191,7 @@ function ChatConversation({
     if (success) {
       setNewMessage('');
       setPendingImage(null);
-      stickToEndRef.current = true;
+      onMessageSent();
       return;
     }
 
@@ -295,12 +255,7 @@ function ChatConversation({
                 tintColor="#48a4f4"
               />
             }
-            onScroll={(event) => {
-              const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
-              const distanceFromEnd =
-                contentSize.height - (contentOffset.y + layoutMeasurement.height);
-              stickToEndRef.current = distanceFromEnd < 80;
-            }}
+            onScroll={onScroll}
             scrollEventThrottle={16}
             renderItem={({ item, index }) => (
               <ChatBubble
@@ -369,10 +324,7 @@ function ChatConversation({
               placeholder="Ton message..."
               placeholderTextColor="#94a3b8"
               multiline
-              onFocus={() => {
-                stickToEndRef.current = true;
-                scrollToLatest(true);
-              }}
+              onFocus={onComposerFocus}
             />
 
             <TouchableOpacity

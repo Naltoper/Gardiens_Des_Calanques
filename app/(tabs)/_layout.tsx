@@ -9,6 +9,7 @@ import {
 } from '../../components/navigation/TabBarVisibility';
 import { Colors, GARDIAN_CLAIR } from '../../constants/theme';
 import { ChatActivityProvider, useChatActivityContext } from '../../contexts/ChatActivityContext';
+import { useWebPush } from '../../hooks/useWebPush';
 
 const TAB_ICON_SIZE = 22;
 const TAB_LABEL_FONT = 11;
@@ -141,10 +142,16 @@ function TabNavigator() {
   );
 }
 
+function WebPushSync() {
+  useWebPush();
+  return null;
+}
+
 export default function TabLayout() {
   return (
     <TabBarVisibilityProvider>
       <ChatActivityProvider>
+        <WebPushSync />
         <TabNavigator />
       </ChatActivityProvider>
     </TabBarVisibilityProvider>

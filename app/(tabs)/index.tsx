@@ -19,6 +19,7 @@ import {
 } from "react-native";
 import { AnonymityBadge } from "../../components/banners/AnonymityBadge";
 import { InstallBanner } from "../../components/banners/InstallBanner";
+import { PushPermissionBanner } from "../../components/banners/PushPermissionBanner";
 import { LyceeBackground } from "../../components/backgrounds/LyceeBackground";
 import { PageHeader } from "../../components/headers/PageHeader";
 import { Colors, GARDIAN_CLAIR } from "../../constants/theme";
@@ -133,6 +134,7 @@ export default function HomeScreen() {
           />
         }
       >
+        <PushPermissionBanner />
         <InstallBanner
           title="Application élève"
           subtitle="Installez l'app pour recevoir les notifications en direct."
