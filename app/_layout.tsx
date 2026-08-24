@@ -6,6 +6,10 @@ import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 
 import { AuthProvider, useAuth } from "../contexts/AuthContext";
 
+export const unstable_settings = {
+  anchor: "(tabs)",
+};
+
 export default function RootLayout() {
   const bgColor = "#E2F4F3";
   // Sur web, overflow:hidden + 100dvh coupait horizontalement les labels de la tab bar.

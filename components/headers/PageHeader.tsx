@@ -9,6 +9,7 @@ export type PageHeaderProps = {
   title: string;
   subtitle?: string;
   onBack?: () => void;
+  right?: React.ReactNode;
   /** Conservé pour compatibilité */
   translucent?: boolean;
   style?: ViewStyle;
@@ -18,6 +19,7 @@ export function PageHeader({
   title,
   subtitle,
   onBack,
+  right,
   style,
 }: PageHeaderProps) {
   return (
@@ -40,7 +42,7 @@ export function PageHeader({
           <View style={styles.sidePlaceholder} />
         )
       }
-      right={<View style={styles.sidePlaceholder} />}
+      right={right ?? <View style={styles.sidePlaceholder} />}
     />
   );
 }

@@ -4,7 +4,6 @@ import { MessageCircle, PenLine, Plus, ThumbsUp, Trash2 } from 'lucide-react-nat
 import { useCallback, useState } from 'react';
 import {
   Image,
-  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -21,6 +20,7 @@ import { useTabBarHidden } from '../../components/navigation/TabBarVisibility';
 import { GARDIAN_CLAIR } from '../../constants/theme';
 import { useCommunityPosts } from '../../hooks/community/useCommunityPosts';
 import { useCreatePost } from '../../hooks/community/useCreatePost';
+import { usePullToRefresh } from '../../hooks/usePullToRefresh';
 import { useUserToken } from '../../hooks/useUserToken';
 import {
   formatCommunityDateTime,
@@ -72,6 +72,11 @@ export default function CommunauteScreen() {
     setRefreshing(false);
   };
 
+  const pullRefresh = usePullToRefresh({
+    refreshing,
+    onRefresh,
+  });
+
   const handlePublished = () => {
     setCreateVisible(false);
     setSuccessVisible(true);
@@ -89,13 +94,7 @@ export default function CommunauteScreen() {
           contentContainerStyle={styles.container}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              tintColor="#48a4f4"
-            />
-          }
+          {...pullRefresh}
         >
           <CommunityIntroCard />
 

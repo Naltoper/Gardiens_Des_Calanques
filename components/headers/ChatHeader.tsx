@@ -17,7 +17,7 @@ export const ChatHeader = ({ role, onShowDetails }: ChatHeaderProps) => {
   const isUserAuthor = role === 'user';
 
   const handleBack = () => {
-    router.replace('/(tabs)/suivis');
+    router.navigate('/(tabs)/suivis');
   };
 
   return (

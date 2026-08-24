@@ -3,7 +3,6 @@ import { ThumbsUp } from 'lucide-react-native';
 import { useCallback, useEffect, useState } from 'react';
 import {
   Image,
-  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -18,6 +17,7 @@ import { KeyboardAwareBody } from '../../components/layout/KeyboardAwareBody';
 import { ImageLightboxModal } from '../../components/modals/ImageLightboxModal';
 import { GARDIAN_CLAIR } from '../../constants/theme';
 import { usePostComments } from '../../hooks/community/usePostComments';
+import { usePullToRefresh } from '../../hooks/usePullToRefresh';
 import { useUserToken } from '../../hooks/useUserToken';
 import { supabase } from '../../lib/supabase';
 import type { CommunityPost } from '../../types/community';
@@ -79,6 +79,11 @@ export default function CommunityPostDetailsScreen() {
     setRefreshing(false);
   };
 
+  const pullRefresh = usePullToRefresh({
+    refreshing,
+    onRefresh,
+  });
+
   const handleLike = async () => {
     if (!postId || !userToken) {
       notify('Erreur', 'Token utilisateur introuvable.');
@@ -136,13 +141,7 @@ export default function CommunityPostDetailsScreen() {
           style={styles.scroll}
           contentContainerStyle={styles.container}
           keyboardShouldPersistTaps="handled"
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              tintColor="#48a4f4"
-            />
-          }
+          {...pullRefresh}
         >
           {post ? (
             <View style={styles.postCard}>

@@ -27,7 +27,6 @@ export function SuivisFilterBar({
 }: SuivisFilterBarProps) {
   return (
     <View style={styles.wrap}>
-      <Text style={styles.heading}>Trier</Text>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -57,7 +56,7 @@ export function SuivisFilterBar({
           accessibilityState={{ selected: onlyWithChat }}
         >
           <MessageCircle
-            size={14}
+            size={13}
             color={onlyWithChat ? '#FFFFFF' : Colors.light.primary}
             strokeWidth={2.4}
           />
@@ -84,36 +83,30 @@ export function matchesStatusFilter(reportStatus: string | null | undefined, fil
 
 const styles = StyleSheet.create({
   wrap: {
-    paddingHorizontal: 20,
-    paddingTop: 10,
+    paddingHorizontal: 16,
+    paddingTop: 4,
     paddingBottom: 8,
-    backgroundColor: 'transparent',
-  },
-  heading: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: Colors.light.textMuted,
-    textTransform: 'uppercase',
-    letterSpacing: 0.7,
-    marginBottom: 8,
+    backgroundColor: GARDIAN_CLAIR,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: 'rgba(148, 163, 184, 0.35)',
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 6,
     paddingRight: 8,
   },
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 999,
-    backgroundColor: GARDIAN_CLAIR,
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 10,
+    backgroundColor: '#EEF4F4',
     borderWidth: 1,
-    borderColor: '#CBD5E1',
-    minHeight: 36,
+    borderColor: '#D8E2E8',
+    minHeight: 32,
   },
   chipSelected: {
     backgroundColor: Colors.light.primary,
@@ -124,7 +117,7 @@ const styles = StyleSheet.create({
     borderColor: '#0077B6',
   },
   chipText: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '700',
     color: Colors.light.text,
   },

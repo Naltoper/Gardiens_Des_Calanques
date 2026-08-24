@@ -1,6 +1,6 @@
 import { Tabs } from 'expo-router';
 import { Home, MessageSquare, Shield, Users } from 'lucide-react-native';
-import { Platform, StyleSheet, Text, ViewStyle } from 'react-native';
+import { Platform, StyleSheet, Text, View, ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {
@@ -8,6 +8,7 @@ import {
   useTabBarVisibility,
 } from '../../components/navigation/TabBarVisibility';
 import { Colors, GARDIAN_CLAIR } from '../../constants/theme';
+import { ChatActivityProvider, useChatActivityContext } from '../../contexts/ChatActivityContext';
 
 const TAB_ICON_SIZE = 22;
 const TAB_LABEL_FONT = 11;
@@ -23,6 +24,22 @@ function TabLabel({ color, children }: { color: string; children: string }) {
     >
       {children}
     </Text>
+  );
+}
+
+function SuivisTabIcon({ color }: { color: string }) {
+  const { hasAnyUnread } = useChatActivityContext();
+
+  return (
+    <View style={styles.tabIconWrap}>
+      <MessageSquare color={color} size={TAB_ICON_SIZE} strokeWidth={2.2} />
+      {hasAnyUnread ? (
+        <View
+          style={styles.tabUnreadBadge}
+          accessibilityLabel="Nouveaux messages non lus"
+        />
+      ) : null}
+    </View>
   );
 }
 
@@ -102,9 +119,7 @@ function TabNavigator() {
         name="suivis"
         options={{
           title: 'Mes Suivis',
-          tabBarIcon: ({ color }) => (
-            <MessageSquare color={color} size={TAB_ICON_SIZE} strokeWidth={2.2} />
-          ),
+          tabBarIcon: ({ color }) => <SuivisTabIcon color={color} />,
         }}
       />
       <Tabs.Screen
@@ -129,7 +144,9 @@ function TabNavigator() {
 export default function TabLayout() {
   return (
     <TabBarVisibilityProvider>
-      <TabNavigator />
+      <ChatActivityProvider>
+        <TabNavigator />
+      </ChatActivityProvider>
     </TabBarVisibilityProvider>
   );
 }
@@ -146,6 +163,24 @@ const styles = StyleSheet.create({
   tabBarIcon: {
     marginTop: 0,
     marginBottom: 0,
+  },
+  tabIconWrap: {
+    width: TAB_ICON_SIZE + 10,
+    height: TAB_ICON_SIZE + 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'visible',
+  },
+  tabUnreadBadge: {
+    position: 'absolute',
+    top: -2,
+    right: 0,
+    width: 9,
+    height: 9,
+    borderRadius: 5,
+    backgroundColor: Colors.light.status.error,
+    borderWidth: 1.5,
+    borderColor: GARDIAN_CLAIR,
   },
   tabBarLabel: {
     fontSize: TAB_LABEL_FONT,

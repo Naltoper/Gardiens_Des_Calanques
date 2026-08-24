@@ -11,6 +11,7 @@ import { ChatBubble } from '../../components/cards/ChatBubble';
 import { KeyboardAwareBody } from '../../components/layout/KeyboardAwareBody';
 import { ImageLightboxModal } from '../../components/modals/ImageLightboxModal';
 import { useChatMessages } from '../../hooks/useChatMessages';
+import { useKeyboardVisible } from '../../hooks/useKeyboardVisible';
 import { ReportDetailModal } from '../../components/modals/ReportDetailModal';
 import { supabase } from '../../lib/supabase';
 import { Report } from '../../types/report';
@@ -40,6 +41,15 @@ export default function ChatScreen() {
   const [modalVisible, setModalVisible] = useState(false);
 
   const { messages, sendMessage, loading, fetchMessages } = useChatMessages(reportId);
+  const keyboardVisible = useKeyboardVisible();
+
+  const scrollToLatest = useCallback((animated = true) => {
+    const run = () => flatListRef.current?.scrollToEnd({ animated });
+    requestAnimationFrame(() => {
+      setTimeout(run, 60);
+      setTimeout(run, 320);
+    });
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
@@ -52,6 +62,12 @@ export default function ChatScreen() {
     if (!reportId || messages.length === 0) return;
     void markChatRead(String(reportId));
   }, [reportId, messages.length]);
+
+  useEffect(() => {
+    if (keyboardVisible && messages.length > 0) {
+      scrollToLatest(true);
+    }
+  }, [keyboardVisible, messages.length, scrollToLatest]);
 
   const pickChatImage = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -128,9 +144,9 @@ export default function ChatScreen() {
   // Auto-scroll à chaque nouveau message
   useEffect(() => {
     if (messages.length > 0) {
-      setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
+      scrollToLatest(true);
     }
-  }, [messages]);
+  }, [messages, scrollToLatest]);
 
   return (
     <View style={styles.mainContainer}>
@@ -224,6 +240,7 @@ export default function ChatScreen() {
               placeholder="Ton message..."
               placeholderTextColor="#94a3b8"
               multiline
+              onFocus={() => scrollToLatest(true)}
             />
 
             <TouchableOpacity

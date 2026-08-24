@@ -1,6 +1,6 @@
 import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
-import { FolderOpen } from 'lucide-react-native';
+import { FolderOpen, ListFilter } from 'lucide-react-native';
 import { useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
@@ -8,15 +8,15 @@ import {
   FlatList,
   ImageBackground,
   Platform,
-  RefreshControl,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from 'react-native';
 
 import { ReportCard } from '../../components/cards/ReportCard';
 import { PageHeader } from '../../components/headers/PageHeader';
-import { GARDIAN_CLAIR, PAGE_SCENE_BACKDROP } from '../../constants/theme';
+import { Colors, GARDIAN_CLAIR, PAGE_SCENE_BACKDROP } from '../../constants/theme';
 import { DeleteConfirmModal } from '../../components/modals/DeleteConfirmModal';
 import { ReportDetailModal } from '../../components/modals/ReportDetailModal';
 import {
@@ -24,7 +24,8 @@ import {
   SuivisFilterBar,
   type SuivisStatusFilter,
 } from '../../components/suivis/SuivisFilterBar';
-import { useChatActivity } from '../../hooks/useChatActivity';
+import { useChatActivityContext } from '../../contexts/ChatActivityContext';
+import { usePullToRefresh } from '../../hooks/usePullToRefresh';
 import { useReports } from '../../hooks/useReports';
 import { supabase } from '../../lib/supabase';
 import { Report } from '../../types/report';
@@ -39,9 +40,15 @@ export default function SuivisScreen() {
   const [reportToDelete, setReportToDelete] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<SuivisStatusFilter>('Tous');
   const [onlyWithChat, setOnlyWithChat] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
-  const reportIds = useMemo(() => reports.map((report) => report.id), [reports]);
-  const { activity, refresh: refreshChatActivity, loaded: chatActivityLoaded } = useChatActivity(reportIds);
+  const {
+    activity,
+    refresh: refreshChatActivity,
+    loaded: chatActivityLoaded,
+    reloadIds,
+  } = useChatActivityContext();
+  const filtersActive = statusFilter !== 'Tous' || onlyWithChat;
 
   const filteredReports = useMemo(() => {
     return reports.filter((report) => {
@@ -56,9 +63,21 @@ export default function SuivisScreen() {
   useFocusEffect(
     useCallback(() => {
       fetchReports();
+      void reloadIds();
       void refreshChatActivity();
-    }, [fetchReports, refreshChatActivity]),
+    }, [fetchReports, reloadIds, refreshChatActivity]),
   );
+
+  const handleRefresh = useCallback(async () => {
+    await onRefresh();
+    await reloadIds();
+    await refreshChatActivity();
+  }, [onRefresh, reloadIds, refreshChatActivity]);
+
+  const pullRefresh = usePullToRefresh({
+    refreshing,
+    onRefresh: handleRefresh,
+  });
 
   const deleteReport = async (reportId: string) => {
     const { error } = await supabase
@@ -106,14 +125,14 @@ export default function SuivisScreen() {
       onDelete={() => confirmDeleteReport(item.id)}
       onChat={() =>
         router.push({
-          pathname: `../chat/${item.id}`,
-          params: { role: 'user' },
+          pathname: '/chat/[id]',
+          params: { id: item.id, role: 'user' },
         })
       }
     />
   );
 
-  if (loading && !refreshing) {
+  if (loading && !refreshing && reports.length === 0) {
     return (
       <View style={styles.loaderContainer}>
         <ActivityIndicator size="large" color="#48a4f4" />
@@ -135,14 +154,32 @@ export default function SuivisScreen() {
       <PageHeader
         title="Mes Suivis"
         subtitle="Signalements et discussions"
+        right={
+          <TouchableOpacity
+            onPress={() => setFiltersOpen((open) => !open)}
+            style={[styles.filterButton, filtersOpen && styles.filterButtonActive]}
+            activeOpacity={0.75}
+            accessibilityRole="button"
+            accessibilityLabel={filtersOpen ? 'Masquer les filtres' : 'Afficher les filtres'}
+          >
+            <ListFilter
+              color={filtersOpen || filtersActive ? Colors.light.primary : '#334155'}
+              size={18}
+              strokeWidth={2.3}
+            />
+            {filtersActive ? <View style={styles.filterDot} /> : null}
+          </TouchableOpacity>
+        }
       />
 
-        <SuivisFilterBar
-          status={statusFilter}
-          onStatusChange={setStatusFilter}
-          onlyWithChat={onlyWithChat}
-          onOnlyWithChatChange={setOnlyWithChat}
-        />
+        {filtersOpen ? (
+          <SuivisFilterBar
+            status={statusFilter}
+            onStatusChange={setStatusFilter}
+            onlyWithChat={onlyWithChat}
+            onOnlyWithChatChange={setOnlyWithChat}
+          />
+        ) : null}
 
         <FlatList
           data={filteredReports}
@@ -152,16 +189,7 @@ export default function SuivisScreen() {
             styles.listContent,
             filteredReports.length === 0 && styles.listContentEmpty,
           ]}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={async () => {
-                await onRefresh();
-                await refreshChatActivity();
-              }}
-              tintColor="#48a4f4"
-            />
-          }
+          {...pullRefresh}
           ListEmptyComponent={
             <View style={styles.emptyWrapper}>
               <View style={styles.emptyCard}>
@@ -212,6 +240,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: PAGE_SCENE_BACKDROP,
   },
   screenBackground: {
     flex: 1,
@@ -277,5 +306,24 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 22,
     paddingHorizontal: 10,
+  },
+  filterButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  filterButtonActive: {
+    backgroundColor: 'rgba(2, 62, 138, 0.08)',
+  },
+  filterDot: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: Colors.light.primary,
   },
 });
