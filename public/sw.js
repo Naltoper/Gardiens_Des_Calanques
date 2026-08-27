@@ -1,5 +1,5 @@
 /* GDC élèves — push-only service worker. Do not intercept fetch (SPA). */
-const SW_VERSION = 'gdc-push-3';
+const SW_VERSION = 'gdc-push-4';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();

@@ -6,3 +6,6 @@ export const VAPID_PUBLIC_KEY =
   'BH-0HJVlx4l2xkMqp7BzklEooka1P6_VD3_eIIBgPUZmNc9wEGEVQ0LO2w0cO2J6GoNn391luJhXRFHt4u6mD1M';
 
 export const PUSH_SUBSCRIBE_PATH = '/api/push-subscribe';
+
+/** Confirmed only after POST /api/push-subscribe returns 200. */
+export const PUSH_REGISTRATION_STORAGE_KEY = 'gdc_push_registered_v1';
