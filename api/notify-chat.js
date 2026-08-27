@@ -6,23 +6,28 @@ const {
   probeStore,
   setCors,
 } = require('../server/pushStore');
+const { readJsonBody } = require('../server/readJsonBody');
 
-const VAPID_PUBLIC_KEY =
-  process.env.VAPID_PUBLIC_KEY ||
-  process.env.EXPO_PUBLIC_VAPID_KEY ||
+const FALLBACK_PUBLIC =
   'BH-0HJVlx4l2xkMqp7BzklEooka1P6_VD3_eIIBgPUZmNc9wEGEVQ0LO2w0cO2J6GoNn391luJhXRFHt4u6mD1M';
+
+function resolveVapidPublic() {
+  if (process.env.VAPID_PUBLIC_KEY) {
+    return { key: process.env.VAPID_PUBLIC_KEY, source: 'VAPID_PUBLIC_KEY' };
+  }
+  if (process.env.EXPO_PUBLIC_VAPID_KEY) {
+    return { key: process.env.EXPO_PUBLIC_VAPID_KEY, source: 'EXPO_PUBLIC_VAPID_KEY' };
+  }
+  if (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY) {
+    return { key: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY, source: 'NEXT_PUBLIC_VAPID_PUBLIC_KEY' };
+  }
+  return { key: FALLBACK_PUBLIC, source: 'fallback' };
+}
+
+const vapidPublic = resolveVapidPublic();
+const VAPID_PUBLIC_KEY = vapidPublic.key;
 const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY || '';
 const VAPID_SUBJECT = process.env.VAPID_SUBJECT || 'mailto:gdc@lyceedescalanques.fr';
-
-function parseBody(raw) {
-  if (!raw) return {};
-  if (typeof raw === 'object') return raw;
-  try {
-    return JSON.parse(raw);
-  } catch {
-    return {};
-  }
-}
 
 function extractRecord(body) {
   if (!body || typeof body !== 'object') return null;
@@ -39,6 +44,19 @@ function extractRecord(body) {
 
 function eventType(body) {
   return String(body?.type || body?.event || body?.eventType || 'INSERT').toUpperCase();
+}
+
+function vapidStatus() {
+  return {
+    public_source: vapidPublic.source,
+    public_prefix: VAPID_PUBLIC_KEY.slice(0, 8),
+    public_length: VAPID_PUBLIC_KEY.length,
+    private_configured: Boolean(VAPID_PRIVATE_KEY),
+    private_length: VAPID_PRIVATE_KEY.length,
+    subject: VAPID_SUBJECT,
+    next_public_present: Boolean(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY),
+    expo_public_present: Boolean(process.env.EXPO_PUBLIC_VAPID_KEY),
+  };
 }
 
 function authorize(req) {
@@ -68,6 +86,7 @@ module.exports = async function handler(req, res) {
       configured: Boolean(VAPID_PRIVATE_KEY),
       store,
       webhook_secret_required: Boolean(process.env.PUSH_WEBHOOK_SECRET),
+      vapid: vapidStatus(),
     });
     return;
   }
@@ -81,7 +100,7 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    const body = parseBody(req.body);
+    const body = await readJsonBody(req);
     const type = eventType(body);
     if (type === 'UPDATE' || type === 'DELETE') {
       res.status(200).json({ ok: true, skipped: 'not_insert' });
@@ -109,6 +128,7 @@ module.exports = async function handler(req, res) {
     }
 
     const userToken = await fetchReportUserToken(reportId);
+    console.info('[gdc-push:notify] report', reportId, 'sender', senderRole || '(vide)', 'user_token', userToken || '(none)');
     if (!userToken) {
       console.warn('[notify-chat] no user_token for report', reportId);
       res.status(200).json({ ok: true, skipped: 'no_user_token', report_id: reportId });
@@ -116,6 +136,7 @@ module.exports = async function handler(req, res) {
     }
 
     const subscriptions = await loadSubscriptions(userToken);
+    console.info('[gdc-push:notify] subscriptions', subscriptions.length, 'for', userToken);
     if (subscriptions.length === 0) {
       console.warn('[notify-chat] no subscriptions for', userToken);
       res.status(200).json({ ok: true, skipped: 'no_subscriptions', report_id: reportId });
@@ -153,6 +174,7 @@ module.exports = async function handler(req, res) {
       const item = results[index];
       if (item.status === 'fulfilled') {
         sent += 1;
+        console.info('[gdc-push:notify] send OK');
         continue;
       }
       failed += 1;

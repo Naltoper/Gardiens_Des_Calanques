@@ -40,6 +40,7 @@ async function detectTable() {
       headers: { Accept: 'application/json' },
     });
     const body = await response.text();
+    console.info('[gdc-push:store] detectTable', name, response.status, body.slice(0, 160));
     if (isMissingTable(response.status, body)) continue;
     if (response.ok || response.status === 200 || response.status === 206) {
       cachedTableName = name;
@@ -194,8 +195,10 @@ async function upsertInTable(userToken, normalized, reportId) {
     return null;
   }
   if (!response.ok) {
+    console.error('[gdc-push:store] table upsert failed', table, response.status, text.slice(0, 400));
     throw new Error(`table upsert ${table} ${response.status}: ${text.slice(0, 400)}`);
   }
+  console.info('[gdc-push:store] table upsert OK', table, userToken, text.slice(0, 180));
   const loaded = await loadFromTable(userToken);
   return loaded ? loaded.length : 1;
 }
@@ -226,8 +229,12 @@ async function upsertSubscription(userToken, subscription, reportId) {
     throw new Error('invalid subscription');
   }
   const fromTable = await upsertInTable(token, normalized, reportId ? String(reportId).trim() : '');
-  if (fromTable != null) return fromTable;
-  return upsertInStorage(token, normalized);
+  if (fromTable != null) {
+    return { count: fromTable, store: 'table', table: (await detectTable()) || 'push_subscriptions' };
+  }
+  console.warn('[gdc-push:store] table absente, fallback Storage');
+  const count = await upsertInStorage(token, normalized);
+  return { count, store: 'storage', table: null };
 }
 
 async function removeFromTable(userToken, endpoint) {
@@ -250,9 +257,15 @@ async function removeSubscription(userToken, subscription) {
   const token = String(userToken || '').trim();
   const endpoint = subscription?.endpoint;
   const fromTable = await removeFromTable(token, endpoint);
-  if (fromTable != null) return fromTable;
+  if (fromTable != null) {
+    return { count: fromTable, store: 'table', table: (await detectTable()) || 'push_subscriptions' };
+  }
   const current = await loadFromStorage(token);
-  return current.filter((item) => item.endpoint !== endpoint).length;
+  return {
+    count: current.filter((item) => item.endpoint !== endpoint).length,
+    store: 'storage',
+    table: null,
+  };
 }
 
 async function deleteEndpoint(endpoint) {

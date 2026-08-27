@@ -5,7 +5,7 @@ import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native
 import { useWebPush } from '../../hooks/useWebPush';
 
 export function PushPermissionBanner() {
-  const { supported, permission, busy, syncError, enable } = useWebPush();
+  const { supported, permission, busy, syncError, lastStore, enable } = useWebPush();
   const [dismissed, setDismissed] = useState(false);
 
   if (Platform.OS !== 'web' || !supported || dismissed) return null;
@@ -26,6 +26,7 @@ export function PushPermissionBanner() {
           {needsRetry
             ? syncError
             : "Reçois une alerte même si l'application est fermée, dès qu'un intervenant te répond."}
+          {lastStore ? ` (${lastStore})` : ''}
         </Text>
       </View>
       <TouchableOpacity
