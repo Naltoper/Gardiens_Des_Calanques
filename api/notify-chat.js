@@ -69,7 +69,7 @@ function authorize(req) {
 }
 
 const PUBLIC_ORIGIN = (process.env.PUSH_PUBLIC_ORIGIN || 'https://gdc-eleves.vercel.app').replace(/\/$/, '');
-const NOTIF_ICON = `${PUBLIC_ORIGIN}/icons/icon-192-maskable.png?v=2`;
+const NOTIF_ICON = `${PUBLIC_ORIGIN}/icons/icon-512.png?v=3`;
 const NOTIF_BADGE = `${PUBLIC_ORIGIN}/notif-icon.png`;
 
 function extractPhotoUrl(record, reportImageUrl) {

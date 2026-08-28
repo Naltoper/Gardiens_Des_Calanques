@@ -1,5 +1,5 @@
 /* GDC élèves — push-only service worker. Do not intercept fetch (SPA). */
-const SW_VERSION = 'gdc-push-7';
+const SW_VERSION = 'gdc-push-8';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
@@ -36,7 +36,7 @@ self.addEventListener('push', (event) => {
   }
 
   const title = payload.title || 'Gardiens des Calanques';
-  const icon = absoluteUrl(payload.icon || '/icons/icon-192-maskable.png?v=2');
+  const icon = absoluteUrl(payload.icon || '/icons/icon-512.png?v=3');
   const badge = absoluteUrl(payload.badge || '/notif-icon.png');
   const options = {
     body: payload.body || 'Tu as reçu un nouveau message.',
