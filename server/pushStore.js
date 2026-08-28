@@ -280,18 +280,27 @@ async function deleteEndpoint(endpoint) {
   });
 }
 
-async function fetchReportUserToken(reportId) {
+async function fetchReportForPush(reportId) {
   const id = String(reportId || '').trim();
-  if (!id) return null;
+  if (!id) return { userToken: null, imageUrl: null };
   const response = await rest(
-    `/rest/v1/reports?id=eq.${encodeURIComponent(id)}&select=id,user_token`,
+    `/rest/v1/reports?id=eq.${encodeURIComponent(id)}&select=id,user_token,image_url`,
     { headers: { Accept: 'application/json' } },
   );
   if (!response.ok) {
     throw new Error(`reports ${response.status}`);
   }
   const rows = await response.json();
-  return rows?.[0]?.user_token || null;
+  const row = rows?.[0];
+  return {
+    userToken: row?.user_token || null,
+    imageUrl: typeof row?.image_url === 'string' && row.image_url.trim() ? row.image_url.trim() : null,
+  };
+}
+
+async function fetchReportUserToken(reportId) {
+  const { userToken } = await fetchReportForPush(reportId);
+  return userToken;
 }
 
 async function probeStore() {
@@ -310,6 +319,7 @@ function setCors(res) {
 
 module.exports = {
   deleteEndpoint,
+  fetchReportForPush,
   fetchReportUserToken,
   loadSubscriptions,
   probeStore,

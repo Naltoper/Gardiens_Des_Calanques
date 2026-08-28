@@ -1,5 +1,5 @@
 /* GDC élèves — push-only service worker. Do not intercept fetch (SPA). */
-const SW_VERSION = 'gdc-push-4';
+const SW_VERSION = 'gdc-push-5';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
@@ -17,6 +17,16 @@ function absoluteUrl(path) {
   }
 }
 
+function isHttpUrl(value) {
+  if (typeof value !== 'string' || !value.trim()) return false;
+  try {
+    const parsed = new URL(value, self.location.origin);
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
 self.addEventListener('push', (event) => {
   let payload = {};
   try {
@@ -26,11 +36,12 @@ self.addEventListener('push', (event) => {
   }
 
   const title = payload.title || 'Gardiens des Calanques';
-  const icon = absoluteUrl('/icons/icon-192.png');
+  const icon = absoluteUrl(payload.icon || '/icons/icon-192.png');
+  const badge = absoluteUrl(payload.badge || '/notif-icon.png');
   const options = {
     body: payload.body || 'Tu as reçu un nouveau message.',
     icon,
-    badge: icon,
+    badge,
     tag: payload.tag || 'gdc-chat',
     renotify: true,
     vibrate: [120, 80, 120],
@@ -39,6 +50,11 @@ self.addEventListener('push', (event) => {
       version: SW_VERSION,
     },
   };
+
+  const photo = payload.image || payload.imageUrl || payload.photo_url;
+  if (isHttpUrl(photo)) {
+    options.image = absoluteUrl(photo);
+  }
 
   event.waitUntil(self.registration.showNotification(title, options));
 });

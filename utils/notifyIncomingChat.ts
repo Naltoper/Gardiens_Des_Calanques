@@ -8,6 +8,7 @@ export function notifyIncomingChat(reportId: string) {
       body: 'La cellule a répondu à ton signalement.',
       tag: `gdc-chat-${reportId}`,
       icon: '/icons/icon-192.png',
+      badge: '/notif-icon.png',
     });
   } catch (error) {
     console.warn('[web-push] local notification', error);
