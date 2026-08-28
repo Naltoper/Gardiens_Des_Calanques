@@ -1,7 +1,7 @@
 const webpush = require('web-push');
 const {
   deleteEndpoint,
-  fetchReportForPush,
+  fetchReportUserToken,
   loadSubscriptions,
   probeStore,
   setCors,
@@ -68,30 +68,6 @@ function authorize(req) {
   return header === secret;
 }
 
-const PUBLIC_ORIGIN = (process.env.PUSH_PUBLIC_ORIGIN || 'https://gdc-eleves.vercel.app').replace(/\/$/, '');
-const NOTIF_ICON = `${PUBLIC_ORIGIN}/icons/icon-512.png?v=3`;
-const NOTIF_BADGE = `${PUBLIC_ORIGIN}/notif-icon.png`;
-
-function extractPhotoUrl(record, reportImageUrl) {
-  const fromRecord =
-    record?.image_url ||
-    record?.image ||
-    record?.photo_url ||
-    record?.illustration;
-  if (typeof fromRecord === 'string' && /^https?:\/\//i.test(fromRecord.trim())) {
-    return fromRecord.trim();
-  }
-  const content = String(record?.content || '');
-  const match = content.match(/^\[\[image\]\](\S+)/);
-  if (match && /^https?:\/\//i.test(match[1])) {
-    return match[1];
-  }
-  if (typeof reportImageUrl === 'string' && /^https?:\/\//i.test(reportImageUrl)) {
-    return reportImageUrl;
-  }
-  return null;
-}
-
 module.exports = async function handler(req, res) {
   setCors(res);
   if (req.method === 'OPTIONS') {
@@ -151,7 +127,7 @@ module.exports = async function handler(req, res) {
       return;
     }
 
-    const { userToken, imageUrl: reportImageUrl } = await fetchReportForPush(reportId);
+    const userToken = await fetchReportUserToken(reportId);
     console.info('[gdc-push:notify] report', reportId, 'sender', senderRole || '(vide)', 'user_token', userToken || '(none)');
     if (!userToken) {
       console.warn('[notify-chat] no user_token for report', reportId);
@@ -169,15 +145,11 @@ module.exports = async function handler(req, res) {
 
     webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
 
-    const photoUrl = extractPhotoUrl(record, reportImageUrl);
     const payload = JSON.stringify({
       title: 'Nouveau message',
       body: 'La cellule a répondu à ton signalement.',
       url: `/chat/${reportId}`,
       tag: `gdc-chat-${reportId}`,
-      icon: NOTIF_ICON,
-      badge: NOTIF_BADGE,
-      ...(photoUrl ? { image: photoUrl } : {}),
     });
 
     const results = await Promise.allSettled(
