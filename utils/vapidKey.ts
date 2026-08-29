@@ -1,5 +1,5 @@
-/** Decode a URL-safe base64 VAPID key into a standalone Uint8Array (65 bytes). */
-export function urlBase64ToUint8Array(base64String: string) {
+/** Décode une clé VAPID publique (URL-safe base64) en Uint8Array (65 octets). */
+function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
   const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
   const raw = globalThis.atob(base64);
@@ -11,10 +11,11 @@ export function urlBase64ToUint8Array(base64String: string) {
 }
 
 /**
- * Chrome / Android TWA can detach the ArrayBuffer of a Uint8Array view.
- * Pass a fresh copy so applicationServerKey stays valid for subscribe().
+ * `PushManager.subscribe()` peut détacher l'ArrayBuffer sous-jacent d'une vue
+ * Uint8Array (observé sur Chrome/Android TWA). On renvoie donc toujours une
+ * copie fraîche, jamais la vue décodée directement.
  */
-export function vapidApplicationServerKey(base64String: string) {
+export function vapidApplicationServerKey(base64String: string): Uint8Array {
   const decoded = urlBase64ToUint8Array(base64String);
   const copy = new Uint8Array(decoded.byteLength);
   copy.set(decoded);

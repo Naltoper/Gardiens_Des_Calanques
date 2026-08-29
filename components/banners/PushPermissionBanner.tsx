@@ -2,15 +2,15 @@ import { Bell } from 'lucide-react-native';
 import { useState } from 'react';
 import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-import { useWebPush } from '../../hooks/useWebPush';
+import { usePushNotifications } from '../../hooks/usePushNotifications';
 
 export function PushPermissionBanner() {
-  const { supported, busy, registered, syncError, lastStore, enable } = useWebPush();
+  const { supported, busy, subscribed, error, enable } = usePushNotifications();
   const [dismissed, setDismissed] = useState(false);
 
-  if (Platform.OS !== 'web' || !supported || registered || dismissed) return null;
+  if (Platform.OS !== 'web' || !supported || subscribed || dismissed) return null;
 
-  const hasError = Boolean(syncError);
+  const hasError = Boolean(error);
 
   return (
     <View style={styles.banner}>
@@ -19,13 +19,12 @@ export function PushPermissionBanner() {
       </View>
       <View style={styles.textWrap}>
         <Text style={styles.title}>
-          {hasError ? 'Notifications non enregistrées' : 'Notifications de chat'}
+          {hasError ? 'Notifications non activées' : 'Notifications de chat'}
         </Text>
         <Text style={styles.subtitle}>
           {hasError
-            ? syncError
+            ? error
             : "Reçois une alerte même si l'application est fermée, dès qu'un intervenant te répond."}
-          {lastStore ? ` (${lastStore})` : ''}
         </Text>
       </View>
       <TouchableOpacity

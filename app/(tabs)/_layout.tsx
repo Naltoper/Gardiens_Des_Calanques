@@ -9,7 +9,7 @@ import {
 } from '../../components/navigation/TabBarVisibility';
 import { Colors, GARDIAN_CLAIR } from '../../constants/theme';
 import { ChatActivityProvider, useChatActivityContext } from '../../contexts/ChatActivityContext';
-import { WebPushProvider } from '../../hooks/useWebPush';
+import { PushNotificationsProvider } from '../../hooks/usePushNotifications';
 
 const TAB_ICON_SIZE = 22;
 const TAB_LABEL_FONT = 11;
@@ -146,9 +146,9 @@ export default function TabLayout() {
   return (
     <TabBarVisibilityProvider>
       <ChatActivityProvider>
-        <WebPushProvider>
+        <PushNotificationsProvider>
           <TabNavigator />
-        </WebPushProvider>
+        </PushNotificationsProvider>
       </ChatActivityProvider>
     </TabBarVisibilityProvider>
   );
