@@ -4,6 +4,7 @@ import React, {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 import { Platform } from 'react-native';
@@ -91,7 +92,18 @@ async function getServiceWorkerRegistration(): Promise<ServiceWorkerRegistration
   });
 }
 
-/** Crée un abonnement `PushSubscription` frais (on se désabonne d'abord si besoin). */
+const wait = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+/**
+ * Crée un abonnement `PushSubscription` frais (on se désabonne d'abord si
+ * besoin).
+ *
+ * Sur Android TWA, la permission de notification est déléguée à une
+ * activité Android native (`NotificationPermissionRequestActivity`) : juste
+ * après que l'utilisateur a accepté, `pushManager.subscribe()` peut échouer
+ * une première fois le temps que l'OS termine de propager l'autorisation au
+ * WebView. On retente donc une fois après un court délai avant d'abandonner.
+ */
 async function subscribe(registration: ServiceWorkerRegistration): Promise<PushSubscription> {
   const existing = await registration.pushManager.getSubscription();
   if (existing) {
@@ -102,10 +114,15 @@ async function subscribe(registration: ServiceWorkerRegistration): Promise<PushS
     }
   }
 
-  return registration.pushManager.subscribe({
-    userVisibleOnly: true,
-    applicationServerKey: vapidApplicationServerKey(VAPID_PUBLIC_KEY) as BufferSource,
-  });
+  const applicationServerKey = vapidApplicationServerKey(VAPID_PUBLIC_KEY) as BufferSource;
+
+  try {
+    return await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey });
+  } catch (error) {
+    console.warn(LOG, 'pushManager.subscribe() a échoué, nouvelle tentative dans 400ms', error);
+    await wait(400);
+    return registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey });
+  }
 }
 
 async function callRegisterEndpoint(payload: {
@@ -177,31 +194,63 @@ function usePushNotificationsState(): PushNotificationsValue {
   const [subscribed, setSubscribed] = useState(() => Boolean(readStoredRegistration()));
   const [error, setError] = useState<string | null>(null);
 
+  /**
+   * Empêche deux souscriptions concurrentes (auto-sync au montage + clic
+   * manuel) : les appels simultanés attendent tous la même promesse au lieu
+   * de lancer chacun leur propre `pushManager.subscribe()`.
+   */
+  const subscriptionInFlightRef = useRef<Promise<void> | null>(null);
+
+  /**
+   * Souscrit et enregistre l'abonnement. Ne revérifie JAMAIS
+   * `Notification.permission` : l'appelant a déjà la responsabilité de
+   * confirmer que la permission est accordée avant d'appeler cette
+   * fonction. C'est important sur Android TWA, où la permission est
+   * déléguée à une boîte de dialogue système : re-lire
+   * `Notification.permission` juste après `requestPermission()` peut
+   * encore renvoyer une valeur non à jour pendant quelques centaines de
+   * millisecondes, ce qui faisait échouer silencieusement l'abonnement
+   * (aucune erreur, mais `subscribed` ne passait jamais à `true`).
+   */
+  const performSubscription = useCallback(async () => {
+    if (subscriptionInFlightRef.current) {
+      return subscriptionInFlightRef.current;
+    }
+
+    const run = (async () => {
+      const userToken = await getUserToken();
+      if (!userToken) {
+        throw new Error('Identifiant élève manquant — reconnecte-toi.');
+      }
+
+      const stored = readStoredRegistration();
+      if (stored && stored.userToken !== userToken) {
+        clearStoredRegistration();
+        setSubscribed(false);
+      }
+
+      const registration = await getServiceWorkerRegistration();
+      await navigator.serviceWorker.ready;
+      const pushSubscription = await subscribe(registration);
+      const endpoint = await saveSubscription(userToken, pushSubscription);
+
+      writeStoredRegistration({ userToken, endpoint, savedAt: new Date().toISOString() });
+      setSubscribed(true);
+      setError(null);
+    })().finally(() => {
+      subscriptionInFlightRef.current = null;
+    });
+
+    subscriptionInFlightRef.current = run;
+    return run;
+  }, []);
+
+  /** Utilisé uniquement par la synchronisation automatique au montage. */
   const syncIfGranted = useCallback(async () => {
     if (!supported) return;
     if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
-
-    const userToken = await getUserToken();
-    if (!userToken) {
-      setError('Identifiant élève manquant — reconnecte-toi.');
-      return;
-    }
-
-    const stored = readStoredRegistration();
-    if (stored && stored.userToken !== userToken) {
-      clearStoredRegistration();
-      setSubscribed(false);
-    }
-
-    const registration = await getServiceWorkerRegistration();
-    await navigator.serviceWorker.ready;
-    const pushSubscription = await subscribe(registration);
-    const endpoint = await saveSubscription(userToken, pushSubscription);
-
-    writeStoredRegistration({ userToken, endpoint, savedAt: new Date().toISOString() });
-    setSubscribed(true);
-    setError(null);
-  }, [supported]);
+    await performSubscription();
+  }, [performSubscription, supported]);
 
   useEffect(() => {
     if (!supported) return;
@@ -229,7 +278,9 @@ function usePushNotificationsState(): PushNotificationsValue {
         );
         return false;
       }
-      await syncIfGranted();
+      // `result` est déjà 'granted' ici : on souscrit directement sans
+      // repasser par la relecture de `Notification.permission`.
+      await performSubscription();
       return true;
     } catch (caught) {
       console.error(LOG, 'enable() a échoué', caught);
@@ -238,7 +289,7 @@ function usePushNotificationsState(): PushNotificationsValue {
     } finally {
       setBusy(false);
     }
-  }, [busy, subscribed, supported, syncIfGranted]);
+  }, [busy, performSubscription, subscribed, supported]);
 
   const disable = useCallback(async () => {
     if (!supported) return;
