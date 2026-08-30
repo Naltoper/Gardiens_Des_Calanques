@@ -1,13 +1,15 @@
 -- Reset complet des notifications Push (PWA + Android TWA).
 --
--- Remplace les anciennes policies "for all / using(true)" (n'importe qui
--- avec la clé anon pouvait lire/supprimer TOUS les abonnements Push de
--- TOUS les élèves) par un modèle où :
---   - le client (clé anon, depuis usePushNotifications.ts) peut seulement
---     CRÉER / METTRE À JOUR son propre abonnement (upsert par `endpoint`).
---   - la LECTURE et la SUPPRESSION ne sont possibles que via la
---     service role key, utilisée uniquement par api/send-notification.js
---     (jamais exposée au client).
+-- IMPORTANT — les policies `push_subscriptions_client_upsert` /
+-- `push_subscriptions_client_update` créées plus bas dans ce fichier sont
+-- SUPERSEDÉES par la migration suivante
+-- (`20260830000000_push_subscriptions_lockdown.sql`), qui retire tous les
+-- droits `anon`/`authenticated` sur la table. Le client ne fait plus jamais
+-- d'upsert Supabase direct (voir `hooks/usePushNotifications.ts` +
+-- `api/register-push-subscription.js`) : il n'y a donc plus besoin de
+-- maintenir de policy RLS ni de GRANT `insert`/`update` pour `anon`. Ce
+-- fichier reste utile pour la CRÉATION de la table (`create table if not
+-- exists`) sur une base qui ne l'aurait pas encore.
 --
 -- Sûr à rejouer plusieurs fois (idempotent).
 

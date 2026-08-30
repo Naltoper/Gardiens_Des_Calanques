@@ -1,19 +1,29 @@
 # Notifications Push — PWA + Android TWA
 
-Cette page documente la **nouvelle** architecture de notifications (reset
-complet du 2026-08-29). Elle remplace intégralement l'ancien système
-(`api/push-subscribe.js`, `api/notify-chat.js`, `hooks/useWebPush.tsx`,
-`utils/notifyIncomingChat.ts`) qui a été supprimé.
+Cette page documente la **nouvelle** architecture de notifications (reset du
+2026-08-29, verrouillage complet le 2026-08-30). Elle remplace intégralement
+l'ancien système (`api/push-subscribe.js`, `api/notify-chat.js`,
+`hooks/useWebPush.tsx`, `utils/notifyIncomingChat.ts`) qui a été supprimé.
+
+> **2026-08-30 — changement important** : le client n'écrit plus jamais
+> directement dans `push_subscriptions` via le SDK Supabase. Cette écriture
+> passait par la clé `anon` + une policy RLS `INSERT`/`UPDATE`, ce qui s'est
+> révélé fragile en pratique (`42501 permission denied for table
+> push_subscriptions` dès que le GRANT ou la policy n'était pas exactement
+> en place). Elle passe maintenant par `api/register-push-subscription.js`,
+> qui utilise la **service role key** côté serveur — plus aucune permission
+> anonyme à maintenir sur cette table.
 
 ## Vue d'ensemble
 
 ```
-Navigateur / TWA élève                         Vercel                          Supabase
-────────────────────────                       ──────                         ────────
+Navigateur / TWA élève                         Vercel                                    Supabase
+────────────────────────                       ──────                                   ────────
 usePushNotifications.ts
   → Notification.requestPermission()
   → registration.pushManager.subscribe(VAPID)
-  → supabase.from('push_subscriptions').upsert()  ───────────────────────────►  push_subscriptions (RLS: anon = insert/update only)
+  → fetch('/api/register-push-subscription')  ──► api/register-push-subscription.js  ──► push_subscriptions
+                                                     (service role key)                    (RLS : aucun accès anon/authenticated)
 
 public/sw.js (service worker)
   ← push event                                  ◄── api/send-notification.js ◄── Database Webhook sur `messages` (INSERT)
@@ -21,7 +31,7 @@ public/sw.js (service worker)
   → notificationclick → focus/ouvre /chat/:id         service role key)
 ```
 
-Points clés du nouveau design :
+Points clés du design :
 
 - **Un seul chemin d'affichage** : toute notification passe par
   `public/sw.js` → `showNotification()`. On n'appelle plus jamais
@@ -29,24 +39,28 @@ Points clés du nouveau design :
   d'effet "spam").
 - **Un seul endpoint d'envoi** : `api/send-notification.js`. Il n'y a plus
   ni `push-subscribe`, ni `notify-chat`.
-- **La clé service role Supabase ne sert que côté serveur.** Le client ne
-  peut plus lire ni supprimer la table `push_subscriptions` (voir RLS
-  ci-dessous) — avant, n'importe qui avec la clé anon pouvait lister tous
-  les abonnements Push de tous les élèves.
+- **Un seul endpoint d'écriture** : `api/register-push-subscription.js`.
+  Le client ne touche plus jamais `push_subscriptions` directement.
+- **La clé service role Supabase ne sert que côté serveur.** Le client n'a
+  plus **aucun** droit (lecture, écriture, suppression) sur
+  `push_subscriptions` — avant, n'importe qui avec la clé anon pouvait
+  lister/modifier/supprimer tous les abonnements Push de tous les élèves.
 
 ## Fichiers
 
 | Fichier | Rôle |
 |---|---|
 | `public/sw.js` | Service worker : reçoit le `push`, affiche la notification (icône/badge/tag app), gère le clic. |
-| `hooks/usePushNotifications.ts` | Hook + provider React : permission, souscription VAPID, upsert Supabase. Isolé sous `Platform.OS === 'web'`. |
-| `constants/pushNotifications.ts` | Clé VAPID publique, nom de table, clés de storage. |
+| `hooks/usePushNotifications.ts` | Hook + provider React : permission, souscription VAPID, appel à `/api/register-push-subscription`. Isolé sous `Platform.OS === 'web'`. |
+| `constants/pushNotifications.ts` | Clé VAPID publique, chemins des endpoints, clés de storage. |
 | `utils/vapidKey.ts` | Décodage base64 → `Uint8Array` de la clé VAPID. |
 | `components/banners/PushPermissionBanner.tsx` | Bandeau "Activer les notifications" sur l'accueil. |
 | `utils/notifyChat.ts` | Roue de secours : prévient `/api/send-notification` côté client après l'insertion d'un message. |
+| `api/register-push-subscription.js` | Fonction Vercel : upsert/suppression d'un abonnement (service role key). |
 | `api/send-notification.js` | Fonction Vercel qui envoie le Web Push (VAPID) via `web-push`. |
-| `server/pushSubscriptions.js` | Accès Supabase **service role** (lecture/suppression des abonnements). |
-| `supabase/migrations/20260829170000_push_subscriptions_reset.sql` | Schéma + RLS de `push_subscriptions`. |
+| `server/pushSubscriptions.js` | Tout l'accès Supabase **service role** (lecture, écriture, suppression des abonnements). |
+| `supabase/migrations/20260829170000_push_subscriptions_reset.sql` | Création de la table (première étape). |
+| `supabase/migrations/20260830000000_push_subscriptions_lockdown.sql` | **À exécuter** : retire tous les droits anon/authenticated — plus rien à maintenir côté RLS client. |
 
 ## Variables d'environnement (Vercel)
 
@@ -56,7 +70,7 @@ Points clés du nouveau design :
 | `VAPID_PUBLIC_KEY` | Vercel (fonctions) | Même clé publique, utilisée par `api/send-notification.js`. |
 | `VAPID_PRIVATE_KEY` | Vercel (fonctions) | Clé VAPID **privée**. Ne jamais l'exposer côté client. |
 | `VAPID_SUBJECT` | Vercel (fonctions) | `mailto:` ou URL de contact exigé par la spec Web Push. |
-| `SUPABASE_SERVICE_ROLE_KEY` | Vercel (fonctions) | **Nouvelle variable requise.** Clé service role du projet Supabase — permet à `api/send-notification.js` de lire/supprimer `push_subscriptions` malgré la RLS restrictive. |
+| `SUPABASE_SERVICE_ROLE_KEY` | Vercel (fonctions) | **Variable requise.** Clé service role du projet Supabase — utilisée par `api/send-notification.js` (lecture/suppression) **et** `api/register-push-subscription.js` (écriture), les deux seuls points d'accès à `push_subscriptions`. |
 | `PUSH_WEBHOOK_SECRET` | Vercel (fonctions), optionnel | Si défini, `api/send-notification.js` exige l'en-tête `x-webhook-secret` (ou `Authorization: Bearer ...`) avec cette valeur. |
 
 Génère une paire de clés VAPID avec :
@@ -69,21 +83,26 @@ npx web-push generate-vapid-keys
 
 ### 1. Supabase — SQL
 
-Le fichier `supabase/migrations/20260829170000_push_subscriptions_reset.sql`
-contient tout le SQL nécessaire. Colle-le dans **SQL Editor → New query** du
-projet Supabase, puis **Run** :
+Exécute les **deux** migrations, dans l'ordre, dans **SQL Editor → New
+query** du projet Supabase :
 
-- Il (re)crée `public.push_subscriptions` si elle n'existe pas encore.
-- Il **remplace** les anciennes policies permissives (`for all using(true)`,
-  qui autorisaient n'importe qui à lire/supprimer les abonnements de tout
-  le monde) par :
-  - `anon` / `authenticated` : `INSERT` et `UPDATE` uniquement (upsert par
-    élève, nécessaire pour que le hook écrive son propre abonnement).
-  - `service_role` uniquement : `SELECT` et `DELETE` (utilisé par
-    `api/send-notification.js`).
+1. `supabase/migrations/20260829170000_push_subscriptions_reset.sql`
+   — (re)crée `public.push_subscriptions` si elle n'existe pas encore
+   (colonnes `user_token`, `endpoint`, `p256dh`, `auth`).
+2. `supabase/migrations/20260830000000_push_subscriptions_lockdown.sql`
+   — **la migration qui compte pour corriger le 401/42501** : elle retire
+   tous les droits `anon`/`authenticated` sur la table (plus aucune policy,
+   plus aucun GRANT `insert`/`update`). Seule la `service_role` (utilisée
+   par les fonctions Vercel) peut lire/écrire/supprimer.
 
-Vérifie ensuite dans **Table Editor** que la table a les colonnes
-`user_token`, `endpoint`, `p256dh`, `auth`.
+Si tu avais déjà exécuté l'ancienne version de l'étape 1 (qui donnait
+`INSERT`/`UPDATE` à `anon`), ce n'est pas grave : l'étape 2 la corrige en
+retirant ces droits. Le nouveau code ne les utilise plus.
+
+Vérifie ensuite dans **Table Editor → push_subscriptions → Policies** qu'il
+n'y a **plus aucune policy** listée (RLS activée, zéro policy = accès refusé
+par défaut pour `anon`/`authenticated`, autorisé uniquement pour
+`service_role`).
 
 ### 2. Supabase — Database Webhook sur `messages`
 
@@ -193,6 +212,8 @@ Doit renvoyer `"configured": true` et `"store": { "ok": true }`. Si
 |---|---|
 | `GET /api/send-notification` → `configured: false` | `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` absentes sur Vercel. |
 | `store.ok: false` | `SUPABASE_SERVICE_ROLE_KEY` absente/invalide. |
+| `"table upsert push_subscriptions 401" / "permission denied for table push_subscriptions" (code 42501)` | **Ancien symptôme**, lié à l'ancien design (upsert client direct via la clé anon). Le nouveau code ne fait plus jamais d'upsert Supabase depuis le client — si tu vois encore cette erreur, c'est que le build déployé date d'avant ce changement, ou que `SUPABASE_SERVICE_ROLE_KEY` manque côté Vercel pour `api/register-push-subscription.js` (l'erreur viendrait alors de la fonction serveur, avec un message `upsert push_subscriptions ... 401/403`, pas plus de "TWA pushManager.subscribe()"). |
+| `POST /api/register-push-subscription` → 500 | `SUPABASE_SERVICE_ROLE_KEY` absente/invalide sur Vercel, ou payload `subscription` incomplet (endpoint/p256dh/auth). |
 | Réponse `{ skipped: "no_subscriptions" }` | L'élève n'a jamais accepté les notifications sur cet appareil, ou son abonnement a expiré. |
 | Réponse `{ sent: 0, failed: 1 }` | Abonnement périmé (410/404) — il est supprimé automatiquement, l'élève doit rouvrir l'app pour se réabonner. |
 | Notification affichée mais logo/nom **Chrome** | Voir section Bubblewrap ci-dessus (asset link / bon binaire testé). |

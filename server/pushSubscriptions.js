@@ -1,10 +1,12 @@
 /**
- * Accès Supabase côté serveur pour `api/send-notification.js`.
+ * Accès Supabase côté serveur pour `api/send-notification.js` et
+ * `api/register-push-subscription.js`.
  *
- * On utilise la **service role key** (jamais exposée au client) pour lire /
- * supprimer les abonnements : la table `push_subscriptions` n'autorise plus
- * la lecture avec la clé anonyme (voir la migration Supabase), donc ce
- * module est le SEUL endroit qui peut lister les abonnements d'un élève.
+ * On utilise la **service role key** (jamais exposée au client) pour lire,
+ * écrire et supprimer les abonnements : la table `push_subscriptions`
+ * n'accorde plus AUCUN droit à la clé anonyme (voir la migration Supabase
+ * `..._lockdown.sql`), donc ce module est le SEUL endroit qui touche cette
+ * table.
  */
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://lgsspvcxayanodmvgkzb.supabase.co';
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
@@ -78,6 +80,53 @@ async function deleteSubscriptionByEndpoint(endpoint) {
   }
 }
 
+/**
+ * Crée / met à jour un abonnement (upsert par `endpoint`), appelé par
+ * `api/register-push-subscription.js`. C'est la SEULE façon d'écrire dans
+ * `push_subscriptions` : le client n'a plus aucun droit direct sur la table
+ * (voir la migration `..._lockdown.sql`), donc pas de RLS/GRANT à maintenir
+ * côté anon pour cette opération.
+ */
+async function upsertSubscription(userToken, subscription) {
+  const token = String(userToken || '').trim();
+  const endpoint = subscription?.endpoint;
+  const p256dh = subscription?.keys?.p256dh;
+  const auth = subscription?.keys?.auth;
+  if (!token || !endpoint || !p256dh || !auth) {
+    throw new Error('invalid_subscription');
+  }
+
+  const response = await adminRest(`/rest/v1/${TABLE}?on_conflict=endpoint`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Prefer: 'resolution=merge-duplicates,return=minimal',
+    },
+    body: JSON.stringify({
+      user_token: token,
+      endpoint,
+      p256dh,
+      auth,
+      updated_at: new Date().toISOString(),
+    }),
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`upsert push_subscriptions ${response.status}: ${text.slice(0, 300)}`);
+  }
+}
+
+/** Supprime l'abonnement d'un élève précis (bouton "désactiver" côté client). */
+async function removeSubscriptionForUser(userToken, endpoint) {
+  const token = String(userToken || '').trim();
+  if (!token || !endpoint) return;
+  await adminRest(
+    `/rest/v1/${TABLE}?user_token=eq.${encodeURIComponent(token)}&endpoint=eq.${encodeURIComponent(endpoint)}`,
+    { method: 'DELETE', headers: { Prefer: 'return=minimal' } },
+  );
+}
+
 /** Retrouve le `user_token` propriétaire d'un signalement (pour les notifs de chat). */
 async function fetchReportUserToken(reportId) {
   const id = String(reportId || '').trim();
@@ -115,5 +164,7 @@ module.exports = {
   fetchReportUserToken,
   loadSubscriptionsForUser,
   probeStore,
+  removeSubscriptionForUser,
   setCors,
+  upsertSubscription,
 };

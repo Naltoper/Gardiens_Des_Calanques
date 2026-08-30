@@ -54,6 +54,9 @@
   "functions": {
     "api/send-notification.js": {
       "includeFiles": "server/**"
+    },
+    "api/register-push-subscription.js": {
+      "includeFiles": "server/**"
     }
   }
 }

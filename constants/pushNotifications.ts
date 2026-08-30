@@ -10,6 +10,15 @@ export const VAPID_PUBLIC_KEY = process.env.EXPO_PUBLIC_VAPID_KEY || '';
 /** Table Supabase où sont stockés les abonnements Push (voir supabase/migrations). */
 export const PUSH_SUBSCRIPTIONS_TABLE = 'push_subscriptions';
 
+/**
+ * Le client n'écrit JAMAIS directement dans `push_subscriptions` (voir
+ * `docs/PUSH-NOTIFICATIONS.md`) : il passe par cette fonction Vercel, qui
+ * utilise la service role key. Ça évite toute dépendance à une combinaison
+ * GRANT + policy RLS anon fragile côté client (source du bug 42501
+ * "permission denied for table push_subscriptions").
+ */
+export const PUSH_REGISTER_PATH = '/api/register-push-subscription';
+
 /** Clé localStorage utilisée pour éviter de re-souscrire à chaque chargement. */
 export const PUSH_REGISTRATION_STORAGE_KEY = 'gdc_push_registration_v2';
 

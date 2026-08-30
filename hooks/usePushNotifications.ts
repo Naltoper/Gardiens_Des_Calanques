@@ -9,13 +9,12 @@ import React, {
 import { Platform } from 'react-native';
 
 import {
+  PUSH_REGISTER_PATH,
   PUSH_REGISTRATION_STORAGE_KEY,
-  PUSH_SUBSCRIPTIONS_TABLE,
   SERVICE_WORKER_PATH,
   SERVICE_WORKER_SCOPE,
   VAPID_PUBLIC_KEY,
 } from '../constants/pushNotifications';
-import { supabase } from '../lib/supabase';
 import { getUserToken } from '../utils/storage';
 import { vapidApplicationServerKey } from '../utils/vapidKey';
 
@@ -109,10 +108,38 @@ async function subscribe(registration: ServiceWorkerRegistration): Promise<PushS
   });
 }
 
+async function callRegisterEndpoint(payload: {
+  user_token: string;
+  action: 'subscribe' | 'unsubscribe';
+  subscription: { endpoint: string; keys: { p256dh: string; auth: string } };
+}) {
+  const response = await fetch(PUSH_REGISTER_PATH, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  const text = await response.text();
+  let data: { ok?: boolean; error?: string; message?: string } = {};
+  try {
+    data = text ? JSON.parse(text) : {};
+  } catch {
+    data = { message: text };
+  }
+  if (!response.ok || data.ok === false) {
+    throw new Error(
+      data.message || data.error || `register-push-subscription ${response.status}: ${text}`,
+    );
+  }
+}
+
 /**
- * Écrit / met à jour l'abonnement dans Supabase, associé au `user_token`
- * (`uf-...`) de l'élève. Un upsert sur `endpoint` évite les doublons quand le
- * navigateur renouvelle l'abonnement.
+ * Écrit / met à jour l'abonnement, associé au `user_token` (`uf-...`) de
+ * l'élève. Passe par `/api/register-push-subscription` (service role key
+ * côté serveur) plutôt que par un upsert Supabase direct depuis le client :
+ * ça évite toute dépendance à une policy RLS + GRANT anon sur
+ * `push_subscriptions`, qui est le point de défaillance historique de cette
+ * fonctionnalité (erreur 42501 "permission denied for table
+ * push_subscriptions").
  */
 async function saveSubscription(userToken: string, subscription: PushSubscription) {
   const json = subscription.toJSON();
@@ -120,26 +147,25 @@ async function saveSubscription(userToken: string, subscription: PushSubscriptio
     throw new Error('Abonnement push incomplet (endpoint / clés manquants).');
   }
 
-  const { error } = await supabase.from(PUSH_SUBSCRIPTIONS_TABLE).upsert(
-    {
-      user_token: userToken,
-      endpoint: json.endpoint,
-      p256dh: json.keys.p256dh,
-      auth: json.keys.auth,
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: 'endpoint' },
-  );
-
-  if (error) {
-    throw new Error(`Supabase upsert push_subscriptions: ${error.message}`);
-  }
+  await callRegisterEndpoint({
+    user_token: userToken,
+    action: 'subscribe',
+    subscription: { endpoint: json.endpoint, keys: { p256dh: json.keys.p256dh, auth: json.keys.auth } },
+  });
 
   return json.endpoint;
 }
 
-async function removeSubscriptionRow(endpoint: string) {
-  await supabase.from(PUSH_SUBSCRIPTIONS_TABLE).delete().eq('endpoint', endpoint);
+async function removeSubscriptionRow(userToken: string, endpoint: string) {
+  try {
+    await callRegisterEndpoint({
+      user_token: userToken,
+      action: 'unsubscribe',
+      subscription: { endpoint, keys: { p256dh: '', auth: '' } },
+    });
+  } catch (error) {
+    console.warn(LOG, 'removeSubscriptionRow a échoué', error);
+  }
 }
 
 function usePushNotificationsState(): PushNotificationsValue {
@@ -218,10 +244,13 @@ function usePushNotificationsState(): PushNotificationsValue {
     if (!supported) return;
     setBusy(true);
     try {
+      const userToken = await getUserToken();
       const registration = await navigator.serviceWorker.getRegistration(SERVICE_WORKER_SCOPE);
       const pushSubscription = await registration?.pushManager.getSubscription();
       if (pushSubscription) {
-        await removeSubscriptionRow(pushSubscription.endpoint);
+        if (userToken) {
+          await removeSubscriptionRow(userToken, pushSubscription.endpoint);
+        }
         await pushSubscription.unsubscribe();
       }
     } catch (caught) {
