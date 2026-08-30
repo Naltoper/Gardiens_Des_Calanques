@@ -16,7 +16,7 @@
 const webpush = require('web-push');
 const {
   deleteSubscriptionByEndpoint,
-  fetchReportUserToken,
+  fetchReportForPush,
   loadSubscriptionsForUser,
   probeStore,
   setCors,
@@ -69,25 +69,47 @@ function authorize(req) {
   return header === secret;
 }
 
+/**
+ * Valide une URL d'image optionnelle avant de l'inclure dans le payload.
+ * Ne lève jamais : une valeur invalide/absente renvoie simplement `null`,
+ * pour que l'aperçu photo (purement cosmétique) ne puisse jamais empêcher
+ * l'envoi de la notification elle-même.
+ */
+function safeImageUrl(value) {
+  if (typeof value !== 'string' || !value.trim()) return null;
+  try {
+    const url = new URL(value.trim());
+    return url.protocol === 'https:' || url.protocol === 'http:' ? url.href : null;
+  } catch {
+    return null;
+  }
+}
+
 /** Construit le payload envoyé au service worker selon le type d'événement. */
-function buildNotificationPayload(kind, record) {
+function buildNotificationPayload(kind, record, imageUrl) {
+  const image = safeImageUrl(imageUrl ?? record?.image_url ?? record?.image);
+
   if (kind === 'chat_message') {
     const reportId = String(record?.report_id || '').trim();
-    return {
+    const payload = {
       title: 'Nouveau message',
       body: 'La cellule a répondu à ton signalement.',
       url: `/chat/${reportId}`,
       tag: `gdc-chat-${reportId}`,
     };
+    if (image) payload.image = image;
+    return payload;
   }
 
   // Notification générique : le body peut fournir directement title/body/url/tag.
-  return {
+  const payload = {
     title: record?.title || 'Gardiens des Calanques',
     body: record?.body || 'Tu as reçu une nouvelle notification.',
     url: record?.url || '/suivis',
     tag: record?.tag || 'gdc-notification',
   };
+  if (image) payload.image = image;
+  return payload;
 }
 
 module.exports = async function handler(req, res) {
@@ -144,8 +166,17 @@ module.exports = async function handler(req, res) {
 
     let userToken = String(record?.user_token || '').trim();
     const reportId = String(record?.report_id || '').trim();
-    if (!userToken && reportId) {
-      userToken = (await fetchReportUserToken(reportId)) || '';
+    // L'aperçu photo est un "bonus" : une erreur ici ne doit jamais
+    // empêcher de résoudre le user_token ni d'envoyer la notification.
+    let reportImageUrl = null;
+    if (reportId) {
+      try {
+        const reportInfo = await fetchReportForPush(reportId);
+        if (!userToken) userToken = reportInfo.userToken || '';
+        reportImageUrl = reportInfo.imageUrl;
+      } catch (error) {
+        console.warn('[send-notification] fetchReportForPush a échoué, on continue sans image', error);
+      }
     }
 
     if (!userToken) {
@@ -160,7 +191,7 @@ module.exports = async function handler(req, res) {
     }
 
     webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
-    const payload = JSON.stringify(buildNotificationPayload(kind, record));
+    const payload = JSON.stringify(buildNotificationPayload(kind, record, reportImageUrl));
 
     const results = await Promise.allSettled(
       subscriptions.map((subscription) =>
