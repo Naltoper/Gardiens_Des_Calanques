@@ -2,8 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 
 import { supabase } from '../lib/supabase';
 import { encodeChatContent } from '../utils/chatMessage';
-import { notifyChatMessage } from '../utils/notifyChat';
 import { uniqueRealtimeTopic } from '../utils/realtimeChannel';
+import { triggerChatPush } from '../utils/triggerChatPush';
 
 export const useChatMessages = (reportId: string | undefined) => {
   const [messages, setMessages] = useState<any[]>([]);
@@ -63,7 +63,7 @@ export const useChatMessages = (reportId: string | undefined) => {
         .maybeSingle();
 
       if (!insertError) {
-        notifyChatMessage(data || { report_id: reportId, sender_role: role });
+        triggerChatPush(data || { report_id: reportId, sender_role: role });
       }
       return !insertError;
     } catch (caught) {
@@ -99,7 +99,7 @@ export const useChatMessages = (reportId: string | undefined) => {
               content?: string | null;
             } | undefined;
             if (!incoming?.id) return;
-            notifyChatMessage(incoming);
+            triggerChatPush(incoming);
             setMessages((prev) => {
               if (prev.find((message) => message.id === incoming.id)) return prev;
               return [...prev, incoming];

@@ -52,10 +52,10 @@
     }
   ],
   "functions": {
-    "api/send-notification.js": {
+    "api/notify-chat.js": {
       "includeFiles": "server/**"
     },
-    "api/register-push-subscription.js": {
+    "api/push-subscribe.js": {
       "includeFiles": "server/**"
     }
   }
