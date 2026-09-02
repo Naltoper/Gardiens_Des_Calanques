@@ -13,41 +13,51 @@ export function PushPermissionBanner() {
   const hasError = Boolean(syncError);
 
   return (
-    <View style={styles.banner}>
-      <View style={styles.iconWrap}>
-        <Bell color="#FFFFFF" size={18} strokeWidth={2.4} />
+    <View style={[styles.banner, hasError && styles.bannerError]}>
+      <View style={styles.row}>
+        <View style={[styles.iconWrap, hasError && styles.iconWrapError]}>
+          <Bell color="#FFFFFF" size={18} strokeWidth={2.4} />
+        </View>
+        <View style={styles.textWrap}>
+          <Text style={[styles.title, hasError && styles.titleError]}>
+            {hasError ? 'Échec de l’enregistrement des notifications' : 'Notifications de chat'}
+          </Text>
+          {hasError ? (
+            <Text style={styles.errorDetail} selectable>
+              {syncError}
+            </Text>
+          ) : (
+            <Text style={styles.subtitle}>
+              Reçois une alerte même si l'application est fermée, dès qu'un intervenant te répond.
+              {lastStore ? ` (${lastStore})` : ''}
+            </Text>
+          )}
+        </View>
       </View>
-      <View style={styles.textWrap}>
-        <Text style={styles.title}>
-          {hasError ? 'Notifications non enregistrées' : 'Notifications de chat'}
-        </Text>
-        <Text style={styles.subtitle}>
-          {hasError
-            ? syncError
-            : "Reçois une alerte même si l'application est fermée, dès qu'un intervenant te répond."}
-          {lastStore ? ` (${lastStore})` : ''}
-        </Text>
+      <View style={styles.actions}>
+        <TouchableOpacity
+          onPress={() => {
+            void enable();
+          }}
+          style={[styles.enableBtn, hasError && styles.retryBtn]}
+          activeOpacity={0.85}
+          disabled={busy}
+          accessibilityRole="button"
+          accessibilityLabel={hasError ? 'Réessayer' : 'Activer les notifications'}
+        >
+          <Text style={[styles.enableText, hasError && styles.retryText]}>
+            {busy ? 'Envoi en cours…' : hasError ? 'Réessayer' : 'Activer'}
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => setDismissed(true)}
+          style={styles.dismissBtn}
+          accessibilityRole="button"
+          accessibilityLabel="Plus tard"
+        >
+          <Text style={styles.dismissText}>Plus tard</Text>
+        </TouchableOpacity>
       </View>
-      <TouchableOpacity
-        onPress={() => {
-          void enable();
-        }}
-        style={styles.enableBtn}
-        activeOpacity={0.85}
-        disabled={busy}
-        accessibilityRole="button"
-        accessibilityLabel="Activer les notifications"
-      >
-        <Text style={styles.enableText}>{busy ? '…' : hasError ? 'Réessayer' : 'Activer'}</Text>
-      </TouchableOpacity>
-      <TouchableOpacity
-        onPress={() => setDismissed(true)}
-        style={styles.dismissBtn}
-        accessibilityRole="button"
-        accessibilityLabel="Plus tard"
-      >
-        <Text style={styles.dismissText}>Plus tard</Text>
-      </TouchableOpacity>
     </View>
   );
 }
@@ -56,10 +66,23 @@ const styles = StyleSheet.create({
   banner: {
     backgroundColor: '#0B4F8A',
     padding: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
     borderRadius: 15,
     marginBottom: 16,
+    gap: 10,
+  },
+  bannerError: {
+    backgroundColor: '#2A0A0A',
+    borderWidth: 1,
+    borderColor: '#E53935',
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+  },
+  actions: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 10,
     flexWrap: 'wrap',
   },
@@ -71,6 +94,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  iconWrapError: {
+    backgroundColor: 'rgba(229,57,53,0.25)',
+  },
   textWrap: {
     flex: 1,
     minWidth: 160,
@@ -80,11 +106,21 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     fontSize: 14,
   },
+  titleError: {
+    color: '#FF6B6B',
+  },
   subtitle: {
     color: '#CAF0F8',
     fontSize: 11,
     marginTop: 2,
     lineHeight: 16,
+  },
+  errorDetail: {
+    color: '#FF6B6B',
+    fontSize: 12,
+    fontWeight: '600',
+    marginTop: 4,
+    lineHeight: 17,
   },
   enableBtn: {
     backgroundColor: '#76C893',
@@ -92,10 +128,16 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 10,
   },
+  retryBtn: {
+    backgroundColor: '#E53935',
+  },
   enableText: {
     color: '#023E8A',
     fontWeight: '800',
     fontSize: 13,
+  },
+  retryText: {
+    color: '#FFFFFF',
   },
   dismissBtn: {
     paddingHorizontal: 8,

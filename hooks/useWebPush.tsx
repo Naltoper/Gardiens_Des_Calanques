@@ -47,6 +47,33 @@ type WebPushValue = {
 const LOG = '[gdc-push]';
 const WebPushContext = createContext<WebPushValue | null>(null);
 
+/** Tags every failure with the exact step of the flow (A: permission, B: VAPID/subscribe, C: POST serveur, D: confirmation BDD). */
+class PushFlowError extends Error {
+  step: 'A' | 'B' | 'C' | 'D';
+
+  constructor(step: 'A' | 'B' | 'C' | 'D', message: string) {
+    super(message);
+    this.name = 'PushFlowError';
+    this.step = step;
+  }
+}
+
+/** Renvoie toujours un texte lisible, même pour des erreurs non standard (DOMException, objets bruts…). */
+function describeError(error: unknown): string {
+  if (error instanceof PushFlowError) {
+    return `[Étape ${error.step}] ${error.message}`;
+  }
+  if (error instanceof Error) {
+    return error.message || error.name || 'Erreur inconnue';
+  }
+  if (typeof error === 'string') return error;
+  try {
+    return JSON.stringify(error);
+  } catch {
+    return String(error);
+  }
+}
+
 function isWebPushSupported() {
   return (
     Platform.OS === 'web' &&
@@ -118,15 +145,30 @@ async function persistSubscription(
     has_p256dh: Boolean(payload.keys?.p256dh),
     has_auth: Boolean(payload.keys?.auth),
   });
-  const response = await fetch(PUSH_SUBSCRIBE_PATH, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      user_token: userToken,
-      action,
-      subscription: payload,
-    }),
-  });
+
+  let response: Response;
+  try {
+    response = await withTimeout(
+      fetch(PUSH_SUBSCRIBE_PATH, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_token: userToken,
+          action,
+          subscription: payload,
+        }),
+      }),
+      10000,
+      'POST /api/push-subscribe',
+    );
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    throw new PushFlowError(
+      'C',
+      `Requête réseau vers ${PUSH_SUBSCRIBE_PATH} impossible : ${detail}`,
+    );
+  }
+
   const text = await response.text();
   let data: PushApiResult = {};
   try {
@@ -136,21 +178,48 @@ async function persistSubscription(
   }
   console.info(LOG, 'réponse push-subscribe', response.status, data);
   if (!response.ok || data.ok === false) {
-    throw new Error(
-      data.message || data.error || `push-subscribe ${response.status}: ${text}`,
+    throw new PushFlowError(
+      'C',
+      `Serveur ${response.status} : ${data.message || data.error || text || 'échec inconnu'}`,
+    );
+  }
+  if (data.store !== 'table') {
+    throw new PushFlowError(
+      'D',
+      `Le serveur n'a pas confirmé l'écriture dans push_subscriptions (store=${data.store || 'inconnu'}). ${
+        data.message || ''
+      }`.trim(),
     );
   }
   return data;
 }
 
+function decodeVapidKey() {
+  try {
+    return vapidApplicationServerKey(VAPID_PUBLIC_KEY);
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    throw new PushFlowError('B', `Décodage de la clé VAPID impossible : ${detail}`);
+  }
+}
+
 function applicationServerKey() {
-  const key = vapidApplicationServerKey(VAPID_PUBLIC_KEY);
+  if (!VAPID_PUBLIC_KEY) {
+    throw new PushFlowError(
+      'B',
+      'Clé VAPID publique absente (EXPO_PUBLIC_VAPID_KEY / NEXT_PUBLIC_VAPID_PUBLIC_KEY non définie).',
+    );
+  }
+  const key = decodeVapidKey();
   console.info(LOG, 'VAPID applicationServerKey', {
     bytes: key.byteLength,
     vapid_len: VAPID_PUBLIC_KEY.length,
   });
   if (key.byteLength !== 65) {
-    throw new Error(`Clé VAPID invalide (${key.byteLength} octets, attendu 65).`);
+    throw new PushFlowError(
+      'B',
+      `Clé VAPID invalide (${key.byteLength} octets, attendu 65).`,
+    );
   }
   return key;
 }
@@ -167,15 +236,20 @@ async function subscribeWithVapid(registration: ServiceWorkerRegistration) {
   }
   console.info(LOG, 'pushManager.subscribe() avec Uint8Array VAPID…');
   try {
-    const subscription = await registration.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: applicationServerKey(),
-    });
+    const subscription = await withTimeout(
+      registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: applicationServerKey(),
+      }),
+      15000,
+      'pushManager.subscribe()',
+    );
     console.info(LOG, 'PushSubscription créée', subscription.endpoint?.slice(0, 64));
     return subscription;
   } catch (error) {
+    if (error instanceof PushFlowError) throw error;
     const detail = error instanceof Error ? error.message : String(error);
-    throw new Error(`pushManager.subscribe() a échoué (TWA/Android) : ${detail}`);
+    throw new PushFlowError('B', `pushManager.subscribe() a échoué (TWA/Android) : ${detail}`);
   }
 }
 
@@ -204,8 +278,7 @@ function useWebPushState(): WebPushValue {
     const userToken = await getUserToken();
     console.info(LOG, 'user_token', userToken || '(vide)');
     if (!userToken) {
-      markUnregistered("Identifiant élève manquant — reconnecte-toi.");
-      return;
+      throw new PushFlowError('D', 'Identifiant élève manquant — reconnecte-toi.');
     }
 
     const stored = readStoredRegistration();
@@ -215,24 +288,32 @@ function useWebPushState(): WebPushValue {
       setRegistered(false);
     }
 
-    const registration = await withTimeout(getRegistration(), 8000, 'service worker register');
-    await withTimeout(navigator.serviceWorker.ready, 8000, 'service worker ready');
+    let registration: ServiceWorkerRegistration;
+    try {
+      registration = await withTimeout(getRegistration(), 8000, 'service worker register');
+      await withTimeout(navigator.serviceWorker.ready, 8000, 'service worker ready');
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : String(error);
+      throw new PushFlowError('B', `Service worker indisponible : ${detail}`);
+    }
 
     const subscription = await subscribeWithVapid(registration);
     const json = subscription.toJSON();
     if (!json.endpoint || !json.keys?.p256dh || !json.keys?.auth) {
-      throw new Error('PushSubscription incomplète (endpoint/p256dh/auth manquants)');
+      throw new PushFlowError(
+        'B',
+        'PushSubscription incomplète (endpoint/p256dh/auth manquants).',
+      );
     }
 
+    // Étape C : POST vers /api/push-subscribe. persistSubscription lève une
+    // PushFlowError si le réseau échoue, si le serveur ne répond pas 200,
+    // ou si la réponse ne confirme pas l'écriture dans push_subscriptions.
     const result = await persistSubscription(userToken, subscription);
     setLastStore(result.store || null);
-    if (result.store === 'storage') {
-      markUnregistered(
-        "Abonnement enregistré en secours (Storage), pas dans push_subscriptions. Vérifie la table / RLS.",
-      );
-      return;
-    }
 
+    // Étape D : on n'écrit gdc_push_registered_v1 et on ne masque la
+    // bannière QUE si le serveur a confirmé l'enregistrement en BDD.
     writeStoredRegistration({
       user_token: userToken,
       endpoint: json.endpoint,
@@ -241,8 +322,8 @@ function useWebPushState(): WebPushValue {
     });
     setRegistered(true);
     setSyncError(null);
-    console.info(LOG, 'sync OK, localStorage écrit après 200', result);
-  }, [markUnregistered, supported]);
+    console.info(LOG, 'sync OK, localStorage écrit après 200 confirmé BDD', result);
+  }, [supported]);
 
   useEffect(() => {
     if (!supported) {
@@ -254,11 +335,7 @@ function useWebPushState(): WebPushValue {
     if (Notification.permission === 'granted' && !readStoredRegistration()) {
       void syncGrantedSubscription().catch((error) => {
         console.error(LOG, 'sync auto failed', error);
-        markUnregistered(
-          error instanceof Error
-            ? error.message
-            : "L'abonnement push n'a pas pu être enregistré.",
-        );
+        markUnregistered(describeError(error));
       });
     }
   }, [markUnregistered, supported, syncGrantedSubscription]);
@@ -267,29 +344,35 @@ function useWebPushState(): WebPushValue {
     console.info(LOG, 'clic Activer', { supported, busy, permission: Notification.permission });
     if (!supported || busy) return registered;
     setBusy(true);
+    setSyncError(null);
     try {
-      const result = await Notification.requestPermission();
+      // Étape A : demander la permission système (Android/Chrome).
+      let result: NotificationPermission;
+      try {
+        result = await Notification.requestPermission();
+      } catch (error) {
+        const detail = error instanceof Error ? error.message : String(error);
+        throw new PushFlowError('A', `Notification.requestPermission() a échoué : ${detail}`);
+      }
       console.info(LOG, 'Notification.requestPermission()', result);
       setPermission(result);
       if (result !== 'granted') {
-        markUnregistered(
+        throw new PushFlowError(
+          'A',
           result === 'denied'
-            ? 'Permission notifications refusée dans Android / Chrome.'
-            : "Permission notifications non accordée.",
+            ? "Permission refusée dans Android/Chrome. Ouvre Paramètres > Applis > Gardiens Des Calanques > Notifications pour l'autoriser, puis réessaie."
+            : 'Permission notifications non accordée.',
         );
-        return false;
       }
+      // Étapes B (VAPID + subscribe), C (POST serveur) et D (confirmation
+      // BDD) sont toutes gérées dans syncGrantedSubscription : elle ne
+      // marque `registered=true` / n'écrit le localStorage QUE si le
+      // serveur a répondu 200 avec une confirmation d'écriture en table.
       await syncGrantedSubscription();
       return true;
     } catch (error) {
       console.error(LOG, 'enable failed', error);
-      const message =
-        error instanceof Error ? error.message : "Impossible d'activer les notifications.";
-      markUnregistered(
-        message.includes('subscribe') || message.includes('push')
-          ? `Échec TWA pushManager.subscribe() : ${message}`
-          : message,
-      );
+      markUnregistered(describeError(error));
       return false;
     } finally {
       setBusy(false);
