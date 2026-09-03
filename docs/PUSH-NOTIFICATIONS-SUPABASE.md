@@ -1,14 +1,5 @@
 # Notifications push — configuration manuelle Supabase
 
-> **2026-08-31 — restauration architecture PR #38.** Les endpoints
-> `/api/notify-chat` et `/api/push-subscribe` sont de nouveau ceux en
-> production. Si tu avais mis à jour le Database Webhook pour pointer vers
-> `/api/send-notification`, **remets-le sur**
-> `https://gdc-eleves.vercel.app/api/notify-chat`. Exécute aussi le SQL de
-> restauration des droits anon (voir migration
-> `20260831120000_restore_push_subscriptions_anon_access.sql`) si tu avais
-> appliqué le lockdown RLS.
-
 Cette page décrit **uniquement** ce que tu dois faire dans le dashboard Supabase.
 Le code (`/api/push-subscribe`, `/api/notify-chat`, `public/sw.js`) est déjà déployé
 sur `https://gdc-eleves.vercel.app`.
@@ -114,9 +105,7 @@ Le `record` envoyé doit contenir au minimum :
 - `report_id` (uuid du signalement)
 - `sender_role` (`admin` pour un intervenant, `user` pour un élève)
 
-`/api/notify-chat` ignore uniquement les messages envoyés par l'élève lui-même
-(`sender_role = user` ou `eleve`) et notifie pour tout le reste (`admin`,
-`intervenant`, `agent`, `assistant`, vide, etc.).
+`/api/notify-chat` ignore les messages `sender_role = user` et notifie pour tout le reste (`admin`, vide, etc.).
 
 ### Si tu ne vois pas le menu Webhooks
 

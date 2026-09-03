@@ -7,7 +7,7 @@ export function notifyIncomingChat(reportId: string) {
     new Notification('Nouveau message', {
       body: 'La cellule a répondu à ton signalement.',
       tag: `gdc-chat-${reportId}`,
-      icon: '/icons/icon-512.png?v=3',
+      icon: '/icons/icon-192.png',
       badge: '/notif-icon.png',
     });
   } catch (error) {
