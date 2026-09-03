@@ -114,7 +114,9 @@ Le `record` envoyé doit contenir au minimum :
 - `report_id` (uuid du signalement)
 - `sender_role` (`admin` pour un intervenant, `user` pour un élève)
 
-`/api/notify-chat` ignore les messages `sender_role = user` et notifie pour tout le reste (`admin`, vide, etc.).
+`/api/notify-chat` ignore uniquement les messages envoyés par l'élève lui-même
+(`sender_role = user` ou `eleve`) et notifie pour tout le reste (`admin`,
+`intervenant`, `agent`, `assistant`, vide, etc.).
 
 ### Si tu ne vois pas le menu Webhooks
 
