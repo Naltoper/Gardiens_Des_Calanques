@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, Platform } from 'react-native';
+
 import { supabase } from '../../lib/supabase';
 import type {
   CommentRow,
@@ -12,15 +13,23 @@ import {
   buildVoteScores,
   sortPostsByScoreAndDate,
 } from '../../utils/community';
+import { notify } from '../../utils/notify';
 
+type FetchPostsOptions = {
+  /** Recalcule le tri par likes. False = met à jour les données sans bouger les cartes. */
+  resort?: boolean;
+};
 
 export const useCommunityPosts = (userToken: string | null) => {
   const [posts, setPosts] = useState<CommunityPost[]>([]);
   const [votes, setVotes] = useState<Record<string, number>>({});
   const [myVotes, setMyVotes] = useState<Record<string, number>>({});
   const [commentCounts, setCommentCounts] = useState<Record<string, number>>({});
+  const [orderedIds, setOrderedIds] = useState<string[]>([]);
 
-  const fetchPosts = useCallback(async () => {
+  const fetchPosts = useCallback(async (options?: FetchPostsOptions) => {
+    const resort = options?.resort !== false;
+
     const { data: postsData, error: postsError } = await supabase
       .from('community_posts')
       .select('*')
@@ -40,6 +49,7 @@ export const useCommunityPosts = (userToken: string | null) => {
       setVotes({});
       setMyVotes({});
       setCommentCounts({});
+      setOrderedIds([]);
       return;
     }
 
@@ -53,7 +63,8 @@ export const useCommunityPosts = (userToken: string | null) => {
       return;
     }
 
-    setVotes(buildVoteScores(votesData as VoteRow[] | null));
+    const nextVotes = buildVoteScores(votesData as VoteRow[] | null);
+    setVotes(nextVotes);
 
     const { data: commentsData, error: commentsError } = await supabase
       .from('community_comments')
@@ -80,21 +91,69 @@ export const useCommunityPosts = (userToken: string | null) => {
 
       setMyVotes(buildMyVotes(myVotesData as VoteRow[] | null));
     }
+
+    if (resort) {
+      setOrderedIds(sortPostsByScoreAndDate(safePosts, nextVotes).map((post) => post.id));
+    } else {
+      setOrderedIds((current) => {
+        if (current.length === 0) {
+          return sortPostsByScoreAndDate(safePosts, nextVotes).map((post) => post.id);
+        }
+        const known = new Set(current);
+        const newcomers = safePosts
+          .filter((post) => !known.has(post.id))
+          .map((post) => post.id);
+        const stillThere = current.filter((id) => postIds.includes(id));
+        return [...newcomers, ...stillThere];
+      });
+    }
   }, [userToken]);
 
   useEffect(() => {
-    fetchPosts();
+    fetchPosts({ resort: true });
   }, [fetchPosts]);
 
-  const handleVote = async (postId: string, value: 1 | -1) => {
+  const handleLike = async (postId: string) => {
     if (!userToken) {
-      Alert.alert('Erreur', 'Token utilisateur introuvable.');
+      notify('Erreur', 'Token utilisateur introuvable.');
       return;
     }
 
-    const currentVote = myVotes[postId];
+    const liked = myVotes[postId] === 1;
+    const previousMine = myVotes[postId];
+    const previousScore = votes[postId] || 0;
 
-    if (currentVote === value) {
+    setMyVotes((current) => {
+      const next = { ...current };
+      if (liked) {
+        delete next[postId];
+      } else {
+        next[postId] = 1;
+      }
+      return next;
+    });
+    setVotes((current) => ({
+      ...current,
+      [postId]: Math.max(0, (current[postId] || 0) + (liked ? -1 : 1)),
+    }));
+
+    const rollback = () => {
+      setMyVotes((current) => {
+        const next = { ...current };
+        if (previousMine === 1) {
+          next[postId] = 1;
+        } else {
+          delete next[postId];
+        }
+        return next;
+      });
+      setVotes((current) => ({
+        ...current,
+        [postId]: previousScore,
+      }));
+    };
+
+    if (liked) {
       const { error } = await supabase
         .from('community_votes')
         .delete()
@@ -102,11 +161,9 @@ export const useCommunityPosts = (userToken: string | null) => {
         .eq('user_token', userToken);
 
       if (error) {
-        console.error('Erreur suppression vote:', error.message);
-        return;
+        console.error('Erreur suppression like:', error.message);
+        rollback();
       }
-
-      fetchPosts();
       return;
     }
 
@@ -116,17 +173,15 @@ export const useCommunityPosts = (userToken: string | null) => {
         {
           post_id: postId,
           user_token: userToken,
-          vote_value: value,
+          vote_value: 1,
         },
         { onConflict: 'post_id,user_token' }
       );
 
     if (error) {
-      console.error('Erreur vote:', error.message);
-      return;
+      console.error('Erreur like:', error.message);
+      rollback();
     }
-
-    fetchPosts();
   };
 
   const confirmDeletePost = (postId: string) => {
@@ -143,7 +198,7 @@ export const useCommunityPosts = (userToken: string | null) => {
         return;
       }
 
-      fetchPosts();
+      fetchPosts({ resort: true });
     };
 
     if (Platform.OS === 'web') {
@@ -161,7 +216,19 @@ export const useCommunityPosts = (userToken: string | null) => {
     }
   };
 
-  const sortedPosts = sortPostsByScoreAndDate(posts, votes);
+  const sortedPosts = useMemo(() => {
+    const byId = new Map(posts.map((post) => [post.id, post]));
+    if (orderedIds.length === 0) {
+      return sortPostsByScoreAndDate(posts, votes);
+    }
+
+    const known = new Set(orderedIds);
+    const newcomers = posts.filter((post) => !known.has(post.id));
+    const ordered = orderedIds
+      .map((id) => byId.get(id))
+      .filter((post): post is CommunityPost => Boolean(post));
+    return [...newcomers, ...ordered];
+  }, [posts, votes, orderedIds]);
 
   return {
     posts,
@@ -170,7 +237,7 @@ export const useCommunityPosts = (userToken: string | null) => {
     myVotes,
     commentCounts,
     fetchPosts,
-    handleVote,
+    handleLike,
     confirmDeletePost,
   };
 };

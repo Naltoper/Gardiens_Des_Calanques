@@ -7,10 +7,9 @@ import {
   Text,
   TouchableOpacity,
   View,
-  ViewStyle
+  ViewStyle,
 } from 'react-native';
 
-// Définition des types pour TypeScript
 interface GradientButtonProps {
   disabled?: boolean;
   title: string;
@@ -19,7 +18,10 @@ interface GradientButtonProps {
   colors: [string, string, ...string[]];
   width?: DimensionValue;
   height?: DimensionValue;
+  fontSize?: number;
+  compact?: boolean;
   style?: StyleProp<ViewStyle>;
+  accessibilityLabel?: string;
 }
 
 export const GradientButton = ({
@@ -27,26 +29,51 @@ export const GradientButton = ({
   icon,
   onPress,
   colors,
-  width = '100%', // Valeur par défaut
-  height = 110,   // Valeur par défaut correspondant à tes boutons actuels
+  width = '100%',
+  height = 110,
+  fontSize = 17,
+  compact = false,
   style,
   disabled = false,
+  accessibilityLabel,
 }: GradientButtonProps) => {
+  const resolvedHeight = compact ? height ?? 42 : height;
+  const resolvedFontSize = compact ? 14 : fontSize;
+  const isRow = compact || (!!icon && !!title);
+
   return (
-    <TouchableOpacity 
-      onPress={onPress} 
+    <TouchableOpacity
+      onPress={onPress}
       disabled={disabled}
-      activeOpacity={0.85}
-      style={[{ width, height }, style]}
+      activeOpacity={0.82}
+      style={[{ width, height: resolvedHeight, opacity: disabled ? 0.55 : 1 }, style]}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel || title || undefined}
     >
       <LinearGradient
         colors={colors}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        style={styles.gradient}
+        style={[
+          styles.gradient,
+          compact && styles.gradientCompact,
+          isRow && styles.gradientRow,
+        ]}
       >
-        {icon && <View style={styles.iconContainer}>{icon}</View>}
-        <Text style={styles.buttonText}>{title}</Text>
+        {icon ? (
+          <View
+            style={[
+              styles.iconContainer,
+              !title && styles.iconContainerSolo,
+              isRow && styles.iconContainerRow,
+            ]}
+          >
+            {icon}
+          </View>
+        ) : null}
+        {title ? (
+          <Text style={[styles.buttonText, { fontSize: resolvedFontSize }]}>{title}</Text>
+        ) : null}
       </LinearGradient>
     </TouchableOpacity>
   );
@@ -58,24 +85,46 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 15,
-    // Ombre légère pour le relief
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.25)',
+    shadowColor: '#023e8a',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.22,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  gradientCompact: {
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 0,
+    elevation: 3,
+    shadowOpacity: 0.14,
+    shadowRadius: 4,
+  },
+  gradientRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 8,
   },
   iconContainer: {
-    marginBottom: 8,
+    marginBottom: 10,
+  },
+  iconContainerSolo: {
+    marginBottom: 0,
+  },
+  iconContainerRow: {
+    marginBottom: 0,
   },
   buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '700',
+    color: '#ffffff',
+    fontWeight: '800',
     textAlign: 'center',
-    textShadowColor: 'rgba(0, 0, 0, 0.1)',
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 2,
+    letterSpacing: 0.3,
+    textShadowColor: 'rgba(0, 0, 0, 0.25)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
 });

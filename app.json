@@ -31,10 +31,28 @@
     },
     "web": {
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/favicon.png",
+      "name": "Gardiens Des Calanques",
+      "shortName": "GDC",
+      "description": "Application de signalement et d'aide du Lycée des Calanques",
+      "themeColor": "#023E8A",
+      "backgroundColor": "#ffffff"
     },
     "plugins": [
       "expo-router",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "L'application utilise la caméra pour scanner un QR code d'identifiant.",
+          "recordAudioAndroid": false
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "L'application accède à tes photos pour les joindre au chat ou à un sujet."
+        }
+      ],
       [
         "expo-splash-screen",
         {
@@ -46,13 +64,10 @@
             "backgroundColor": "#000000"
           }
         }
-      ],
-      "expo-secure-store",
-      "expo-web-browser"
+      ]
     ],
     "experiments": {
-      "typedRoutes": true,
-      "reactCompiler": true
+      "typedRoutes": true
     },
     "extra": {
       "router": {},

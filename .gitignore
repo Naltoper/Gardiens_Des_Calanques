@@ -5,5 +5,12 @@
 expo-env.d.ts
 # @end expo-cli
 /node_modules
-./expo
+.expo/
 node_modules
+.vercel
+dist
+.env*
+/twa/**
+!/twa/twa-manifest.json
+/android-packages/
+supabase/.temp/

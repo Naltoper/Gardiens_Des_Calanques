@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { Alert } from 'react-native';
+
 import { supabase } from '../../lib/supabase';
-import { getStartOfTodayIso } from '../../utils/community';
+import { encodeForumPost } from '../../utils/community';
+import { notify } from '../../utils/notify';
 import { useCommunityImage } from './useCommunityImage';
 
 export const useCreatePost = (userToken: string | null, onPostCreated: () => void) => {
@@ -12,61 +13,67 @@ export const useCreatePost = (userToken: string | null, onPostCreated: () => voi
     uploadPostImage,
   } = useCommunityImage();
 
-  // États locaux du formulaire
+  const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [isAnonyme, setIsAnonyme] = useState(true);
   const [authorName, setAuthorName] = useState('');
   const [loading, setLoading] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+
+  const resetForm = () => {
+    setTitle('');
+    setContent('');
+    removeSelectedImage();
+    setAuthorName('');
+    setIsAnonyme(true);
+    setFormError(null);
+  };
 
   const handleCreatePost = async () => {
+    setFormError(null);
+
     if (!userToken) {
-      Alert.alert('Erreur', 'Token utilisateur introuvable. Réessayez dans quelques secondes.');
-      return;
+      const message = 'Token utilisateur introuvable. Réessaie dans quelques secondes.';
+      setFormError(message);
+      notify('Erreur', message);
+      return false;
+    }
+
+    if (!title.trim()) {
+      const message = 'Ajoute un titre à ton sujet.';
+      setFormError(message);
+      notify('Titre obligatoire', message);
+      return false;
     }
 
     if (!content.trim()) {
-      Alert.alert('Champ obligatoire', 'Écris un message avant de publier.');
-      return;
+      const message = 'Écris le contenu du sujet avant de publier.';
+      setFormError(message);
+      notify('Champ obligatoire', message);
+      return false;
     }
 
     if (!isAnonyme && !authorName.trim()) {
-      Alert.alert('Nom obligatoire', 'Entre un nom public ou active le mode anonyme.');
-      return;
+      const message = 'Entre un nom public ou active le mode anonyme.';
+      setFormError(message);
+      notify('Nom obligatoire', message);
+      return false;
     }
 
-    // Règle métier : Vérification de la limite journalière (1 post max)
-    const { count: todayPostsCount, error: countError } = await supabase
-      .from('community_posts')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_token', userToken)
-      .gte('created_at', getStartOfTodayIso());
-
-    if (countError) {
-      console.error('Erreur vérification limite posts:', countError.message);
-      Alert.alert('Erreur', 'Impossible de vérifier la limite de publication.');
-      return;
-    }
-
-    if ((todayPostsCount || 0) >= 1) {
-      Alert.alert(
-        'Limite atteinte',
-        'Tu peux publier seulement 1 post par jour dans la communauté.'
-      );
-      return;
-    }
-
+    // Limite 1 post/jour temporairement désactivée pour les tests.
     setLoading(true);
 
-    // Upload de l'image si présente
     const imageUrl = await uploadPostImage();
     if (selectedImage && !imageUrl) {
       setLoading(false);
-      return;
+      const message = "L'image n'a pas pu être envoyée. Réessaie sans photo ou plus tard.";
+      setFormError(message);
+      notify('Erreur', message);
+      return false;
     }
 
-    // Insertion du post dans la table Supabase
     const { error } = await supabase.from('community_posts').insert({
-      content: content.trim(),
+      content: encodeForumPost(title, content),
       image_url: imageUrl,
       is_anonyme: isAnonyme,
       author_name: isAnonyme ? null : authorName.trim(),
@@ -77,21 +84,20 @@ export const useCreatePost = (userToken: string | null, onPostCreated: () => voi
 
     if (error) {
       console.error('Erreur création post:', error.message);
-      Alert.alert('Erreur', "Impossible de publier le post.");
-      return;
+      const message = "Impossible de publier le post.";
+      setFormError(message);
+      notify('Erreur', message);
+      return false;
     }
 
-    // Réinitialisation complète après succès
-    setContent('');
-    removeSelectedImage();
-    setAuthorName('');
-    setIsAnonyme(true);
-    
-    // Callback pour rafraîchir la liste principale
+    resetForm();
     onPostCreated();
+    return true;
   };
 
   return {
+    title,
+    setTitle,
     content,
     setContent,
     isAnonyme,
@@ -99,9 +105,11 @@ export const useCreatePost = (userToken: string | null, onPostCreated: () => voi
     authorName,
     setAuthorName,
     loading,
+    formError,
     selectedImage,
     pickImage,
     removeSelectedImage,
     handleCreatePost,
+    resetForm,
   };
 };

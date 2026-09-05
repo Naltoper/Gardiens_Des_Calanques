@@ -31,3 +31,6 @@ export const EMERGENCY_NUMBERS: EmergencyNumber[] = [
     colors: ["#023e8a", "#48cae4"],
   }
 ];
+
+/** Numéros affichés sur la page Numéros Utiles */
+export const NUMEROS_UTILES: EmergencyNumber[] = [...EMERGENCY_NUMBERS];

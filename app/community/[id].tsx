@@ -1,58 +1,50 @@
-import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ChevronLeft, MessageCircle, Send, Trash2, UserRound } from 'lucide-react-native';
-import { useEffect, useState } from 'react';
+import { ThumbsUp } from 'lucide-react-native';
+import { useCallback, useEffect, useState } from 'react';
 import {
-  Alert,
-  ImageBackground,
-  Platform,
+  Image,
   ScrollView,
   StyleSheet,
-  Switch,
   Text,
-  TextInput,
   TouchableOpacity,
-  View
+  View,
 } from 'react-native';
-import { GradientButton } from '../../components/buttons/GradientButton';
+
+import { CommunityCommentsList } from '../../components/Community/CommunityCommentsList';
+import { ReplyComposerBar } from '../../components/Community/ReplyComposerBar';
+import { PageHeader } from '../../components/headers/PageHeader';
+import { KeyboardAwareBody } from '../../components/layout/KeyboardAwareBody';
+import { ImageLightboxModal } from '../../components/modals/ImageLightboxModal';
+import { GARDIAN_CLAIR } from '../../constants/theme';
+import { usePostComments } from '../../hooks/community/usePostComments';
+import { usePullToRefresh } from '../../hooks/usePullToRefresh';
 import { useUserToken } from '../../hooks/useUserToken';
 import { supabase } from '../../lib/supabase';
-import type {
-  CommunityComment,
-  CommunityPost,
-} from '../../types/community';
+import type { CommunityPost } from '../../types/community';
 import {
-  COMMUNITY_GRADIENT_COLORS,
   formatCommunityDateTime,
+  getCommunityAuthorRole,
   getCommunityDisplayName,
-  getStartOfTodayIso,
+  getPostTitleAndBody,
 } from '../../utils/community';
-
+import { notify } from '../../utils/notify';
 
 export default function CommunityPostDetailsScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
+  const postId = Array.isArray(id) ? id[0] : id;
   const userToken = useUserToken();
+  const commentsState = usePostComments(postId ?? null, userToken);
 
   const [post, setPost] = useState<CommunityPost | null>(null);
-  const [comments, setComments] = useState<CommunityComment[]>([]);
+  const [score, setScore] = useState(0);
+  const [liked, setLiked] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [lightboxUri, setLightboxUri] = useState<string | null>(null);
 
-  const [content, setContent] = useState('');
-  const [isAnonyme, setIsAnonyme] = useState(true);
-  const [authorName, setAuthorName] = useState('');
-  const [loading, setLoading] = useState(false);
+  const fetchPost = useCallback(async () => {
+    if (!postId) return;
 
-  const postId = Array.isArray(id) ? id[0] : id;
-
-  useEffect(() => {
-    if (postId) {
-      fetchPost();
-      fetchComments();
-    }
-  }, [postId]);
-
-
-  const fetchPost = async () => {
     const { data, error } = await supabase
       .from('community_posts')
       .select('*')
@@ -61,265 +53,175 @@ export default function CommunityPostDetailsScreen() {
 
     if (error) {
       console.error('Erreur chargement post:', error.message);
-      Alert.alert('Erreur', 'Impossible de charger ce post.');
+      notify('Erreur', 'Impossible de charger ce sujet.');
       return;
     }
 
-    setPost(data);
+    setPost(data as CommunityPost);
+
+    const { data: votesData } = await supabase
+      .from('community_votes')
+      .select('vote_value, user_token')
+      .eq('post_id', postId);
+
+    const likes = (votesData || []).filter((vote) => vote.vote_value === 1);
+    setScore(likes.length);
+    setLiked(Boolean(userToken && likes.some((vote) => vote.user_token === userToken)));
+  }, [postId, userToken]);
+
+  useEffect(() => {
+    fetchPost();
+  }, [fetchPost]);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await Promise.all([fetchPost(), commentsState.fetchComments()]);
+    setRefreshing(false);
   };
 
-  const fetchComments = async () => {
-    const { data, error } = await supabase
-      .from('community_comments')
-      .select('*')
-      .eq('post_id', postId)
-      .order('created_at', { ascending: true });
+  const pullRefresh = usePullToRefresh({
+    refreshing,
+    onRefresh,
+  });
 
-    if (error) {
-      console.error('Erreur chargement commentaires:', error.message);
+  const handleLike = async () => {
+    if (!postId || !userToken) {
+      notify('Erreur', 'Token utilisateur introuvable.');
       return;
     }
 
-    setComments(data || []);
-  };
+    const wasLiked = liked;
+    setLiked(!wasLiked);
+    setScore((current) => Math.max(0, current + (wasLiked ? -1 : 1)));
 
-  const handleCreateComment = async () => {
-    if (!userToken) {
-      Alert.alert('Erreur', 'Token utilisateur introuvable. Réessayez dans quelques secondes.');
-      return;
-    }
-
-    if (!content.trim()) {
-      Alert.alert('Champ obligatoire', 'Écris un commentaire avant de publier.');
-      return;
-    }
-
-    if (!isAnonyme && !authorName.trim()) {
-      Alert.alert('Nom obligatoire', 'Entre un nom public ou active le mode anonyme.');
-      return;
-    }
-
-
-    const { count: todayCommentsCount, error: countError } = await supabase
-      .from('community_comments')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_token', userToken)
-      .gte('created_at', getStartOfTodayIso());
-
-    if (countError) {
-      console.error('Erreur vérification limite commentaires:', countError.message);
-      Alert.alert('Erreur', 'Impossible de vérifier la limite de commentaires.');
-      return;
-    }
-
-    if ((todayCommentsCount || 0) >= 4) {
-      Alert.alert(
-        'Limite atteinte',
-        'Tu peux publier seulement 4 commentaires par jour dans la communauté.'
-      );
-      return;
-    }
-
-    setLoading(true);
-
-    const { error } = await supabase.from('community_comments').insert({
-      post_id: postId,
-      content: content.trim(),
-      is_anonyme: isAnonyme,
-      author_name: isAnonyme ? null : authorName.trim(),
-      user_token: userToken,
-    });
-
-    setLoading(false);
-
-    if (error) {
-      console.error('Erreur création commentaire:', error.message);
-      Alert.alert('Erreur', 'Impossible de publier le commentaire.');
-      return;
-    }
-
-    setContent('');
-    setAuthorName('');
-    setIsAnonyme(true);
-    fetchComments();
-  };
-
-  const confirmDeleteComment = (commentId: string) => {
-    const deleteComment = async () => {
+    if (wasLiked) {
       const { error } = await supabase
-        .from('community_comments')
+        .from('community_votes')
         .delete()
-        .eq('id', commentId)
+        .eq('post_id', postId)
         .eq('user_token', userToken);
-
       if (error) {
-        console.error('Erreur suppression commentaire:', error.message);
-        Alert.alert('Erreur', 'Impossible de supprimer ce commentaire.');
-        return;
+        setLiked(true);
+        setScore((current) => current + 1);
       }
+      return;
+    }
 
-      fetchComments();
-    };
+    const { error } = await supabase.from('community_votes').upsert(
+      {
+        post_id: postId,
+        user_token: userToken,
+        vote_value: 1,
+      },
+      { onConflict: 'post_id,user_token' }
+    );
 
-    if (Platform.OS === 'web') {
-      const confirmed = window.confirm('Supprimer ce commentaire ?');
-      if (confirmed) deleteComment();
-    } else {
-      Alert.alert(
-        'Supprimer le commentaire',
-        'Tu veux vraiment supprimer ce commentaire ?',
-        [
-          { text: 'Annuler', style: 'cancel' },
-          { text: 'Supprimer', style: 'destructive', onPress: deleteComment },
-        ]
-      );
+    if (error) {
+      setLiked(false);
+      setScore((current) => Math.max(0, current - 1));
     }
   };
 
-  if (!post) {
-    return (
-      <View style={styles.safeArea}>
-        <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>Chargement...</Text>
-        </View>
-      </View>
-    );
-  }
+  const handleSendReply = async () => {
+    await commentsState.handleCreateComment();
+  };
 
-  const displayName = getCommunityDisplayName(post.is_anonyme, post.author_name);
+  const { title, body } = getPostTitleAndBody(post?.content || '');
 
   return (
     <View style={styles.safeArea}>
-      <ImageBackground
-        source={require('../../assets/images/lyceeBgBlur.png')} // Reprise de l'image de fond marine
-        style={styles.screenBackground}
-        imageStyle={styles.screenBackgroundImage}
-        resizeMode="cover"
-      >
-        <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-          <TouchableOpacity style={styles.backButton} onPress={() => router.replace('/(tabs)/communaute')}>
-          <ChevronLeft color="#023e8a" size={24} />
-          <Text style={styles.backText}>Retour</Text>
-        </TouchableOpacity>
+      <PageHeader
+        title="Sujet"
+        subtitle="Discussion de la communauté"
+        onBack={() => router.back()}
+      />
 
-        <LinearGradient
-          colors={COMMUNITY_GRADIENT_COLORS}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.headerCard}
+      <KeyboardAwareBody>
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.container}
+          keyboardShouldPersistTaps="handled"
+          {...pullRefresh}
         >
-          <View style={styles.headerIcon}>
-            <MessageCircle color="#ffffff" size={32} />
-          </View>
-          <Text style={styles.headerTitle}>Discussion</Text>
-          <Text style={styles.headerSubtitle}>Lis le post et participe avec respect.</Text>
-        </LinearGradient>
+          {post ? (
+            <View style={styles.postCard}>
+              <View style={styles.postHeader}>
+                <TouchableOpacity
+                  style={styles.likeButton}
+                  onPress={handleLike}
+                  accessibilityRole="button"
+                  accessibilityLabel={liked ? 'Retirer le like' : 'Liker'}
+                >
+                  <ThumbsUp
+                    color={liked ? '#10ac56' : '#64748b'}
+                    fill={liked ? '#10ac56' : 'transparent'}
+                    size={18}
+                  />
+                  <Text style={styles.score}>{score}</Text>
+                </TouchableOpacity>
 
-        <View style={styles.postCard}>
-          <View style={styles.postHeader}>
-            <View style={styles.authorIcon}>
-              <UserRound color="#10ac56" size={22} />
+                <View style={styles.postCopy}>
+                  <Text style={styles.title}>{title}</Text>
+                  <Text style={styles.meta}>
+                    {getCommunityDisplayName(post.is_anonyme, post.author_name)} ·{' '}
+                    {getCommunityAuthorRole(post.is_anonyme)} ·{' '}
+                    {formatCommunityDateTime(post.created_at)}
+                  </Text>
+                </View>
+              </View>
+
+              {body ? <Text style={styles.body}>{body}</Text> : null}
+
+              {post.image_url ? (
+                <TouchableOpacity
+                  onPress={() => setLightboxUri(post.image_url)}
+                  activeOpacity={0.85}
+                  accessibilityRole="button"
+                  accessibilityLabel="Voir l'image en grand"
+                >
+                  <Image
+                    source={{ uri: post.image_url }}
+                    style={styles.postImage}
+                    resizeMode="cover"
+                  />
+                </TouchableOpacity>
+              ) : null}
             </View>
-
-            <View style={{ flex: 1 }}>
-              <Text style={styles.author}>{displayName}</Text>
-              <Text style={styles.date}>{formatCommunityDateTime(post.created_at)}</Text>
-            </View>
-          </View>
-
-          <Text style={styles.postContent}>{post.content}</Text>
-        </View>
-
-        <View style={styles.createCard}>
-          <Text style={styles.sectionTitle}>Ajouter un commentaire</Text>
-
-          <TextInput
-            style={styles.textArea}
-            placeholder="Écris ton commentaire..."
-            placeholderTextColor="#94a3b8"
-            multiline
-            value={content}
-            onChangeText={setContent}
-          />
-
-          <View style={styles.switchRow}>
-            <View>
-              <Text style={styles.switchTitle}>Commenter anonymement</Text>
-              <Text style={styles.switchSubtitle}>Ton nom ne sera pas affiché.</Text>
-            </View>
-
-            <Switch
-              value={isAnonyme}
-              onValueChange={setIsAnonyme}
-              trackColor={{ false: '#cbd5e1', true: '#76c893' }}
-              thumbColor={isAnonyme ? '#10ac56' : '#f4f4f5'}
-            />
-          </View>
-
-          {!isAnonyme && (
-            <TextInput
-              style={styles.input}
-              placeholder="Ton nom public"
-              placeholderTextColor="#94a3b8"
-              value={authorName}
-              onChangeText={setAuthorName}
-            />
+          ) : (
+            <Text style={styles.loadingText}>Chargement du sujet…</Text>
           )}
 
-          <GradientButton
-            title={loading ? 'Publication...' : 'Publier le commentaire'}
-            icon={<Send color="white" size={20} />}
-            colors={COMMUNITY_GRADIENT_COLORS}
-            onPress={handleCreateComment}
-            disabled={loading}
-            height={64}
+          <Text style={styles.commentsHeading}>
+            {commentsState.comments.length}{' '}
+            {commentsState.comments.length > 1 ? 'commentaires' : 'commentaire'}
+          </Text>
+
+          <CommunityCommentsList
+            comments={commentsState.comments}
+            userToken={userToken}
+            onDelete={commentsState.confirmDeleteComment}
           />
-        </View>
+        </ScrollView>
 
-        <Text style={styles.commentsTitle}>
-          Commentaires ({comments.length})
-        </Text>
+        <ReplyComposerBar
+          content={commentsState.content}
+          setContent={commentsState.setContent}
+          isAnonyme={commentsState.isAnonyme}
+          setIsAnonyme={commentsState.setIsAnonyme}
+          authorName={commentsState.authorName}
+          setAuthorName={commentsState.setAuthorName}
+          loading={commentsState.loading}
+          onSend={handleSendReply}
+          showClose={false}
+          autoFocus={false}
+        />
+      </KeyboardAwareBody>
 
-        {comments.length === 0 ? (
-          <View style={styles.emptyCard}>
-            <Text style={styles.emptyText}>Aucun commentaire pour le moment.</Text>
-          </View>
-        ) : (
-          comments.map((comment) => {
-            const commentName = getCommunityDisplayName(
-              comment.is_anonyme,
-              comment.author_name
-            );
-
-            const isMine = userToken === comment.user_token;
-
-            return (
-              <View key={comment.id} style={styles.commentCard}>
-                <View style={styles.commentHeader}>
-                  <View>
-                    <Text style={styles.commentAuthor}>{commentName}</Text>
-                    <Text style={styles.commentDate}>
-                      {formatCommunityDateTime(comment.created_at)}
-                    </Text>
-                  </View>
-
-                  {isMine && (
-                    <TouchableOpacity
-                      style={styles.deleteButton}
-                      onPress={() => confirmDeleteComment(comment.id)}
-                    >
-                      <Trash2 color="#ef4444" size={18} />
-                    </TouchableOpacity>
-                  )}
-                </View>
-
-                <Text style={styles.commentContent}>{comment.content}</Text>
-              </View>
-            );
-          })
-        )}
-      </ScrollView>
-      </ImageBackground>
+      <ImageLightboxModal
+        visible={!!lightboxUri}
+        uri={lightboxUri}
+        onClose={() => setLightboxUri(null)}
+      />
     </View>
   );
 }
@@ -327,238 +229,78 @@ export default function CommunityPostDetailsScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: 'transparent',
+    backgroundColor: GARDIAN_CLAIR,
+  },
+  scroll: {
+    flex: 1,
   },
   container: {
-    flexGrow: 1,
-    padding: 24,
-  },
-  loadingContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-  },
-  loadingText: {
-    color: '#023e8a',
-    fontSize: 17,
-    fontWeight: '700',
-  },
-  backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    backgroundColor: 'rgba(255,255,255,0.9)',
-    borderRadius: 18,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    marginBottom: 18,
-    borderWidth: 1,
-    borderColor: '#caf0f8',
-  },
-  backText: {
-    color: '#023e8a',
-    fontSize: 16,
-    fontWeight: '700',
-    marginLeft: 4,
-  },
-  headerCard: {
-    borderRadius: 24,
-    padding: 24,
-    marginBottom: 22,
-    alignItems: 'center',
-    shadowColor: '#0077b6',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.18,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  headerIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: 'rgba(255,255,255,0.22)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 12,
-  },
-  headerTitle: {
-    fontSize: 25,
-    fontWeight: '800',
-    color: '#ffffff',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  headerSubtitle: {
-    fontSize: 15,
-    color: '#e0f2fe',
-    textAlign: 'center',
-    lineHeight: 22,
+    padding: 16,
+    paddingBottom: 28,
   },
   postCard: {
-    backgroundColor: 'rgba(255,255,255,0.94)',
-    borderRadius: 24,
-    padding: 18,
-    marginBottom: 22,
+    backgroundColor: GARDIAN_CLAIR,
     borderWidth: 1,
-    borderColor: '#caf0f8',
-    shadowColor: '#0077b6',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 4,
+    borderColor: 'rgba(2, 62, 138, 0.12)',
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 18,
   },
   postHeader: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    marginBottom: 14,
+    alignItems: 'flex-start',
+    gap: 10,
   },
-  authorIcon: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: '#dcfce7',
+  likeButton: {
     alignItems: 'center',
-    justifyContent: 'center',
+    paddingTop: 2,
+    gap: 4,
   },
-  author: {
-    fontSize: 17,
+  score: {
+    fontSize: 13,
     fontWeight: '800',
     color: '#023e8a',
   },
-  date: {
-    fontSize: 12,
-    color: '#94a3b8',
-    marginTop: 3,
+  postCopy: {
+    flex: 1,
+    minWidth: 0,
   },
-  postContent: {
-    fontSize: 16,
-    color: '#334155',
+  title: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#0f172a',
     lineHeight: 24,
   },
-  createCard: {
-    backgroundColor: 'rgba(255,255,255,0.92)',
-    borderRadius: 24,
-    padding: 18,
-    marginBottom: 24,
-    borderWidth: 1,
-    borderColor: '#caf0f8',
-    shadowColor: '#0077b6',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: '#023e8a',
-    marginBottom: 14,
-  },
-  textArea: {
-    minHeight: 110,
-    backgroundColor: '#f8fafc',
-    borderRadius: 18,
-    padding: 16,
-    fontSize: 16,
-    color: '#0f172a',
-    textAlignVertical: 'top',
-    borderWidth: 1,
-    borderColor: '#dbeafe',
-    marginBottom: 16,
-  },
-  input: {
-    backgroundColor: '#f8fafc',
-    borderRadius: 16,
-    padding: 14,
-    fontSize: 16,
-    color: '#0f172a',
-    borderWidth: 1,
-    borderColor: '#dbeafe',
-    marginBottom: 16,
-  },
-  switchRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-    gap: 12,
-  },
-  switchTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#023e8a',
-  },
-  switchSubtitle: {
-    fontSize: 13,
-    color: '#64748b',
-    marginTop: 3,
-  },
-  commentsTitle: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: '#023e8a',
-    marginBottom: 14,
-  },
-  emptyCard: {
-    backgroundColor: 'rgba(255,255,255,0.9)',
-    borderRadius: 20,
-    padding: 22,
-    borderWidth: 1,
-    borderColor: '#caf0f8',
-  },
-  emptyText: {
-    textAlign: 'center',
-    color: '#64748b',
-    fontSize: 15,
-  },
-  commentCard: {
-    backgroundColor: 'rgba(255,255,255,0.94)',
-    borderRadius: 22,
-    padding: 16,
-    marginBottom: 14,
-    borderWidth: 1,
-    borderColor: '#caf0f8',
-    shadowColor: '#0077b6',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    elevation: 3,
-  },
-  commentHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 12,
-    marginBottom: 10,
-  },
-  commentAuthor: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: '#023e8a',
-  },
-  commentDate: {
+  meta: {
+    marginTop: 6,
     fontSize: 12,
-    color: '#94a3b8',
-    marginTop: 3,
+    color: '#64748b',
+    fontWeight: '500',
   },
-  commentContent: {
+  body: {
+    marginTop: 12,
     fontSize: 15,
-    color: '#334155',
     lineHeight: 22,
+    color: '#334155',
   },
-  deleteButton: {
-    padding: 8,
-    borderRadius: 14,
-    backgroundColor: '#fee2e2',
-    alignSelf: 'flex-start',
-  },
-  screenBackground: {
-    flex: 1,
+  postImage: {
     width: '100%',
-    height: '100%',
+    height: 220,
+    borderRadius: 12,
+    marginTop: 14,
+    backgroundColor: '#d1e4e3',
   },
-  screenBackgroundImage: {
-    opacity: 0.5, // Opacité ultra-légère (5%) pour préserver le contraste de tes cartes de discussion blanches
+  commentsHeading: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#023e8a',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+    marginBottom: 8,
+  },
+  loadingText: {
+    color: '#64748b',
+    textAlign: 'center',
+    paddingVertical: 24,
   },
 });

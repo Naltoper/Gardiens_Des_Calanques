@@ -1,29 +1,42 @@
+import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
-import { ChevronDown, ChevronUp, MessageCircle, Trash2 } from 'lucide-react-native';
+import { MessageCircle, PenLine, Plus, ThumbsUp, Trash2 } from 'lucide-react-native';
+import { useCallback, useState } from 'react';
 import {
   Image,
-  ImageBackground,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View
+  View,
 } from 'react-native';
+
+import { CommunityCreateModal } from '../../components/Community/CommunityCreateModal';
 import { CommunityIntroCard } from '../../components/Community/CommunityIntroCard';
-import { CommunityCreateCard } from '../../components/Community/CommunityCreateCard'; 
-import { ScreenHeader } from '../../components/headers/ScreenHeader';
+import { CommunityPostSuccessModal } from '../../components/Community/CommunityPostSuccessModal';
+import { PageHeader } from '../../components/headers/PageHeader';
+import { ImageLightboxModal } from '../../components/modals/ImageLightboxModal';
+import { useTabBarHidden } from '../../components/navigation/TabBarVisibility';
+import { GARDIAN_CLAIR } from '../../constants/theme';
 import { useCommunityPosts } from '../../hooks/community/useCommunityPosts';
+import { useCreatePost } from '../../hooks/community/useCreatePost';
+import { usePullToRefresh } from '../../hooks/usePullToRefresh';
 import { useUserToken } from '../../hooks/useUserToken';
 import {
   formatCommunityDateTime,
-  getCommunityDisplayName
+  getCommunityAuthorRole,
+  getCommunityDisplayName,
+  getPostTitleAndBody,
 } from '../../utils/community';
-import { useCreatePost } from '../../hooks/community/useCreatePost';
 
 export default function CommunauteScreen() {
   const router = useRouter();
   const userToken = useUserToken();
-  
+  const [createVisible, setCreateVisible] = useState(false);
+  const [successVisible, setSuccessVisible] = useState(false);
+  const [lightboxUri, setLightboxUri] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+
   const {
     posts,
     sortedPosts,
@@ -31,116 +44,217 @@ export default function CommunauteScreen() {
     myVotes,
     commentCounts,
     fetchPosts,
-    handleVote,
+    handleLike,
     confirmDeletePost,
   } = useCommunityPosts(userToken);
 
-  const createPostProps = useCreatePost(userToken, fetchPosts);
-  
+  const { resetForm: _resetCreateForm, ...createPostProps } = useCreatePost(
+    userToken,
+    fetchPosts
+  );
+  void _resetCreateForm;
+
+  useTabBarHidden(createVisible);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchPosts({ resort: true });
+    }, [fetchPosts]),
+  );
+
+  const openPost = (postId: string) => {
+    router.push(`/community/${postId}`);
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchPosts({ resort: true });
+    setRefreshing(false);
+  };
+
+  const pullRefresh = usePullToRefresh({
+    refreshing,
+    onRefresh,
+  });
+
+  const handlePublished = () => {
+    setCreateVisible(false);
+    setSuccessVisible(true);
+  };
+
   return (
     <View style={styles.safeArea}>
-      <ImageBackground
-        source={require('../../assets/images/lyceeBgBlur.png')} // Reprise de l'image de fond marine
-        style={styles.screenBackground}
-        imageStyle={styles.screenBackgroundImage}
-        resizeMode="cover"
-      >
-      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-        <ScreenHeader title="Communauté" onBack={() => router.replace('/(tabs)')} />
+      <PageHeader
+        title="Communauté"
+        subtitle="Espace d'échange entre élèves, dans le respect et la bienveillance."
+      />
 
-        <CommunityIntroCard />
+      <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.container}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          {...pullRefresh}
+        >
+          <CommunityIntroCard />
 
-        {/* RENDU MODULAIRE SÉPARÉ (SOLID) */}
-          <CommunityCreateCard {...createPostProps} />
-
-        <Text style={styles.postsTitle}>Publications récentes</Text>
-
-        {posts.length === 0 ? (
-          <View style={styles.emptyCard}>
-            <Text style={styles.emptyText}>Aucun post pour le moment.</Text>
-          </View>
-        ) : (
-          sortedPosts.map((post) => {
-            const score = votes[post.id] || 0;
-            const commentCount = commentCounts[post.id] || 0;
-            const isMine = userToken === post.user_token;
-            const displayName = getCommunityDisplayName(post.is_anonyme, post.author_name);
-            
-            return (
-              <View key={post.id} style={styles.postCard}>
-                <View style={styles.postHeader}>
-                  <View>
-                    <Text style={styles.author}>{displayName}</Text>
-                    <Text style={styles.date}>{formatCommunityDateTime(post.created_at)}</Text>
-                  </View>
-
-                  {isMine && (
-                    <TouchableOpacity
-                      style={styles.deleteButton}
-                      onPress={() => confirmDeletePost(post.id)}
-                    >
-                      <Trash2 color="#ef4444" size={20} />
-                    </TouchableOpacity>
-                  )}
-                </View>
-
-                <Text style={styles.postContent}>{post.content}</Text>
-                {post.image_url && (
-                  <Image
-                    source={{ uri: post.image_url }}
-                    style={styles.postImage}
-                    resizeMode="cover"
-                    onError={(error) => {
-                      console.error('Erreur affichage image:', error.nativeEvent);
-                }}
-              />
-            )}
-
-                <View style={styles.actionsRow}>
-                  <View style={styles.voteBox}>
-                    <TouchableOpacity
-                      style={[
-                        styles.voteButton,
-                        myVotes[post.id] === 1 && styles.activeVoteButton,
-                      ]}
-                      onPress={() => handleVote(post.id, 1)}
-                    >
-                      <ChevronUp
-                        color={myVotes[post.id] === 1 ? '#10ac56' : '#64748b'}
-                        size={22}
-                      />
-                    </TouchableOpacity>
-
-                    <Text style={styles.score}>{score}</Text>
-
-                    <TouchableOpacity
-                      style={[
-                        styles.voteButton,
-                        myVotes[post.id] === -1 && styles.activeVoteButton,
-                      ]}
-                      onPress={() => handleVote(post.id, -1)}
-                    >
-                      <ChevronDown
-                        color={myVotes[post.id] === -1 ? '#10ac56' : '#64748b'}
-                        size={22}
-                      />
-                    </TouchableOpacity>
-                  </View>
-
-                  <TouchableOpacity
-                    style={styles.commentButton}
-                    onPress={() => router.push(`/community/${post.id}` as any)}
-                  >
-                    <MessageCircle color="#023e8a" size={20} />
-                    <Text style={styles.commentText}>{commentCount} {commentCount > 1 ? 'commentaires' : 'commentaire'}</Text>
-                  </TouchableOpacity>
-                </View>
+          <View style={styles.createWrap}>
+            <TouchableOpacity
+              style={styles.createButton}
+              onPress={() => setCreateVisible(true)}
+              activeOpacity={0.85}
+              accessibilityRole="button"
+              accessibilityLabel="Créer un sujet"
+            >
+              <View style={styles.createIcon}>
+                <Plus color="#ffffff" size={18} strokeWidth={2.6} />
               </View>
-            );
-          })
-        )}
-      </ScrollView>
-      </ImageBackground>
+              <Text style={styles.createButtonText}>Créer un sujet</Text>
+              <PenLine color="#023e8a" size={18} />
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.listHeader}>
+            <Text style={styles.listHeaderTitle}>Sujets récents</Text>
+            <Text style={styles.listHeaderMeta}>
+              {posts.length} {posts.length > 1 ? 'sujets' : 'sujet'}
+            </Text>
+          </View>
+
+          {posts.length === 0 ? (
+            <View style={styles.emptyRow}>
+              <Text style={styles.emptyText}>Aucun sujet pour le moment.</Text>
+            </View>
+          ) : (
+            sortedPosts.map((post, index) => {
+              const score = votes[post.id] || 0;
+              const commentCount = commentCounts[post.id] || 0;
+              const isMine = userToken === post.user_token;
+              const displayName = getCommunityDisplayName(post.is_anonyme, post.author_name);
+              const role = getCommunityAuthorRole(post.is_anonyme);
+              const liked = myVotes[post.id] === 1;
+              const { title, body } = getPostTitleAndBody(post.content);
+
+              return (
+                <View
+                  key={post.id}
+                  style={[
+                    styles.threadRow,
+                    index === sortedPosts.length - 1 && styles.threadRowLast,
+                  ]}
+                >
+                  <View style={styles.threadMain}>
+                    <View style={styles.voteColumn}>
+                      <TouchableOpacity
+                        style={styles.voteButton}
+                        onPress={() => handleLike(post.id)}
+                        accessibilityRole="button"
+                        accessibilityLabel={liked ? 'Retirer le like' : 'Liker'}
+                      >
+                        <ThumbsUp
+                          color={liked ? '#10ac56' : '#64748b'}
+                          fill={liked ? '#10ac56' : 'transparent'}
+                          size={18}
+                        />
+                      </TouchableOpacity>
+                      <Text style={styles.score}>{score}</Text>
+                    </View>
+
+                    <TouchableOpacity
+                      style={styles.threadBody}
+                      activeOpacity={0.85}
+                      onPress={() => openPost(post.id)}
+                      accessibilityRole="button"
+                      accessibilityLabel="Ouvrir le sujet"
+                    >
+                      <View style={styles.threadTitleRow}>
+                        <Text style={styles.threadTitle} numberOfLines={2}>
+                          {title}
+                        </Text>
+                        {isMine && (
+                          <TouchableOpacity
+                            style={styles.deleteButton}
+                            onPress={() => confirmDeletePost(post.id)}
+                            accessibilityRole="button"
+                            accessibilityLabel="Supprimer le sujet"
+                          >
+                            <Trash2 color="#ef4444" size={16} />
+                          </TouchableOpacity>
+                        )}
+                      </View>
+
+                      <Text style={styles.threadMeta} numberOfLines={1}>
+                        {displayName} · {role} · {formatCommunityDateTime(post.created_at)}
+                      </Text>
+
+                      {body ? (
+                        <Text style={styles.threadPreview} numberOfLines={3}>
+                          {body}
+                        </Text>
+                      ) : null}
+                    </TouchableOpacity>
+
+                    {post.image_url ? (
+                      <TouchableOpacity
+                        activeOpacity={0.85}
+                        onPress={() => setLightboxUri(post.image_url)}
+                        accessibilityRole="button"
+                        accessibilityLabel="Voir l'image en grand"
+                      >
+                        <Image
+                          source={{ uri: post.image_url }}
+                          style={styles.threadThumb}
+                          resizeMode="cover"
+                        />
+                      </TouchableOpacity>
+                    ) : null}
+                  </View>
+
+                  <View style={styles.threadFooter}>
+                    <TouchableOpacity
+                      style={styles.repliesButton}
+                      onPress={() => openPost(post.id)}
+                      accessibilityRole="button"
+                      accessibilityLabel="Voir les commentaires"
+                    >
+                      <MessageCircle color="#023e8a" size={15} />
+                      <Text style={styles.repliesText}>
+                        {commentCount} {commentCount > 1 ? 'commentaires' : 'commentaire'}
+                      </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={styles.replyAction}
+                      onPress={() => openPost(post.id)}
+                      accessibilityRole="button"
+                      accessibilityLabel="Répondre"
+                    >
+                      <Text style={styles.replyActionText}>Répondre</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              );
+            })
+          )}
+        </ScrollView>
+
+      <CommunityCreateModal
+        visible={createVisible}
+        onClose={() => setCreateVisible(false)}
+        onPublished={handlePublished}
+        {...createPostProps}
+      />
+
+      <CommunityPostSuccessModal
+        visible={successVisible}
+        onClose={() => setSuccessVisible(false)}
+      />
+
+      <ImageLightboxModal
+        visible={!!lightboxUri}
+        uri={lightboxUri}
+        onClose={() => setLightboxUri(null)}
+      />
     </View>
   );
 }
@@ -148,127 +262,173 @@ export default function CommunauteScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: 'transparent',
+    backgroundColor: GARDIAN_CLAIR,
+  },
+  scroll: {
+    flex: 1,
+    backgroundColor: GARDIAN_CLAIR,
   },
   container: {
     flexGrow: 1,
-    padding: 24,
+    paddingBottom: 24,
   },
-  postsTitle: {
-    fontSize: 22,
+  createWrap: {
+    paddingHorizontal: 14,
+    paddingBottom: 12,
+  },
+  createButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: '#F0F9FF',
+    borderWidth: 1.5,
+    borderColor: '#7DD3FC',
+    borderRadius: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    shadowColor: '#023e8a',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  createIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: '#023e8a',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  createButtonText: {
+    flex: 1,
+    fontSize: 16,
     fontWeight: '800',
     color: '#023e8a',
-    marginBottom: 14,
   },
-  emptyCard: {
-    backgroundColor: 'rgba(255,255,255,0.9)',
-    borderRadius: 20,
-    padding: 22,
-    borderWidth: 1,
-    borderColor: '#caf0f8',
+  listHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: 'rgba(2, 62, 138, 0.12)',
+  },
+  listHeaderTitle: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#023e8a',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+  },
+  listHeaderMeta: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#64748b',
+  },
+  emptyRow: {
+    paddingVertical: 28,
+    paddingHorizontal: 16,
   },
   emptyText: {
     textAlign: 'center',
     color: '#64748b',
-    fontSize: 15,
+    fontSize: 14,
   },
-  postCard: {
-    backgroundColor: 'rgba(255,255,255,0.94)',
-    borderRadius: 24,
-    padding: 18,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#caf0f8',
-    shadowColor: '#0077b6',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 4,
+  threadRow: {
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: 'rgba(2, 62, 138, 0.12)',
+    backgroundColor: GARDIAN_CLAIR,
   },
-  postHeader: {
+  threadRowLast: {
+    borderBottomWidth: 0,
+  },
+  threadMain: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 12,
-    marginBottom: 12,
+    alignItems: 'flex-start',
+    gap: 8,
   },
-  author: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: '#023e8a',
-  },
-  date: {
-    fontSize: 12,
-    color: '#94a3b8',
-    marginTop: 3,
-  },
-  deleteButton: {
-    padding: 8,
-    borderRadius: 14,
-    backgroundColor: '#fee2e2',
-  },
-  postContent: {
-    fontSize: 16,
-    color: '#334155',
-    lineHeight: 23,
-    marginBottom: 16,
-  },
-  actionsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  voteColumn: {
+    width: 36,
     alignItems: 'center',
-  },
-  voteBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f8fafc',
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: '#dbeafe',
-    paddingHorizontal: 6,
-    paddingVertical: 4,
+    paddingTop: 2,
+    gap: 2,
   },
   voteButton: {
-    padding: 6,
-    borderRadius: 12,
-  },
-  activeVoteButton: {
-    backgroundColor: '#dcfce7',
+    padding: 4,
   },
   score: {
-    minWidth: 28,
+    minWidth: 22,
     textAlign: 'center',
-    fontSize: 16,
+    fontSize: 13,
     fontWeight: '800',
     color: '#023e8a',
   },
-  commentButton: {
+  threadBody: {
+    flex: 1,
+    minWidth: 0,
+  },
+  threadTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+  },
+  threadTitle: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#0f172a',
+    lineHeight: 21,
+  },
+  deleteButton: {
+    padding: 4,
+  },
+  threadMeta: {
+    fontSize: 12,
+    color: '#64748b',
+    marginTop: 4,
+    fontWeight: '500',
+  },
+  threadPreview: {
+    fontSize: 14,
+    color: '#334155',
+    lineHeight: 20,
+    marginTop: 6,
+    fontWeight: '500',
+  },
+  threadFooter: {
+    marginTop: 10,
+    marginLeft: 40,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    backgroundColor: '#e0f2fe',
-    paddingHorizontal: 12,
-    paddingVertical: 9,
-    borderRadius: 16,
+    gap: 16,
   },
-  commentText: {
+  repliesButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  repliesText: {
     color: '#023e8a',
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '700',
   },
-  screenBackground: {
-    flex: 1,
-    width: '100%',
-    height: '100%',
+  replyAction: {
+    paddingVertical: 2,
   },
-  screenBackgroundImage: {
-    opacity: 0.5, // Opacité ultra-légère (5%) pour préserver le contraste de tes cartes de discussion blanches
+  replyActionText: {
+    color: '#0077b6',
+    fontSize: 12,
+    fontWeight: '800',
   },
-  postImage: {
-    width: '100%',
-    height: 210,
-    borderRadius: 18,
-    backgroundColor: '#e2e8f0',
-    marginBottom: 16,
-    resizeMode: 'cover',
+  threadThumb: {
+    width: 56,
+    height: 56,
+    borderRadius: 6,
+    backgroundColor: '#d1e4e3',
+    marginTop: 2,
   },
 });
