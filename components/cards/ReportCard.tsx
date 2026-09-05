@@ -51,7 +51,7 @@ interface ReportCardProps {
 
 export const ReportCard = ({
   item,
-  index = 0,
+  index: _index = 0,
   onChat,
   onDetails,
   onDelete,
@@ -67,11 +67,7 @@ export const ReportCard = ({
 
   return (
     <Animated.View
-      entering={FadeInDown.delay(index * 35)
-        .duration(280)
-        .springify()
-        .damping(22)
-        .mass(0.7)}
+      entering={FadeInDown.duration(220).springify().damping(22).mass(0.7)}
       style={[
         styles.card,
         isCompact && styles.cardCompact,

@@ -8,6 +8,8 @@ interface ChatBubbleProps {
     content: string;
     created_at: string;
     sender_role: string;
+    pendingUpload?: boolean;
+    uploadFailed?: boolean;
   };
   isMyMessage: boolean;
   /** Index pour un léger décalage à l'ouverture de la page */
@@ -68,8 +70,21 @@ export const ChatBubble = ({
             onPress={() => onImagePress?.(imageUrl)}
             accessibilityRole="button"
             accessibilityLabel="Voir l'image en grand"
+            disabled={item.pendingUpload}
           >
-            <Image source={{ uri: imageUrl }} style={styles.image} resizeMode="cover" />
+            <View style={styles.imageWrap}>
+              <Image source={{ uri: imageUrl }} style={styles.image} resizeMode="cover" />
+              {item.pendingUpload ? (
+                <View style={styles.uploadOverlay} pointerEvents="none">
+                  <Text style={styles.uploadStatus}>En cours d'envoi...</Text>
+                </View>
+              ) : null}
+              {item.uploadFailed ? (
+                <View style={[styles.uploadOverlay, styles.uploadFailedOverlay]} pointerEvents="none">
+                  <Text style={styles.uploadStatus}>Échec d'envoi</Text>
+                </View>
+              ) : null}
+            </View>
           </TouchableOpacity>
         ) : null}
         {text ? (
@@ -129,11 +144,35 @@ const styles = StyleSheet.create({
     backgroundColor: '#E2F4F3',
     borderBottomLeftRadius: 4,
   },
+  imageWrap: {
+    position: 'relative',
+    borderRadius: 14,
+    overflow: 'hidden',
+  },
   image: {
     width: 210,
     height: 160,
     borderRadius: 14,
     backgroundColor: '#cbd5e1',
+  },
+  uploadOverlay: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    backgroundColor: 'rgba(15, 23, 42, 0.55)',
+    alignItems: 'center',
+  },
+  uploadFailedOverlay: {
+    backgroundColor: 'rgba(185, 28, 28, 0.7)',
+  },
+  uploadStatus: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#ffffff',
+    letterSpacing: 0.2,
   },
   msgText: {
     fontSize: 15,

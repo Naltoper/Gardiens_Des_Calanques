@@ -30,7 +30,6 @@ import { useKeyboardVisible } from '../../hooks/useKeyboardVisible';
 import { ReportDetailModal } from '../../components/modals/ReportDetailModal';
 import { supabase } from '../../lib/supabase';
 import { Report } from '../../types/report';
-import { uploadImageToSupabase } from '../../utils/uploadImage';
 import { notify } from '../../utils/notify';
 import { markChatRead } from '../../utils/chatReadState';
 import { parseRouteParam } from '../../utils/routeParam';
@@ -131,7 +130,8 @@ function ChatConversation({
   const [reportData, setReportData] = useState<Report | null>(null);
   const flatListRef = useRef<FlatList>(null);
 
-  const { messages, sendMessage, loading, fetchMessages, error } = useChatMessages(reportId);
+  const { messages, sendMessage, sendMessageWithImage, loading, sending, fetchMessages, error } =
+    useChatMessages(reportId);
   const keyboardVisible = useKeyboardVisible();
   const { onScroll, onComposerFocus, onMessageSent } = useChatListScroll(flatListRef, {
     messageCount: messages.length,
@@ -174,28 +174,33 @@ function ChatConversation({
 
   const handleSend = async () => {
     if (!newMessage.trim() && !pendingImage) return;
+    if (sending) return;
 
-    let imageUrl: string | null = null;
-    if (pendingImage) {
-      imageUrl = await uploadImageToSupabase(pendingImage.uri, 'report-photos', {
-        mimeType: pendingImage.mimeType,
-        fileName: pendingImage.fileName,
+    const text = newMessage;
+    const image = pendingImage;
+
+    // Optimistic UI : vider le composer immédiatement
+    setNewMessage('');
+    setPendingImage(null);
+    onMessageSent();
+
+    if (image) {
+      const success = await sendMessageWithImage(text, role, {
+        uri: image.uri,
+        mimeType: image.mimeType,
+        fileName: image.fileName,
       });
-      if (!imageUrl) {
+      if (!success) {
         notify('Erreur', "Impossible d'envoyer l'image.");
-        return;
       }
-    }
-
-    const success = await sendMessage(newMessage, role, imageUrl);
-    if (success) {
-      setNewMessage('');
-      setPendingImage(null);
-      onMessageSent();
       return;
     }
 
-    notify('Erreur', "Impossible d'envoyer le message.");
+    const success = await sendMessage(text, role, null);
+    if (!success) {
+      setNewMessage(text);
+      notify('Erreur', "Impossible d'envoyer le message.");
+    }
   };
 
   const onRefresh = async () => {
@@ -329,7 +334,7 @@ function ChatConversation({
 
             <TouchableOpacity
               onPress={handleSend}
-              disabled={(!newMessage.trim() && !pendingImage) || loading}
+              disabled={(!newMessage.trim() && !pendingImage) || sending}
             >
               <LinearGradient
                 colors={

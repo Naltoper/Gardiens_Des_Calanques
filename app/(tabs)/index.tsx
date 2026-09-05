@@ -18,7 +18,6 @@ import {
   View,
 } from "react-native";
 import { AnonymityBadge } from "../../components/banners/AnonymityBadge";
-import { InstallBanner } from "../../components/banners/InstallBanner";
 import { PushPermissionBanner } from "../../components/banners/PushPermissionBanner";
 import { LyceeBackground } from "../../components/backgrounds/LyceeBackground";
 import { PageHeader } from "../../components/headers/PageHeader";
@@ -135,11 +134,6 @@ export default function HomeScreen() {
         }
       >
         <PushPermissionBanner />
-        <InstallBanner
-          title="Application élève"
-          subtitle="Installez l'app pour recevoir les notifications en direct."
-          url="https://github.com/Naltoper/GardiensApp_v0/releases/download/v1.0.0/GDC.apk"
-        />
 
         <View style={styles.header}>
           <View style={styles.logoContainer}>

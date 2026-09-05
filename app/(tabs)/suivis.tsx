@@ -54,10 +54,9 @@ export default function SuivisScreen() {
     statusFilter !== 'Tous' || onlyWithChat || dateSort !== 'recent';
 
   const filteredReports = useMemo(() => {
-    const compareDate = (a: Report, b: Report) => {
-      const timeA = new Date(a.created_at).getTime();
-      const timeB = new Date(b.created_at).getTime();
-      return dateSort === 'oldest' ? timeA - timeB : timeB - timeA;
+    const toTimestamp = (value: string | null | undefined) => {
+      const time = value ? new Date(value).getTime() : Number.NaN;
+      return Number.isFinite(time) ? time : 0;
     };
 
     const visible = reports.filter((report) => {
@@ -68,17 +67,12 @@ export default function SuivisScreen() {
       return true;
     });
 
-    const unread = visible
-      .filter((report) => activity[report.id]?.unread)
-      .sort(compareDate);
-    const activeChat = visible
-      .filter((report) => !activity[report.id]?.unread && activity[report.id]?.hasMessages)
-      .sort(compareDate);
-    const others = visible
-      .filter((report) => !activity[report.id]?.unread && !activity[report.id]?.hasMessages)
-      .sort(compareDate);
-
-    return [...unread, ...activeChat, ...others];
+    // Copie propre + tri global par date (évite mutation et listes partiellement figées)
+    return [...visible].sort((a, b) => {
+      const timeA = toTimestamp(a.created_at);
+      const timeB = toTimestamp(b.created_at);
+      return dateSort === 'oldest' ? timeA - timeB : timeB - timeA;
+    });
   }, [reports, statusFilter, onlyWithChat, dateSort, activity, chatActivityLoaded]);
 
   const unreadCount = useMemo(
@@ -139,32 +133,26 @@ export default function SuivisScreen() {
   };
 
   const renderItem = ({ item, index }: { item: Report; index: number }) => (
-    <View>
-      {unreadCount > 0 && index === unreadCount ? (
-        <View style={styles.otherSection}>
-          <Text style={styles.otherSectionTitle}>Autres signalements</Text>
-        </View>
-      ) : null}
-      <ReportCard
-        item={item}
-        index={index}
-        formatDateTime={formatDateTime}
-        hasUnreadChat={activity[item.id]?.unread === true}
-        onDetails={() => {
-          setSelectedReport(item);
-          setModalVisible(true);
-        }}
-        onDelete={() => confirmDeleteReport(item.id)}
-        onChat={() => {
-          const id = String(item.id ?? '').trim();
-          if (!id) return;
-          router.push({
-            pathname: '/chat/[id]',
-            params: { id, role: 'user' },
-          });
-        }}
-      />
-    </View>
+    <ReportCard
+      key={item.id}
+      item={item}
+      index={index}
+      formatDateTime={formatDateTime}
+      hasUnreadChat={activity[item.id]?.unread === true}
+      onDetails={() => {
+        setSelectedReport(item);
+        setModalVisible(true);
+      }}
+      onDelete={() => confirmDeleteReport(item.id)}
+      onChat={() => {
+        const id = String(item.id ?? '').trim();
+        if (!id) return;
+        router.push({
+          pathname: '/chat/[id]',
+          params: { id, role: 'user' },
+        });
+      }}
+    />
   );
 
   if (loading && !refreshing && reports.length === 0) {
@@ -222,7 +210,8 @@ export default function SuivisScreen() {
 
         <FlatList
           data={filteredReports}
-          keyExtractor={(item) => item.id.toString()}
+          keyExtractor={(item) => String(item.id)}
+          extraData={{ dateSort, statusFilter, onlyWithChat, activity }}
           renderItem={renderItem}
           contentContainerStyle={[
             styles.listContent,
@@ -235,8 +224,8 @@ export default function SuivisScreen() {
                 <Text style={styles.unreadSectionTitle}>Messages non lus</Text>
                 <Text style={styles.unreadSectionSubtitle}>
                   {unreadCount === 1
-                    ? '1 discussion t’attend en haut de la liste.'
-                    : `${unreadCount} discussions t’attendent en haut de la liste.`}
+                    ? '1 discussion a un message non lu (badge rouge).'
+                    : `${unreadCount} discussions ont un message non lu (badge rouge).`}
                 </Text>
               </View>
             ) : null
@@ -394,16 +383,5 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     color: '#64748b',
-  },
-  otherSection: {
-    marginTop: 4,
-    marginBottom: 10,
-  },
-  otherSectionTitle: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: '#64748b',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
   },
 });

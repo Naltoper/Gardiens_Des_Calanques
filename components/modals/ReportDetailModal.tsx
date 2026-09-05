@@ -1,6 +1,5 @@
 import { X } from 'lucide-react-native';
-import * as WebBrowser from 'expo-web-browser';
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Animated,
   Easing,
@@ -13,12 +12,15 @@ import {
   View,
 } from 'react-native';
 
+import { ImageLightboxModal } from './ImageLightboxModal';
+import { Report } from '../../types/report';
+
 const ANIM_DURATION = 140;
 
 interface ReportDetailModalProps {
   visible: boolean;
   onClose: () => void;
-  report: Record<string, unknown> | null;
+  report: Report | null;
 }
 
 export const ReportDetailModal = ({
@@ -29,7 +31,8 @@ export const ReportDetailModal = ({
   const overlayOpacity = useRef(new Animated.Value(0)).current;
   const cardScale = useRef(new Animated.Value(0.96)).current;
   const cardOpacity = useRef(new Animated.Value(0)).current;
-  const [mounted, setMounted] = React.useState(visible);
+  const [mounted, setMounted] = useState(visible);
+  const [lightboxUri, setLightboxUri] = useState<string | null>(null);
 
   useEffect(() => {
     if (visible) {
@@ -63,6 +66,8 @@ export const ReportDetailModal = ({
 
     if (!mounted) return;
 
+    setLightboxUri(null);
+
     Animated.parallel([
       Animated.timing(overlayOpacity, {
         toValue: 0,
@@ -93,75 +98,81 @@ export const ReportDetailModal = ({
     typeof report.image_url === 'string' ? report.image_url : undefined;
 
   return (
-    <Modal animationType="none" transparent visible={mounted} onRequestClose={onClose}>
-      <Animated.View style={[styles.modalOverlay, { opacity: overlayOpacity }]}>
-        <Animated.View
-          style={[
-            styles.modalView,
-            {
-              opacity: cardOpacity,
-              transform: [{ scale: cardScale }],
-            },
-          ]}
-        >
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Détails du signalement</Text>
-            <TouchableOpacity onPress={onClose}>
-              <X size={24} color="#023e8a" />
-            </TouchableOpacity>
-          </View>
-
-          <ScrollView showsVerticalScrollIndicator={false}>
-            <DetailRow
-              label="Type de harcèlement"
-              value={report.type_harcelement as string}
-            />
-            <DetailRow
-              label="Niveau d'urgence"
-              value={report.urgence as string}
-              color={
-                String(report.urgence ?? '').includes('Élevé')
-                  ? '#e63946'
-                  : '#334155'
-              }
-            />
-            <DetailRow label="Lieu des faits" value={report.lieu as string} />
-            <DetailRow label="Date / Période" value={report.date_faits as string} />
-            <DetailRow label="Fréquence" value={report.frequence as string} />
-            <DetailRow label="Victimes" value={report.nb_victimes as string} />
-
-            <View style={[styles.detailRow, { borderBottomWidth: 0 }]}>
-              <Text style={styles.detailLabel}>Description complète :</Text>
-              <Text style={styles.fullDescription}>{String(report.content ?? '')}</Text>
+    <>
+      <Modal animationType="none" transparent visible={mounted} onRequestClose={onClose}>
+        <Animated.View style={[styles.modalOverlay, { opacity: overlayOpacity }]}>
+          <Animated.View
+            style={[
+              styles.modalView,
+              {
+                opacity: cardOpacity,
+                transform: [{ scale: cardScale }],
+              },
+            ]}
+          >
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Détails du signalement</Text>
+              <TouchableOpacity onPress={onClose}>
+                <X size={24} color="#023e8a" />
+              </TouchableOpacity>
             </View>
 
-            {imageUrl ? (
-              <View style={styles.imageSection}>
-                <Text style={styles.imageLabel}>
-                  📸 Pièce jointe (Clique pour agrandir/télécharger) :
-                </Text>
-                <TouchableOpacity
-                  activeOpacity={0.8}
-                  onPress={async () => {
-                    await WebBrowser.openBrowserAsync(imageUrl);
-                  }}
-                >
-                  <Image
-                    source={{ uri: imageUrl }}
-                    style={styles.attachedImage}
-                    resizeMode="cover"
-                  />
-                </TouchableOpacity>
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <DetailRow
+                label="Type de harcèlement"
+                value={report.type_harcelement ?? undefined}
+              />
+              <DetailRow
+                label="Niveau d'urgence"
+                value={report.urgence ?? undefined}
+                color={
+                  String(report.urgence ?? '').includes('Élevé')
+                    ? '#e63946'
+                    : '#334155'
+                }
+              />
+              <DetailRow label="Lieu des faits" value={report.lieu ?? undefined} />
+              <DetailRow label="Date / Période" value={report.date_faits ?? undefined} />
+              <DetailRow label="Fréquence" value={report.frequence ?? undefined} />
+              <DetailRow label="Victimes" value={report.nb_victimes ?? undefined} />
+
+              <View style={[styles.detailRow, { borderBottomWidth: 0 }]}>
+                <Text style={styles.detailLabel}>Description complète :</Text>
+                <Text style={styles.fullDescription}>{String(report.content ?? '')}</Text>
               </View>
-            ) : (
-              <View style={styles.imageSection}>
-                <Text style={styles.noImageText}>🚫 Aucune pièce jointe associée</Text>
-              </View>
-            )}
-          </ScrollView>
+
+              {imageUrl ? (
+                <View style={styles.imageSection}>
+                  <Text style={styles.imageLabel}>Pièce jointe (appuyer pour agrandir) :</Text>
+                  <TouchableOpacity
+                    activeOpacity={0.8}
+                    onPress={() => setLightboxUri(imageUrl)}
+                    accessibilityRole="button"
+                    accessibilityLabel="Voir la pièce jointe en grand"
+                  >
+                    <Image
+                      source={{ uri: imageUrl }}
+                      style={styles.attachedImage}
+                      resizeMode="cover"
+                    />
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <View style={styles.imageSection}>
+                  <Text style={styles.noImageText}>Aucune pièce jointe associée</Text>
+                </View>
+              )}
+            </ScrollView>
+          </Animated.View>
         </Animated.View>
-      </Animated.View>
-    </Modal>
+      </Modal>
+
+      <ImageLightboxModal
+        visible={!!lightboxUri}
+        uri={lightboxUri}
+        onClose={() => setLightboxUri(null)}
+      />
+    </>
   );
 };
 
